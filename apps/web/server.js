@@ -6,7 +6,11 @@ const jwt = require("jsonwebtoken");
 
 const dev = process.env.NODE_ENV !== "production";
 const port = parseInt(process.env.PORT || "3000", 10);
-const JWT_SECRET = process.env.JWT_SECRET || "myschool-dev-secret-change-in-production-32chars";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
 
 const app = next({ dev, dir: __dirname });
 const handle = app.getRequestHandler();
