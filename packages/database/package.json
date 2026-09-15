@@ -1,0 +1,19 @@
+{
+  "name": "@myschool/database",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "module": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "generate": "prisma generate --schema=./schema.prisma",
+    "push": "prisma db push --schema=./schema.prisma",
+    "studio": "prisma studio --schema=./schema.prisma",
+    "migrate": "prisma migrate dev --schema=./schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}

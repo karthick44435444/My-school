@@ -1,0 +1,205 @@
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import { Platform } from "react-native";
+import Constants from "expo-constants";
+import { router } from "expo-router";
+import { api, registerPushToken } from "./api";
+
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} catch {
+  /* ignore */
+}
+
+function resolveProjectId(): string | undefined {
+  const extra = Constants.expoConfig?.extra as any;
+  const id =
+    extra?.eas?.projectId ||
+    (Constants as any).easConfig?.projectId ||
+    process.env.EXPO_PUBLIC_PROJECT_ID ||
+    undefined;
+  if (!id || typeof id !== "string") return undefined;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id) || id.includes("a1b2c3d4")) return undefined;
+  return id;
+}
+
+export async function ensureNotificationPermissions(): Promise<boolean> {
+  try {
+    if (!Device.isDevice) {
+      console.log("[push] Running on simulator/emulator — physical device recommended for remote push notifications");
+    }
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    let final = existing;
+    if (existing !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      final = status;
+    }
+    if (final !== "granted") return false;
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "My School",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#6366F1",
+      });
+    }
+    return true;
+  } catch (e) {
+    console.warn("[push] permission error", e);
+    return false;
+  }
+}
+
+export async function getExpoPushToken(): Promise<string | null> {
+  const ok = await ensureNotificationPermissions();
+  if (!ok) return null;
+
+  const projectId = resolveProjectId();
+  // 1. If a valid EAS project UUID is configured, get Expo push token
+  if (projectId) {
+    try {
+      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+      if (tokenData?.data) return tokenData.data;
+    } catch {
+      // EAS token fetch failed, proceed to native device token
+    }
+  }
+
+  // 2. Native Device Push Token (Firebase FCM on Android / APNs on iOS)
+  try {
+    const deviceToken = await Notifications.getDevicePushTokenAsync();
+    if (deviceToken?.data) return String(deviceToken.data);
+  } catch {
+    // Simulator or non-GMS device fallback
+  }
+
+  return null;
+}
+
+export async function setupPushForUser(): Promise<{
+  success: boolean;
+  token?: string;
+  error?: string;
+}> {
+  try {
+    const token = await getExpoPushToken();
+    if (!token) {
+      return {
+        success: false,
+        error: "Push token unavailable (physical device recommended).",
+      };
+    }
+    await registerPushToken(token, Platform.OS);
+    return { success: true, token };
+  } catch (e: any) {
+    return { success: false, error: e?.message || "Push setup failed" };
+  }
+}
+
+/** Route resolution when notification is tapped */
+export function resolveRouteFromNotification(data: Record<string, any>): {
+  path: string;
+  params?: Record<string, string>;
+} {
+  const type = String(data.type || data.notifType || "").toUpperCase();
+  const explicitRoute = data.route;
+  const itemId = String(data.itemId || data.examId || data.homeworkId || "");
+  const childId = String(data.studentId || data.childId || "");
+
+  if (explicitRoute && explicitRoute.startsWith("/(app)")) {
+    const params: Record<string, string> = {};
+    if (itemId) params.highlightId = itemId;
+    if (childId) params.childId = childId;
+    return { path: explicitRoute, params: Object.keys(params).length ? params : undefined };
+  }
+
+  if (type.includes("MARK") || type.includes("EXAM") || type.includes("TEST")) {
+    const params: Record<string, string> = {};
+    if (itemId) params.highlightId = itemId;
+    if (childId) params.childId = childId;
+    return { path: "/(app)/marks", params: Object.keys(params).length ? params : undefined };
+  }
+
+  if (type.includes("HOMEWORK") || type.includes("HW")) {
+    return { path: "/(app)/homework", params: itemId ? { highlightId: itemId } : undefined };
+  }
+
+  if (type.includes("ANNOUNCE") || type.includes("NOTICE") || type.includes("NEWS")) {
+    return { path: "/(app)/announcements", params: itemId ? { highlightId: itemId } : undefined };
+  }
+
+  if (type.includes("LEAVE") || type.includes("ATTEND") || type.includes("ABSENT")) {
+    return { path: "/(app)/attendance" };
+  }
+
+  return { path: "/(app)/notifications" };
+}
+
+/** Process notification tap, mark as read, and navigate to target screen */
+export async function processNotificationResponse(
+  response: Notifications.NotificationResponse
+) {
+  try {
+    const data = (response.notification.request.content.data || {}) as Record<string, any>;
+    const notifId = data.notificationId || data.id;
+
+    // 1. Mark notification as read on the backend
+    if (notifId) {
+      api("/api/notifications", {
+        method: "POST",
+        body: { id: notifId },
+      }).catch(() => {});
+    }
+
+    // 2. Navigate to destination screen
+    const target = resolveRouteFromNotification(data);
+    if (target.path) {
+      if (target.params) {
+        router.push({ pathname: target.path as any, params: target.params });
+      } else {
+        router.push(target.path as any);
+      }
+    }
+  } catch (e) {
+    console.warn("[push] processNotificationResponse error", e);
+  }
+}
+
+/** Attach listeners for notification received & tapped */
+export function addNotificationListeners(opts?: {
+  onReceive?: (n: Notifications.Notification) => void;
+  onResponse?: (r: Notifications.NotificationResponse) => void;
+}) {
+  try {
+    const sub1 = Notifications.addNotificationReceivedListener((n) => {
+      opts?.onReceive?.(n);
+    });
+
+    const sub2 = Notifications.addNotificationResponseReceivedListener((r) => {
+      processNotificationResponse(r);
+      opts?.onResponse?.(r);
+    });
+
+    // Check cold-launch notification response
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        processNotificationResponse(response);
+      }
+    });
+
+    return () => {
+      sub1.remove();
+      sub2.remove();
+    };
+  } catch {
+    return () => {};
+  }
+}

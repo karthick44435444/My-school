@@ -1,0 +1,27 @@
+# ===================================================================
+# Docker Compose Local Development Override Example
+# Copy this file to 'docker-compose.override.yml' to customize your
+# local development environment.
+# ===================================================================
+
+version: "3.8"
+
+services:
+  # Optional: For local development when running web outside Docker
+  # (e.g. running 'npm run dev:web' locally with hot reloading against
+  # dockerized PostgreSQL, Redis, and pgAdmin)
+  # You can disable the web container by uncommenting 'profiles':
+  # web:
+  #   profiles: ["donotstart"]
+
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  pgadmin:
+    ports:
+      - "5050:80"

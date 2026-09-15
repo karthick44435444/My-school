@@ -1,0 +1,234 @@
+/**
+ * API client – uses AsyncStorage (works in Expo Go; SecureStore was failing).
+ * API base URL can be set in-app on the login screen (saved permanently).
+ */
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { Platform } from "react-native";
+
+const TOKEN_KEY = "myschool_jwt";
+const USER_KEY = "myschool_user";
+const API_KEY = "myschool_api_base";
+
+const DEFAULT_API =
+  Platform.OS === "android"
+    ? "http://10.0.2.2:3000"
+    : "http://localhost:3000";
+
+let _cachedApiBase: string = (() => {
+  const fromEnv =
+    typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
+      ? process.env.EXPO_PUBLIC_API_URL
+      : undefined;
+  const extra = Constants.expoConfig?.extra as { apiUrl?: string } | undefined;
+  return (fromEnv || extra?.apiUrl || DEFAULT_API).replace(/\/$/, "");
+})();
+
+// Immediately attempt async restore of user-configured API URL into memory cache
+AsyncStorage.getItem(API_KEY).then((saved) => {
+  if (saved && saved.trim()) {
+    _cachedApiBase = saved.trim().replace(/\/$/, "");
+  }
+}).catch(() => {});
+
+/** Resolve API base: saved preference > env > app.json > platform default */
+export async function getApiBase(): Promise<string> {
+  try {
+    const saved = await AsyncStorage.getItem(API_KEY);
+    if (saved && saved.trim()) {
+      _cachedApiBase = saved.trim().replace(/\/$/, "");
+      return _cachedApiBase;
+    }
+  } catch {
+    /* ignore */
+  }
+  const fromEnv =
+    typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
+      ? process.env.EXPO_PUBLIC_API_URL
+      : undefined;
+  const extra = Constants.expoConfig?.extra as { apiUrl?: string } | undefined;
+  _cachedApiBase = (fromEnv || extra?.apiUrl || DEFAULT_API).replace(/\/$/, "");
+  return _cachedApiBase;
+}
+
+/** Sync helper for display only (always matches latest resolved api base) */
+export function getApiBaseSync(): string {
+  return _cachedApiBase;
+}
+
+export async function setApiBase(url: string) {
+  const clean = url.trim().replace(/\/$/, "");
+  _cachedApiBase = clean;
+  await AsyncStorage.setItem(API_KEY, clean);
+}
+
+export type MobileUser = {
+  id: string;
+  role: "ADMIN" | "PRINCIPAL" | "TEACHER" | "STUDENT" | "PARENT";
+  firstName: string;
+  lastName?: string;
+  email: string;
+  username: string;
+  photoUrl?: string;
+  schoolCode: string;
+  schoolName?: string;
+  schoolLogo?: string;
+  themeColor?: string;
+  teacherType?: string;
+  className?: string;
+  section?: string;
+  parentName?: string;
+  phone?: string;
+  childrenIds?: string[];
+};
+
+
+/** Turn relative /uploads/... into absolute URL for <Image> */
+export async function resolveMediaUrl(url?: string | null): Promise<string | undefined> {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  const base = await getApiBase();
+  return `${base}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
+export function resolveMediaUrlSync(url: string | null | undefined, apiBase?: string): string | undefined {
+  if (!url) return undefined;
+  const u = String(url).trim();
+  if (!u) return undefined;
+  if (/^https?:\/\//i.test(u)) return u;
+  if (u.startsWith("data:")) return u;
+  const base = (apiBase || getApiBaseSync() || "").replace(/\/$/, "");
+  if (!base) return u.startsWith("/") ? u : `/${u}`;
+  // /uploads/... or uploads/...
+  if (u.startsWith("/")) return `${base}${u}`;
+  return `${base}/${u}`;
+}
+
+export async function getToken(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function setToken(token: string) {
+  await AsyncStorage.setItem(TOKEN_KEY, token);
+}
+
+export async function clearToken() {
+  await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+}
+
+export async function saveUser(user: MobileUser) {
+  await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+export async function loadUser(): Promise<MobileUser | null> {
+  try {
+    const raw = await AsyncStorage.getItem(USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+type RequestOpts = {
+  method?: string;
+  body?: any;
+  auth?: boolean;
+};
+
+function networkHelp(base: string): string {
+  return (
+    `Cannot reach API at ${base}. ` +
+    `On the login screen set "API Server URL" to http://YOUR_PC_IP:3000 ` +
+    `(same Wi‑Fi, web must be running: npm run dev:web). ` +
+    `Android emulator: http://10.0.2.2:3000`
+  );
+}
+
+export async function api<T = any>(
+  path: string,
+  opts: RequestOpts = {}
+): Promise<T> {
+  const { method = "GET", body, auth = true } = opts;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+
+  if (auth) {
+    const token = await getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  const base = await getApiBase();
+  const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new Error(networkHelp(base));
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data?.error || data?.message || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return data as T;
+}
+
+export async function login(
+  schoolCode: string,
+  username: string,
+  password: string
+): Promise<{ user: MobileUser; token: string }> {
+  const data = await api<{ success: boolean; token: string; user: MobileUser }>(
+    "/api/auth/login",
+    {
+      method: "POST",
+      body: { schoolCode, username, password },
+      auth: false,
+    }
+  );
+  if (!data.token) throw new Error("No token returned from server");
+  await setToken(data.token);
+  await saveUser(data.user);
+  return { user: data.user, token: data.token };
+}
+
+export async function logout() {
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } catch {
+    /* ignore */
+  }
+  await clearToken();
+}
+
+export async function fetchMe(): Promise<MobileUser> {
+  const data = await api<{ user: MobileUser }>("/api/auth/me");
+  await saveUser(data.user);
+  return data.user;
+}
+
+export async function registerPushToken(token: string, platform: string) {
+  return api("/api/push", {
+    method: "POST",
+    body: { action: "register", token, platform },
+  });
+}
+
+export async function testPush() {
+  return api("/api/push", { method: "POST", body: { action: "test" } });
+}

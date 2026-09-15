@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "MySchool-PostgreSQL",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "myschool",
+      "Username": "postgres",
+      "SSLMode": "prefer"
+    }
+  }
+}

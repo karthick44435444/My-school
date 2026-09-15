@@ -1,0 +1,20 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "My School",
+        "supportEmail": "firebase-adminsdk-fbsvc@my-school-1980d.iam.gserviceaccount.com",
+        "authorizedRedirectUris": [
+          "http://localhost:3000",
+          "http://localhost",
+          "https://my-school-1980d.firebaseapp.com/__/auth/handler"
+        ]
+      }
+    }
+  }
+}

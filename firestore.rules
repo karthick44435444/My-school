@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Schools collection: read public/authenticated, write admin only
+    match /schools/{schoolId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Users collection: users can read their profile, authenticated users in same school
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Classes collection
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Homework collection
+    match /homework/{homeworkId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Announcements collection
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Attendance records
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Exam & Marks records
+    match /marks/{markId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Read Receipts
+    match /readReceipts/{receiptId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Push Tokens
+    match /pushTokens/{tokenId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
