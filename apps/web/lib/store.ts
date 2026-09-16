@@ -4174,23 +4174,27 @@ export function getExamsForTeacher(
     // 1. Teacher created this exam
     if (ex.createdById === teacherId) return true;
 
-    // 2. Check if teacher is assigned to this exam's class
-    const matchingClass = teacherClasses.find((tc: any) =>
-      isExactClassAndSection(tc.className, tc.section, ex.className, ex.section)
+    // 2. If Class Teacher for this class (or whole class match), they see all exams
+    const isClassTeacher = teacherClasses.some(
+      (tc: any) =>
+        isSameClassAndSection(tc.className, tc.section, ex.className, ex.section) &&
+        tc.role === "CLASS_TEACHER"
     );
-    if (!matchingClass) return false;
+    if (isClassTeacher) return true;
 
-    // 3. If Class Teacher for this class, they see all exams for this class
-    if (matchingClass.role === "CLASS_TEACHER") return true;
+    // 3. Check if teacher is assigned to this class
+    const matchingClasses = teacherClasses.filter((tc: any) =>
+      isSameClassAndSection(tc.className, tc.section, ex.className, ex.section)
+    );
+    if (matchingClasses.length === 0) return false;
 
-    // 4. If Subject Teacher, check if subject matches or if they teach in this class
-    const assignedSubs = teacherClasses
-      .filter((tc: any) => isExactClassAndSection(tc.className, tc.section, ex.className, ex.section))
+    // 4. If Subject Teacher, check if subject matches or if any assigned subject matches
+    const assignedSubs = matchingClasses
       .map((tc: any) => (tc.subjectName || tc.subject || "").trim().toLowerCase())
       .filter(Boolean);
 
     if (assignedSubs.length === 0) {
-      // If no specific subject restriction recorded, they are mapped to the class
+      // If no specific subject restriction, teacher is mapped to the entire class
       return true;
     }
 
