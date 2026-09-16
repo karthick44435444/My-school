@@ -137,11 +137,15 @@ export function Empty({ message }: { message: string }) {
   );
 }
 
-import { AppSplashLoader } from "./AppSplashLoader";
-export { AppSplashLoader };
+export { AppSplashLoader } from "./AppSplashLoader";
 
 export function Loading({ message, color }: { message?: string; color?: string }) {
-  return <AppSplashLoader message={message} themeColor={color} />;
+  return (
+    <View style={styles.loading}>
+      <ActivityIndicator size="large" color={color || Colors.primary} />
+      {!!message && <Text style={styles.loadingText}>{message}</Text>}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -220,5 +224,16 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 15,
     textAlign: "center",
+  },
+  loading: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
+  loadingText: {
+    marginTop: spacing.sm,
+    color: Colors.textMuted,
+    fontSize: 14,
   },
 });

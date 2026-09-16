@@ -1,26 +1,21 @@
 import React, { useEffect, useRef } from "react";
 import {
   Animated,
-  Dimensions,
   Easing,
   Image,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import { Colors } from "@/constants/theme";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SLIDER_WIDTH = Math.min(SCREEN_WIDTH * 0.55, 180);
-const INDICATOR_WIDTH = SLIDER_WIDTH * 0.4;
+const SLIDER_WIDTH = 110;
+const INDICATOR_WIDTH = 45;
 
 interface AppSplashLoaderProps {
-  message?: string;
   themeColor?: string;
 }
 
 export function AppSplashLoader({
-  message = "Loading your school portal…",
   themeColor,
 }: AppSplashLoaderProps) {
   const activeColor = themeColor || Colors.primary || "#6366F1";
@@ -91,13 +86,13 @@ export function AppSplashLoader({
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        {/* Small centered App Icon with small border radius */}
+        {/* Small centered App Icon with small corner radius */}
         <Animated.View
           style={[
             styles.iconWrapper,
             {
               transform: [{ scale: pulseAnim }],
-              borderColor: activeColor + "2A",
+              borderColor: activeColor + "25",
               shadowColor: activeColor,
             },
           ]}
@@ -109,11 +104,7 @@ export function AppSplashLoader({
           />
         </Animated.View>
 
-        {/* School / App Title */}
-        <Text style={styles.title}>My School</Text>
-        <Text style={styles.subtitle}>Smart Education Platform</Text>
-
-        {/* Animated Slider Bar with small border radius */}
+        {/* Animated Slider Bar at the bottom with corner radius */}
         <View
           style={[
             styles.sliderTrack,
@@ -131,9 +122,6 @@ export function AppSplashLoader({
             ]}
           />
         </View>
-
-        {/* Subtitle / Status text */}
-        <Text style={styles.message}>{message}</Text>
       </Animated.View>
     </View>
   );
@@ -152,53 +140,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconWrapper: {
-    width: 64,
-    height: 64,
+    width: 52,
+    height: 52,
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    padding: 6,
+    padding: 4,
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 14,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+    marginBottom: 16,
   },
   iconImage: {
     width: "100%",
     height: "100%",
     borderRadius: 6,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0F172A",
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  subtitle: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#64748B",
-    marginBottom: 18,
-  },
   sliderTrack: {
-    height: 4,
-    borderRadius: 4,
+    height: 3.5,
+    borderRadius: 3.5,
     overflow: "hidden",
     borderWidth: 0.5,
-    marginBottom: 12,
     position: "relative",
   },
   sliderThumb: {
     height: "100%",
-    borderRadius: 4,
-  },
-  message: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#94A3B8",
+    borderRadius: 3.5,
   },
 });

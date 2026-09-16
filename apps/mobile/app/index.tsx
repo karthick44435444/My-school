@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { router } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
-import { Loading } from "@/components/ui";
+import { AppSplashLoader } from "@/components/AppSplashLoader";
 
 export default function Index() {
-  const { user, loading } = useAuth();
+  const { user, loading, themeColor } = useAuth();
 
   useEffect(() => {
     if (!loading) {
@@ -16,5 +16,5 @@ export default function Index() {
     }
   }, [user, loading]);
 
-  return <Loading message="Starting My School…" />;
+  return <AppSplashLoader themeColor={themeColor} />;
 }
