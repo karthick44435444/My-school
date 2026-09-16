@@ -60,12 +60,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Setup push listeners and registration for active user
   useEffect(() => {
     if (!user) return;
-    setupPushForUser().then((r) => {
-      if (!r.success) console.warn("[push]", r.error);
-    });
-    const removeListeners = addNotificationListeners();
+    setupPushForUser()
+      .then((r) => {
+        if (!r.success) console.warn("[push]", r.error);
+      })
+      .catch(() => {});
+    let removeListeners: (() => void) | undefined;
+    try {
+      removeListeners = addNotificationListeners();
+    } catch {
+      /* ignore */
+    }
     return () => {
-      removeListeners();
+      if (removeListeners) removeListeners();
     };
   }, [user?.id]);
 

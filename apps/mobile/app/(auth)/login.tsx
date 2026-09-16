@@ -22,7 +22,6 @@ export default function LoginScreen() {
   const [schoolCode, setSchoolCode] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [apiUrl, setApiUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
@@ -30,16 +29,10 @@ export default function LoginScreen() {
     schoolCode?: string;
     username?: string;
     password?: string;
-    apiUrl?: string;
   }>({});
-
-  useEffect(() => {
-    getApiBase().then(setApiUrl);
-  }, []);
 
   const onSubmit = async () => {
     const fe: typeof fieldErrors = {};
-    if (!apiUrl.trim()) fe.apiUrl = "API URL is required";
     if (!schoolCode.trim()) fe.schoolCode = "School code is required";
     if (!username.trim()) fe.username = "Username is required";
     if (!password) fe.password = "Password is required";
@@ -49,7 +42,6 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      await setApiBase(apiUrl.trim());
       await login(schoolCode.trim(), username.trim(), password);
       router.replace("/(app)");
     } catch (e: any) {
@@ -89,26 +81,6 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
-          <Label>API Server URL</Label>
-          <Input
-            placeholder="http://192.168.x.x:3000"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-            value={apiUrl}
-            onChangeText={(t) => {
-              setApiUrl(t);
-              setFieldErrors((p) => ({ ...p, apiUrl: undefined }));
-              setError("");
-            }}
-          />
-          {!!fieldErrors.apiUrl && (
-            <Text style={styles.fieldErr}>{fieldErrors.apiUrl}</Text>
-          )}
-          <Text style={styles.tip}>
-            Use your PC Wi‑Fi IP (ipconfig) + :3000 — not localhost on a real phone
-          </Text>
-
           <Label>School Code</Label>
           <Input
             placeholder="SCH-XXXXXX"
@@ -188,9 +160,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoBox: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
+    width: 72,
+    height: 72,
+    borderRadius: 10,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
@@ -205,6 +177,7 @@ const styles = StyleSheet.create({
   logoImg: {
     width: "100%",
     height: "100%",
+    borderRadius: 6,
   },
   form: { padding: spacing.lg, marginTop: -spacing.md },
   fieldErr: { color: Colors.danger, fontSize: 12, marginTop: 4 },

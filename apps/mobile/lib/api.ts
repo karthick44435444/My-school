@@ -11,16 +11,13 @@ const TOKEN_KEY = "myschool_jwt";
 const USER_KEY = "myschool_user";
 const API_KEY = "myschool_api_base";
 
-const DEFAULT_API =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:3000"
-    : "http://localhost:3000";
+const DEFAULT_API = "https://myschool-web-had7.onrender.com";
 
 function sanitizeApiUrl(url?: string): string {
-  if (!url) return "";
+  if (!url) return DEFAULT_API;
   let clean = url.trim().replace(/\/+$/, "");
   clean = clean.replace(/\/api$/, "");
-  return clean;
+  return clean || DEFAULT_API;
 }
 
 let _cachedApiBase: string = (() => {
