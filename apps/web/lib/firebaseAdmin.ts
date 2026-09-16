@@ -8,20 +8,33 @@ function getServiceAccount(): any | null {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (raw) {
     try {
-      return typeof raw === "string" ? JSON.parse(raw) : raw;
+      const sa = typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (sa && typeof sa.private_key === "string") {
+        sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+      }
+      return sa;
     } catch (e) {
       console.error("[firebaseAdmin] Invalid FIREBASE_SERVICE_ACCOUNT_JSON", e);
     }
   }
 
-  const p =
-    process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-    path.join(process.cwd(), "firebase-service-account.json");
-  if (fs.existsSync(p)) {
-    try {
-      return JSON.parse(fs.readFileSync(p, "utf8"));
-    } catch (e) {
-      console.error("[firebaseAdmin] Failed reading service account file", e);
+  const possiblePaths = [
+    process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+    path.join(process.cwd(), "firebase-service-account.json"),
+    path.join(process.cwd(), "apps", "web", "firebase-service-account.json"),
+  ].filter(Boolean) as string[];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        const sa = JSON.parse(fs.readFileSync(p, "utf8"));
+        if (sa && typeof sa.private_key === "string") {
+          sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+        }
+        return sa;
+      } catch (e) {
+        console.error("[firebaseAdmin] Failed reading service account file at " + p, e);
+      }
     }
   }
 

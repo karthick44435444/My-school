@@ -171,6 +171,21 @@ export default function NotificationsScreen() {
     load(page + 1, true);
   };
 
+  const [testingPush, setTestingPush] = useState(false);
+  const handleTestPush = async () => {
+    if (testingPush) return;
+    setTestingPush(true);
+    try {
+      const { testPush } = await import("@/lib/api");
+      await testPush();
+      load(1, false);
+    } catch {
+      /* ignore */
+    } finally {
+      setTestingPush(false);
+    }
+  };
+
   return (
     <View style={styles.root}>
       <FlatList
@@ -202,13 +217,44 @@ export default function NotificationsScreen() {
           initialLoading ? (
             <ActivityIndicator size="large" color={themeColor} style={{ marginVertical: 32 }} />
           ) : (
-            <Empty message="No notifications yet" />
+            <View style={{ alignItems: "center", paddingVertical: 32 }}>
+              <Empty message="No notifications yet" />
+              <Pressable
+                onPress={handleTestPush}
+                disabled={testingPush}
+                style={{
+                  marginTop: 12,
+                  backgroundColor: themeColor || "#6366F1",
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>
+                  {testingPush ? "Sending test…" : "🔔 Send Test Notification"}
+                </Text>
+              </Pressable>
+            </View>
           )
         }
         ListHeaderComponent={
-          list.length > 0 ? (
-            <Text style={styles.hint}>Tap a notification to open the related page</Text>
-          ) : null
+          <View style={{ marginBottom: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={styles.hint}>Tap a notification to open details</Text>
+            <Pressable
+              onPress={handleTestPush}
+              disabled={testingPush}
+              style={{
+                backgroundColor: (themeColor || "#6366F1") + "18",
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                borderRadius: 6,
+              }}
+            >
+              <Text style={{ color: themeColor || "#6366F1", fontWeight: "700", fontSize: 11 }}>
+                {testingPush ? "Sending…" : "Test Push"}
+              </Text>
+            </Pressable>
+          </View>
         }
         renderItem={({ item, index }) => {
           const currDay = getDayWiseLabel(item.createdAt);

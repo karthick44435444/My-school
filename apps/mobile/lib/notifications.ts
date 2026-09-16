@@ -68,8 +68,8 @@ export async function getExpoPushToken(): Promise<string | null> {
     try {
       const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
       if (tokenData?.data) return tokenData.data;
-    } catch {
-      // EAS token fetch failed, proceed to native device token
+    } catch (e) {
+      console.log("[push] Expo push token fetch info:", e);
     }
   }
 
@@ -77,8 +77,8 @@ export async function getExpoPushToken(): Promise<string | null> {
   try {
     const deviceToken = await Notifications.getDevicePushTokenAsync();
     if (deviceToken?.data) return String(deviceToken.data);
-  } catch {
-    // Simulator or non-GMS device fallback
+  } catch (e) {
+    console.log("[push] Native device token info:", e);
   }
 
   return null;
@@ -90,15 +90,46 @@ export async function setupPushForUser(): Promise<{
   error?: string;
 }> {
   try {
-    const token = await getExpoPushToken();
-    if (!token) {
+    const ok = await ensureNotificationPermissions();
+    if (!ok) {
+      return { success: false, error: "Notification permission not granted" };
+    }
+
+    const tokensToRegister: string[] = [];
+
+    // Try Native Device Push Token (Firebase FCM)
+    try {
+      const deviceToken = await Notifications.getDevicePushTokenAsync();
+      if (deviceToken?.data) {
+        tokensToRegister.push(String(deviceToken.data));
+      }
+    } catch {}
+
+    // Try Expo Push Token
+    const projectId = resolveProjectId();
+    if (projectId) {
+      try {
+        const expoToken = await Notifications.getExpoPushTokenAsync({ projectId });
+        if (expoToken?.data && !tokensToRegister.includes(expoToken.data)) {
+          tokensToRegister.push(expoToken.data);
+        }
+      } catch {}
+    }
+
+    if (tokensToRegister.length === 0) {
       return {
         success: false,
         error: "Push token unavailable (physical device recommended).",
       };
     }
-    await registerPushToken(token, Platform.OS);
-    return { success: true, token };
+
+    for (const t of tokensToRegister) {
+      await registerPushToken(t, Platform.OS).catch((err) => {
+        console.warn("[push] failed registering token:", err);
+      });
+    }
+
+    return { success: true, token: tokensToRegister[0] };
   } catch (e: any) {
     return { success: false, error: e?.message || "Push setup failed" };
   }

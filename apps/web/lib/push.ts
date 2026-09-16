@@ -1,20 +1,13 @@
 /**
- * Push notifications via Firebase Cloud Messaging HTTP v1 (service account)
- * or OneSignal / legacy FCM server key.
- *
- * Env:
- *   PUSH_ENABLED=true
- *   PUSH_PROVIDER=fcm|onesignal
- *   FIREBASE_PROJECT_ID=...
- *   FIREBASE_SERVICE_ACCOUNT_JSON='{...}'   // full service account JSON string
- *   // or FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
- *   FCM_SERVER_KEY=...                     // legacy fallback
- *   ONESIGNAL_APP_ID / ONESIGNAL_REST_API_KEY
+ * Push notifications via Firebase Cloud Messaging HTTP v1 (Firebase Admin SDK)
+ * with support for Web, Mobile, Expo Push, and OneSignal.
  */
 
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { getFirebaseAdminApp } from "./firebaseAdmin";
+import { getMessaging as getAdminMessaging } from "firebase-admin/messaging";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
@@ -44,11 +37,7 @@ function writeDB(data: any) {
 
 export function isPushEnabled() {
   if (process.env.PUSH_ENABLED === "false") return false;
-  if (process.env.PUSH_ENABLED === "true") return true;
-  return Boolean(
-    process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
-      fs.existsSync(path.join(process.cwd(), "firebase-service-account.json"))
-  );
+  return true;
 }
 
 export function savePushToken(userId: string, token: string, platform?: string) {
@@ -64,6 +53,24 @@ export function savePushToken(userId: string, token: string, platform?: string) 
     updatedAt: new Date().toISOString(),
   });
   writeDB(db);
+
+  // Background sync to Firestore if configured
+  (async () => {
+    try {
+      const { setDoc, COLLECTIONS } = await import("./firestore");
+      // Use sanitized token string as doc ID
+      const safeDocId = `${userId}_${token.slice(-16).replace(/[^a-zA-Z0-9]/g, "_")}`;
+      await setDoc(COLLECTIONS.PUSH_TOKENS, safeDocId, {
+        userId,
+        token,
+        platform: platform || "web",
+        updatedAt: new Date().toISOString(),
+      });
+    } catch {
+      /* ignore firestore sync errors if not configured */
+    }
+  })();
+
   return { success: true };
 }
 
@@ -77,179 +84,19 @@ export function removePushToken(userId: string, token?: string) {
   return { success: true };
 }
 
+export function removePushTokenByValue(token: string) {
+  const db = readDB();
+  if (!db.pushTokens) return;
+  db.pushTokens = db.pushTokens.filter((t: any) => t.token !== token);
+  writeDB(db);
+}
+
 export function getTokensForUser(userId: string): string[] {
   const db = readDB();
   const list = (db.pushTokens || [])
     .filter((t: any) => t.userId === userId)
     .map((t: any) => t.token);
   return Array.from(new Set(list.filter(Boolean)));
-}
-
-function b64url(input: Buffer | string) {
-  return Buffer.from(input)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-}
-
-function loadServiceAccount(): any | null {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (raw) {
-    try {
-      return typeof raw === "string" ? JSON.parse(raw) : raw;
-    } catch (e) {
-      console.error("[push] invalid FIREBASE_SERVICE_ACCOUNT_JSON", e);
-    }
-  }
-  const p =
-    process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-    path.join(process.cwd(), "firebase-service-account.json");
-  if (fs.existsSync(p)) {
-    try {
-      return JSON.parse(fs.readFileSync(p, "utf8"));
-    } catch (e) {
-      console.error("[push] failed reading service account file", e);
-    }
-  }
-  return null;
-}
-
-let cachedAccessToken: { token: string; exp: number } | null = null;
-
-async function getFcmAccessToken(sa: any): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  if (cachedAccessToken && cachedAccessToken.exp > now + 60) {
-    return cachedAccessToken.token;
-  }
-  const header = { alg: "RS256", typ: "JWT" };
-  const claim = {
-    iss: sa.client_email,
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600,
-  };
-  const unsigned = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(claim))}`;
-  const signer = crypto.createSign("RSA-SHA256");
-  signer.update(unsigned);
-  signer.end();
-  const sig = signer
-    .sign(sa.private_key)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-  const jwt = `${unsigned}.${sig}`;
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=${encodeURIComponent(
-      "urn:ietf:params:oauth:grant-type:jwt-bearer"
-    )}&assertion=${jwt}`,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.access_token) {
-    console.error("[push] OAuth token error", data);
-    throw new Error(data.error_description || data.error || "FCM OAuth failed");
-  }
-  cachedAccessToken = {
-    token: data.access_token,
-    exp: now + (data.expires_in || 3600),
-  };
-  return data.access_token;
-}
-
-async function sendFcmV1(
-  token: string,
-  payload: { title: string; body: string; data?: Record<string, string> },
-  sa: any
-) {
-  const projectId =
-    process.env.FIREBASE_PROJECT_ID || sa.project_id || "my-school-1980d";
-  const accessToken = await getFcmAccessToken(sa);
-  const appBase = (
-    process.env.NEXT_PUBLIC_APP_URL || "https://myschool-web.onrender.com"
-  ).replace(/\/+$/, "");
-  const iconUrl = `${appBase}/logo.png`;
-  const targetLink = payload.data?.webUrl || appBase || "/";
-
-  const res = await fetch(
-    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: {
-          token,
-          notification: {
-            title: payload.title,
-            body: payload.body,
-            image: iconUrl,
-          },
-          data: Object.fromEntries(
-            Object.entries(payload.data || {}).map(([k, v]) => [k, String(v)])
-          ),
-          android: {
-            priority: "high",
-            notification: {
-              channelId: "default",
-              sound: "default",
-              notificationPriority: "PRIORITY_MAX",
-              defaultVibrateTimings: true,
-              defaultLightSettings: true,
-              icon: "notification_icon",
-              color: "#6366F1",
-            },
-          },
-          webpush: {
-            headers: {
-              Urgency: "high",
-            },
-            notification: {
-              title: payload.title,
-              body: payload.body,
-              icon: iconUrl,
-              badge: iconUrl,
-              image: iconUrl,
-            },
-            fcm_options: {
-              link: targetLink,
-            },
-          },
-        },
-      }),
-    }
-  );
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.error("[push:fcm-v1]", data);
-    return { ok: false, data };
-  }
-  return { ok: true, data };
-}
-
-async function sendFcmLegacy(
-  token: string,
-  payload: { title: string; body: string; data?: Record<string, string> },
-  serverKey: string
-) {
-  const res = await fetch("https://fcm.googleapis.com/fcm/send", {
-    method: "POST",
-    headers: {
-      Authorization: `key=${serverKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      to: token,
-      notification: { title: payload.title, body: payload.body },
-      data: payload.data || {},
-    }),
-  });
-  return { ok: res.ok };
 }
 
 function isExpoPushToken(token: string) {
@@ -259,7 +106,7 @@ function isExpoPushToken(token: string) {
   );
 }
 
-/** Send via Expo Push API (works with Expo Go + standalone) */
+/** Send via Expo Push API (works with Expo Go + standalone Expo tokens) */
 async function sendExpoPush(
   tokens: string[],
   payload: { title: string; body: string; data?: Record<string, string> }
@@ -291,18 +138,90 @@ async function sendExpoPush(
   return { ok: res.ok, data };
 }
 
+/** Send via Firebase Cloud Messaging HTTP v1 using Firebase Admin SDK */
+async function sendFcmAdmin(
+  token: string,
+  payload: { title: string; body: string; data?: Record<string, string> }
+) {
+  try {
+    const adminApp = getFirebaseAdminApp();
+    const messaging = getAdminMessaging(adminApp);
+    const appBase = (
+      process.env.NEXT_PUBLIC_APP_URL || "https://myschool-web-had7.onrender.com"
+    ).replace(/\/+$/, "");
+    const iconUrl = `${appBase}/logo.png`;
+    const targetLink = payload.data?.url || payload.data?.webUrl || appBase || "/";
+
+    const stringData: Record<string, string> = {};
+    for (const [k, v] of Object.entries(payload.data || {})) {
+      if (v !== undefined && v !== null) {
+        stringData[k] = String(v);
+      }
+    }
+
+    const response = await messaging.send({
+      token,
+      notification: {
+        title: payload.title,
+        body: payload.body,
+        imageUrl: iconUrl,
+      },
+      data: stringData,
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "default",
+          sound: "default",
+          priority: "max",
+          defaultVibrateTimings: true,
+          defaultLightSettings: true,
+          color: "#6366F1",
+        },
+      },
+      webpush: {
+        headers: {
+          Urgency: "high",
+        },
+        notification: {
+          title: payload.title,
+          body: payload.body,
+          icon: "/logo.png",
+          badge: "/logo.png",
+          image: iconUrl,
+        },
+        fcmOptions: {
+          link: targetLink,
+        },
+      },
+    });
+
+    return { ok: true, id: response };
+  } catch (err: any) {
+    console.error("[push:fcm-v1] Error sending to token:", token.slice(0, 15) + "...", err?.message || err);
+    // Auto-prune dead/expired tokens
+    if (
+      err?.code === "messaging/registration-token-not-registered" ||
+      err?.code === "messaging/invalid-registration-token" ||
+      err?.code === "messaging/invalid-argument"
+    ) {
+      removePushTokenByValue(token);
+    }
+    return { ok: false, error: err?.message, code: err?.code };
+  }
+}
+
 export async function sendPushToUser(
   userId: string,
   payload: { title: string; body: string; data?: Record<string, string> }
 ) {
   const tokens = getTokensForUser(userId);
   if (!tokens.length) {
-    return { success: true, sent: 0, reason: "no tokens" };
+    return { success: true, sent: 0, reason: "no tokens registered for this user" };
   }
 
   if (!isPushEnabled()) {
-    console.log("[push:demo]", { userId, tokens: tokens.length, ...payload });
-    return { success: true, demo: true, sent: tokens.length };
+    console.log("[push:disabled]", { userId, tokens: tokens.length, ...payload });
+    return { success: true, sent: 0, reason: "PUSH_ENABLED is false" };
   }
 
   const expoTokens = tokens.filter(isExpoPushToken);
@@ -310,7 +229,7 @@ export async function sendPushToUser(
   let sent = 0;
   const errors: any[] = [];
 
-  // Expo Go / Expo push tokens
+  // 1. Send to Expo push tokens (if any)
   if (expoTokens.length) {
     try {
       const r = await sendExpoPush(expoTokens, payload);
@@ -321,70 +240,51 @@ export async function sendPushToUser(
     }
   }
 
-  if (!fcmTokens.length) {
-    return { success: sent > 0 || errors.length === 0, sent, errors };
-  }
+  // 2. Send to native FCM tokens (Web & Android APK)
+  if (fcmTokens.length) {
+    const provider = (process.env.PUSH_PROVIDER || "fcm").toLowerCase();
 
-  const provider = (process.env.PUSH_PROVIDER || "fcm").toLowerCase();
-
-  if (provider === "onesignal") {
-    const appId = process.env.ONESIGNAL_APP_ID;
-    const apiKey = process.env.ONESIGNAL_REST_API_KEY;
-    if (!appId || !apiKey) {
-      return { success: false, error: "OneSignal env missing", sent, errors };
-    }
-    const res = await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        app_id: appId,
-        include_player_ids: fcmTokens,
-        headings: { en: payload.title },
-        contents: { en: payload.body },
-        data: payload.data || {},
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) sent += fcmTokens.length;
-    else errors.push(data);
-    return { success: res.ok || sent > 0, sent, errors, data };
-  }
-
-  // FCM HTTP v1 (service account) for web / native FCM tokens
-  const sa = loadServiceAccount();
-  if (sa) {
-    for (const token of fcmTokens) {
-      try {
-        const r = await sendFcmV1(token, payload, sa);
-        if (r.ok) sent++;
-        else errors.push(r.data);
-      } catch (e: any) {
-        errors.push(e.message);
+    if (provider === "onesignal") {
+      const appId = process.env.ONESIGNAL_APP_ID;
+      const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+      if (appId && apiKey) {
+        try {
+          const res = await fetch("https://onesignal.com/api/v1/notifications", {
+            method: "POST",
+            headers: {
+              Authorization: `Basic ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              app_id: appId,
+              include_player_ids: fcmTokens,
+              headings: { en: payload.title },
+              contents: { en: payload.body },
+              data: payload.data || {},
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) sent += fcmTokens.length;
+          else errors.push(data);
+        } catch (e: any) {
+          errors.push(e.message);
+        }
+      }
+    } else {
+      // Default: Firebase FCM v1 via Admin SDK
+      for (const token of fcmTokens) {
+        try {
+          const r = await sendFcmAdmin(token, payload);
+          if (r.ok) sent++;
+          else errors.push(r);
+        } catch (e: any) {
+          errors.push(e.message);
+        }
       }
     }
-    return { success: sent > 0 || errors.length === 0, sent, errors };
   }
 
-  const serverKey = process.env.FCM_SERVER_KEY;
-  if (!serverKey) {
-    return {
-      success: sent > 0,
-      sent,
-      errors,
-      error:
-        sent > 0
-          ? undefined
-          : "No FIREBASE_SERVICE_ACCOUNT_JSON / firebase-service-account.json or FCM_SERVER_KEY",
-    };
-  }
-  for (const token of fcmTokens) {
-    const r = await sendFcmLegacy(token, payload, serverKey);
-    if (r.ok) sent++;
-  }
-  return { success: true, sent, errors };
+  return { success: sent > 0 || errors.length === 0, sent, totalTokens: tokens.length, errors };
 }
 
 export function getRoleBasedRoutes(

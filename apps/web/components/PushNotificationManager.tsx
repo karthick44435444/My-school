@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { Bell, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   checkAndMarkNotificationReadFromUrl,
   registerWebPushToken,
@@ -10,6 +12,8 @@ import {
 
 export default function PushNotificationManager() {
   const pathname = usePathname();
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   // 1. Check & mark read from URL whenever route changes or on initial load
   useEffect(() => {
@@ -20,23 +24,101 @@ export default function PushNotificationManager() {
   useEffect(() => {
     const unsub = setupForegroundPushListener();
 
-    // Check if session user exists before attempting push registration
+    // Check if session user exists
+    let hasUser = false;
     try {
-      const hasUser =
-        sessionStorage.getItem("myschool_user") || localStorage.getItem("myschool_user");
-      if (hasUser) {
+      hasUser = Boolean(
+        sessionStorage.getItem("myschool_user") || localStorage.getItem("myschool_user")
+      );
+    } catch {}
+
+    if (hasUser && typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "granted") {
         registerWebPushToken().then((res) => {
           if (res.success) {
             console.log("[push:web] Registered FCM token successfully");
           }
         });
+      } else if (
+        Notification.permission === "default" &&
+        !sessionStorage.getItem("myschool_notif_dismissed") &&
+        !["/login", "/register-school", "/forgot-password"].includes(pathname)
+      ) {
+        // Show gentle permission banner after a 2.5s delay
+        const t = setTimeout(() => setShowPrompt(true), 2500);
+        return () => {
+          clearTimeout(t);
+          unsub();
+        };
       }
-    } catch {}
+    }
 
     return () => {
       unsub();
     };
-  }, []);
+  }, [pathname]);
 
-  return null;
+  const handleEnable = async () => {
+    setIsRegistering(true);
+    try {
+      const res = await registerWebPushToken();
+      if (res.success) {
+        toast.success("Push notifications enabled successfully!");
+        setShowPrompt(false);
+      } else {
+        toast.error(res.error || "Could not enable notifications.");
+      }
+    } catch {
+      toast.error("Failed to enable notifications.");
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const handleDismiss = () => {
+    setShowPrompt(false);
+    try {
+      sessionStorage.setItem("myschool_notif_dismissed", "1");
+    } catch {}
+  };
+
+  if (!showPrompt) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-xl border border-indigo-100 bg-white p-4 shadow-2xl animate-in slide-in-from-bottom-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <Bell className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <h4 className="text-sm font-semibold text-slate-900">Enable Push Notifications</h4>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Get instant alerts for new homework, exam marks, attendance, and school announcements.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              onClick={handleEnable}
+              disabled={isRegistering}
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60 transition"
+            >
+              {isRegistering ? "Enabling…" : "Enable Notifications"}
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 transition"
+            >
+              Later
+            </button>
+          </div>
+        </div>
+        <button
+          onClick={handleDismiss}
+          className="text-slate-400 hover:text-slate-600 transition"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
 }
