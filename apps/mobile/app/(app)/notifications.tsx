@@ -85,7 +85,7 @@ export default function NotificationsScreen() {
         totalPages?: number;
       }>(`/api/notifications?page=${pageNum}&limit=20`);
 
-      const incoming = data.notifications || [];
+      const incoming = Array.isArray(data?.notifications) ? data.notifications : [];
       if (isAppend) {
         setList((prev) => {
           const seen = new Set(prev.map((x) => x.id));
@@ -97,13 +97,13 @@ export default function NotificationsScreen() {
       }
       setPage(pageNum);
       setHasMore(
-        data.hasMore ??
-          (data.page != null && data.totalPages != null
+        data?.hasMore ??
+          (data?.page != null && data?.totalPages != null
             ? data.page < data.totalPages
             : incoming.length === 20)
       );
       if (pageNum === 1) {
-        await badges.markNotificationsSeen();
+        badges.markNotificationsSeen().catch(() => {});
       }
     } catch {
       if (!isAppend) setList([]);
@@ -121,21 +121,31 @@ export default function NotificationsScreen() {
   );
 
   useEffect(() => {
-    let unsub: (() => void) | null = null;
+    let unsub: (() => void) | undefined;
+    let isMounted = true;
+
     (async () => {
       try {
         const { subscribeMobileNewNotification } = await import("@/lib/socket");
-        unsub = await subscribeMobileNewNotification((newNotif) => {
+        const cleanup = await subscribeMobileNewNotification((newNotif) => {
+          if (!isMounted) return;
           setList((prev) => {
             if (prev.some((x) => x.id === newNotif.id)) return prev;
             return [newNotif as any, ...prev];
           });
         });
+        if (isMounted) {
+          unsub = cleanup;
+        } else if (cleanup) {
+          cleanup();
+        }
       } catch {
         /* fallback */
       }
     })();
+
     return () => {
+      isMounted = false;
       if (unsub) unsub();
     };
   }, []);
@@ -150,9 +160,9 @@ export default function NotificationsScreen() {
       /* ignore */
     }
     const r = routeFor(item);
-    if (r.path !== "/(app)/notifications") {
-      if (r.params) router.push({ pathname: r.path as any, params: r.params });
-      else router.push(r.path as any);
+    if (r.path && r.path !== "/(app)/notifications") {
+      if (r.params) router.navigate({ pathname: r.path as any, params: r.params });
+      else router.navigate(r.path as any);
     }
   };
 

@@ -137,12 +137,10 @@ export function Empty({ message }: { message: string }) {
   );
 }
 
-export function Loading() {
-  return (
-    <View style={styles.empty}>
-      <ActivityIndicator size="large" color={Colors.primary} />
-    </View>
-  );
+export { AppSplashLoader } from "./AppSplashLoader";
+
+export function Loading({ message, color }: { message?: string; color?: string }) {
+  return <AppSplashLoader message={message} themeColor={color} />;
 }
 
 const styles = StyleSheet.create({

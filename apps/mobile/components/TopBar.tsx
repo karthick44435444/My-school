@@ -26,30 +26,33 @@ export default function TopBar() {
   const subTitles = useMemo(() => {
     const map: Record<string, string> = {
       "/notifications": "Notifications",
+      "/(app)/notifications": "Notifications",
+      "/top-students": "Top Students",
+      "/(app)/top-students": "Top Students",
+      "/profile": "Profile",
+      "/(app)/profile": "Profile",
+      "/settings": "Settings",
+      "/(app)/settings": "Settings",
     };
     if (user?.role === "ADMIN") {
       map["/principals"] = "Principals";
+      map["/(app)/principals"] = "Principals";
       map["/teachers"] = "Teachers";
+      map["/(app)/teachers"] = "Teachers";
       map["/students"] = "Students";
-      map["/profile"] = "Profile";
-      map["/settings"] = "Settings";
-      map["/top-students"] = "Top Students";
+      map["/(app)/students"] = "Students";
     } else if (user?.role === "PRINCIPAL") {
       map["/teachers"] = "Teachers";
+      map["/(app)/teachers"] = "Teachers";
       map["/students"] = "Students";
-      map["/profile"] = "Profile";
-      map["/settings"] = "Settings";
-      map["/top-students"] = "Top Students";
-    } else {
-      // TEACHER, STUDENT, PARENT
-      map["/profile"] = "Profile";
-      map["/settings"] = "Settings";
+      map["/(app)/students"] = "Students";
     }
     return map;
   }, [user?.role]);
 
-  const isMoreSubPage = Boolean(subTitles[pathname]);
-  const pageTitle = subTitles[pathname];
+  const normPath = pathname.replace(/^\/\(app\)/, "") || "/";
+  const isMoreSubPage = Boolean(subTitles[pathname] || subTitles[normPath]);
+  const pageTitle = subTitles[pathname] || subTitles[normPath] || "Notifications";
 
   useEffect(() => {
     getApiBase().then((b) => {
@@ -83,19 +86,10 @@ export default function TopBar() {
             <Pressable
               style={styles.backBtn}
               onPress={() => {
-                if (pathname === "/notifications" || pathname === "/top-students") {
-                  router.replace("/(app)");
-                } else if (pathname === "/settings") {
-                  router.replace("/(app)/profile");
-                } else if (pathname === "/profile") {
-                  if (user?.role === "ADMIN") {
-                    router.replace("/(app)/more");
-                  } else {
-                    // TEACHER, STUDENT, PARENT, PRINCIPAL
-                    router.replace("/(app)");
-                  }
+                if (router.canGoBack()) {
+                  router.back();
                 } else {
-                  router.replace("/(app)/more");
+                  router.replace("/(app)");
                 }
               }}
               hitSlop={8}
@@ -142,7 +136,10 @@ export default function TopBar() {
         <View style={styles.right}>
           <Pressable
             style={styles.iconBtn}
-            onPress={() => router.push("/(app)/notifications")}
+            onPress={() => {
+              if (pathname.includes("notifications")) return;
+              router.navigate("/(app)/notifications" as any);
+            }}
             hitSlop={8}
           >
             <Ionicons name="notifications" size={22} color="#fff" />
