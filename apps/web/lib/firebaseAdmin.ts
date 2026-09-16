@@ -9,28 +9,45 @@ function getServiceAccount(): any | null {
   if (raw) {
     try {
       let parsed: any;
-      if (raw.startsWith("{")) {
+      
+      // 1. Try direct parse
+      try {
         parsed = JSON.parse(raw);
-      } else if (raw.startsWith('"') && raw.endsWith('"')) {
-        // Double stringified JSON
-        parsed = JSON.parse(JSON.parse(raw));
-      } else {
-        // Try base64 decoded or direct parse
+        if (typeof parsed === "string") {
+          parsed = JSON.parse(parsed);
+        }
+      } catch {}
+
+      // 2. Try unescaping backslashes if user pasted escaped JSON (e.g. {\ "type\": \"service_account\"...})
+      if (!parsed || typeof parsed !== "object") {
+        try {
+          const unescaped = raw
+            .replace(/\\"/g, '"')
+            .replace(/\\ /g, " ")
+            .replace(/\\\\/g, "\\");
+          parsed = JSON.parse(unescaped);
+          if (typeof parsed === "string") {
+            parsed = JSON.parse(parsed);
+          }
+        } catch {}
+      }
+
+      // 3. Try base64 decoded
+      if (!parsed || typeof parsed !== "object") {
         try {
           const b64 = Buffer.from(raw, "base64").toString("utf-8");
           if (b64.startsWith("{")) {
             parsed = JSON.parse(b64);
           }
         } catch {}
-        if (!parsed) {
-          parsed = JSON.parse(raw);
-        }
       }
 
-      if (parsed && typeof parsed.private_key === "string") {
-        parsed.private_key = parsed.private_key.replace(/\\n/g, "\n");
+      if (parsed && typeof parsed === "object" && parsed.private_key) {
+        if (typeof parsed.private_key === "string") {
+          parsed.private_key = parsed.private_key.replace(/\\n/g, "\n");
+        }
+        return parsed;
       }
-      return parsed;
     } catch (e) {
       console.error("[firebaseAdmin] Invalid FIREBASE_SERVICE_ACCOUNT_JSON:", e);
     }
