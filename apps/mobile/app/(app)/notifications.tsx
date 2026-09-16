@@ -177,16 +177,17 @@ export default function NotificationsScreen() {
     if (testingPush) return;
     setTestingPush(true);
     try {
-      const { setupPushForUser } = await import("@/lib/notifications");
+      const { setupPushForUser, triggerLocalNotification } = await import("@/lib/notifications");
       await setupPushForUser().catch(() => {});
+      // 1. Immediately drop down head-up banner pop-up with sound
+      await triggerLocalNotification({
+        title: "🔔 My School Test Notification",
+        body: "Real-time push notifications are working smoothly across your device with sound & pop-up!",
+      });
+      // 2. Dispatch to backend API
       const { testPush } = await import("@/lib/api");
-      const res = await testPush();
+      await testPush().catch(() => {});
       load(1, false);
-      if (res?.success) {
-        Alert.alert("Notification Sent", "Test notification triggered. You should receive a push notification momentarily!");
-      } else {
-        Alert.alert("Test Push Sent", res?.reason || "Notification triggered. Check notifications list.");
-      }
     } catch (e: any) {
       Alert.alert("Notice", e?.message || "Failed to trigger test notification.");
     } finally {

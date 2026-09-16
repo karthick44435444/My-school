@@ -145,7 +145,7 @@ export async function registerWebPushToken(): Promise<{ success: boolean; token?
   }
 }
 
-/** Listen for foreground FCM messages and show rich in-app toast */
+/** Listen for foreground FCM messages and show rich in-app toast with sound & logo */
 export function setupForegroundPushListener(onReceived?: (payload: any) => void) {
   if (typeof window === "undefined") return () => {};
   let unsubscribe: (() => void) | null = null;
@@ -158,38 +158,21 @@ export function setupForegroundPushListener(onReceived?: (payload: any) => void)
       const app = getFirebaseApp();
       if (!app) return;
 
+      const { displayNotificationAlert } = await import("./notificationPopups");
       const messaging = getMessaging(app);
       unsubscribe = onMessage(messaging, (payload) => {
-        const title = payload.notification?.title || payload.data?.title || "My School Notification";
+        const title = payload.notification?.title || payload.data?.title || "🔔 My School Notification";
         const body = payload.notification?.body || payload.data?.body || "";
         const targetUrl = payload.data?.url || payload.fcmOptions?.link || "/";
         const notifId = payload.data?.notificationId;
 
-        toast(title, {
-          description: body,
-          action: {
-            label: "View",
-            onClick: async () => {
-              if (notifId) {
-                try {
-                  await fetch("/api/notifications", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: notifId }),
-                  });
-                } catch {}
-              }
-              if (targetUrl && targetUrl !== "#") {
-                window.location.href = targetUrl;
-              }
-            },
-          },
+        displayNotificationAlert({
+          title,
+          body,
+          url: targetUrl,
+          notificationId: notifId,
+          icon: payload.notification?.icon || "/logo.png",
         });
-
-        // Dispatch global event for instant in-app badge updates without refresh
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("myschool:badges-updated", { detail: payload }));
-        }
 
         onReceived?.(payload);
       });

@@ -178,6 +178,7 @@ async function sendFcmAdmin(
           sound: "default",
           priority: "max",
           defaultVibrateTimings: true,
+          defaultSound: true,
           defaultLightSettings: true,
           color: "#6366F1",
         },
@@ -189,9 +190,10 @@ async function sendFcmAdmin(
         notification: {
           title: payload.title,
           body: payload.body,
-          icon: "/logo.png",
-          badge: "/logo.png",
+          icon: iconUrl,
+          badge: iconUrl,
           image: iconUrl,
+          requireInteraction: true,
         },
         fcmOptions: {
           link: targetLink,

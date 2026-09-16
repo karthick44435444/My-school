@@ -20,9 +20,30 @@ export default function PushNotificationManager() {
     checkAndMarkNotificationReadFromUrl();
   }, [pathname]);
 
-  // 2. Set up foreground listener and register token if user is logged in
+  // 2. Set up foreground FCM listener, live Socket.IO listener, and auto-registration
   useEffect(() => {
-    const unsub = setupForegroundPushListener();
+    const unsubFCM = setupForegroundPushListener();
+    let unsubSocket: (() => void) | null = null;
+
+    import("@/lib/socketClient").then(({ subscribeNewNotification }) => {
+      import("@/lib/notificationPopups").then(({ displayNotificationAlert }) => {
+        unsubSocket = subscribeNewNotification((n) => {
+          const title = n.title || "🔔 My School Notification";
+          const body = n.body || n.message || "";
+          const notifId = n.id;
+          const meta = n.meta || n.data || {};
+          const url = meta.url || (notifId ? `/?markRead=${notifId}` : undefined);
+
+          displayNotificationAlert({
+            title,
+            body,
+            url,
+            notificationId: notifId,
+            icon: "/logo.png",
+          });
+        });
+      });
+    });
 
     // Check if session user exists
     let hasUser = false;
@@ -44,17 +65,19 @@ export default function PushNotificationManager() {
         !sessionStorage.getItem("myschool_notif_dismissed") &&
         !["/login", "/register-school", "/forgot-password"].includes(pathname)
       ) {
-        // Show gentle permission banner after a 2.5s delay
-        const t = setTimeout(() => setShowPrompt(true), 2500);
+        // Show gentle permission banner after a 2s delay
+        const t = setTimeout(() => setShowPrompt(true), 2000);
         return () => {
           clearTimeout(t);
-          unsub();
+          unsubFCM();
+          if (unsubSocket) unsubSocket();
         };
       }
     }
 
     return () => {
-      unsub();
+      unsubFCM();
+      if (unsubSocket) unsubSocket();
     };
   }, [pathname]);
 

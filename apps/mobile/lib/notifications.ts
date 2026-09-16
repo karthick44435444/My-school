@@ -45,16 +45,47 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
 
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
-        name: "My School",
+        name: "My School Notifications",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#6366F1",
+        sound: "default",
+        enableLights: true,
+        enableVibrate: true,
+        showBadge: true,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        bypassDnd: false,
       });
     }
     return true;
   } catch (e) {
     console.warn("[push] permission error", e);
     return false;
+  }
+}
+
+/** Instantly triggers a local system pop-up banner with sound */
+export async function triggerLocalNotification(payload: {
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+}) {
+  try {
+    await ensureNotificationPermissions();
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title: payload.title,
+        body: payload.body,
+        sound: "default",
+        data: payload.data || {},
+        badge: 1,
+        color: "#6366F1",
+      },
+      trigger: null,
+    });
+  } catch (err) {
+    console.warn("[push:mobile] triggerLocalNotification error", err);
+    return null;
   }
 }
 
