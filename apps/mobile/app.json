@@ -44,7 +44,7 @@
       "router": {
         "origin": false
       },
-      "apiUrl": "http://10.0.2.2:3000",
+      "apiUrl": "https://myschool-web.onrender.com",
       "eas": {
         "projectId": "1c8713c2-a03d-4e59-b9e7-4f5073ba544a"
       }
