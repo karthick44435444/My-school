@@ -137,7 +137,8 @@ export function Empty({ message }: { message: string }) {
   );
 }
 
-export { AppSplashLoader } from "./AppSplashLoader";
+import { AppSplashLoader } from "./AppSplashLoader";
+export { AppSplashLoader };
 
 export function Loading({ message, color }: { message?: string; color?: string }) {
   return <AppSplashLoader message={message} themeColor={color} />;

@@ -3,16 +3,16 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Image,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { Image as ExpoImage } from "expo-image";
 import { Colors } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SLIDER_WIDTH = Math.min(SCREEN_WIDTH * 0.6, 220);
-const INDICATOR_WIDTH = SLIDER_WIDTH * 0.45;
+const SLIDER_WIDTH = Math.min(SCREEN_WIDTH * 0.55, 180);
+const INDICATOR_WIDTH = SLIDER_WIDTH * 0.4;
 
 interface AppSplashLoaderProps {
   message?: string;
@@ -34,22 +34,22 @@ export function AppSplashLoader({
     // 1. Fade-in entry
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 350,
+      duration: 300,
       useNativeDriver: true,
     }).start();
 
-    // 2. Continuous breathing pulse for the icon
+    // 2. Subtle breathing pulse for the icon
     const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 1100,
+          toValue: 1.04,
+          duration: 1000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
-          toValue: 0.97,
-          duration: 1100,
+          toValue: 0.98,
+          duration: 1000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
@@ -62,13 +62,13 @@ export function AppSplashLoader({
       Animated.sequence([
         Animated.timing(slideAnim, {
           toValue: 1,
-          duration: 1300,
+          duration: 1200,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 1300,
+          duration: 1200,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -91,22 +91,21 @@ export function AppSplashLoader({
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        {/* Animated App Icon Card with border radius 16px / 12px */}
+        {/* Small centered App Icon with small border radius */}
         <Animated.View
           style={[
             styles.iconWrapper,
             {
               transform: [{ scale: pulseAnim }],
-              borderColor: activeColor + "33",
+              borderColor: activeColor + "2A",
               shadowColor: activeColor,
             },
           ]}
         >
-          <ExpoImage
+          <Image
             source={require("@/assets/logo.png")}
             style={styles.iconImage}
-            contentFit="contain"
-            transition={200}
+            resizeMode="contain"
           />
         </Animated.View>
 
@@ -114,11 +113,11 @@ export function AppSplashLoader({
         <Text style={styles.title}>My School</Text>
         <Text style={styles.subtitle}>Smart Education Platform</Text>
 
-        {/* Animated Slider Bar with 12px border radius */}
+        {/* Animated Slider Bar with small border radius */}
         <View
           style={[
             styles.sliderTrack,
-            { width: SLIDER_WIDTH, backgroundColor: activeColor + "18", borderColor: activeColor + "30" },
+            { width: SLIDER_WIDTH, backgroundColor: activeColor + "15", borderColor: activeColor + "25" },
           ]}
         >
           <Animated.View
@@ -146,59 +145,59 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
     alignItems: "center",
     justifyContent: "center",
-    padding: 24,
+    padding: 20,
   },
   content: {
     alignItems: "center",
     justifyContent: "center",
   },
   iconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
+    width: 64,
+    height: 64,
+    borderRadius: 8,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    padding: 8,
-    borderWidth: 1.5,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
-    marginBottom: 16,
+    padding: 6,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 14,
   },
   iconImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 8,
+    borderRadius: 6,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "900",
+    fontSize: 18,
+    fontWeight: "800",
     color: "#0F172A",
-    letterSpacing: -0.5,
-    marginBottom: 3,
+    letterSpacing: -0.3,
+    marginBottom: 2,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     color: "#64748B",
-    marginBottom: 22,
+    marginBottom: 18,
   },
   sliderTrack: {
-    height: 6,
-    borderRadius: 6,
+    height: 4,
+    borderRadius: 4,
     overflow: "hidden",
-    borderWidth: 1,
-    marginBottom: 14,
+    borderWidth: 0.5,
+    marginBottom: 12,
     position: "relative",
   },
   sliderThumb: {
     height: "100%",
-    borderRadius: 6,
+    borderRadius: 4,
   },
   message: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     color: "#94A3B8",
   },
