@@ -13,13 +13,15 @@ self.addEventListener("push", (event) => {
 
   const title = notification.title || data.title || "My School Notification";
   const body = notification.body || data.body || "You have a new update";
-  const icon = data.icon || "/icon.png";
-  const badge = "/notification-icon.png";
+  const icon = notification.icon || data.icon || "/logo.png";
+  const badge = notification.badge || data.badge || "/logo.png";
+  const image = notification.image || data.image || undefined;
 
   const options = {
     body,
     icon,
     badge,
+    image,
     data: {
       url: data.url || (data.notificationId ? `/?markRead=${data.notificationId}` : "/"),
       notificationId: data.notificationId,

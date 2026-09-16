@@ -43,7 +43,12 @@ function writeDB(data: any) {
 }
 
 export function isPushEnabled() {
-  return process.env.PUSH_ENABLED === "true";
+  if (process.env.PUSH_ENABLED === "false") return false;
+  if (process.env.PUSH_ENABLED === "true") return true;
+  return Boolean(
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
+      fs.existsSync(path.join(process.cwd(), "firebase-service-account.json"))
+  );
 }
 
 export function savePushToken(userId: string, token: string, platform?: string) {
@@ -163,6 +168,12 @@ async function sendFcmV1(
   const projectId =
     process.env.FIREBASE_PROJECT_ID || sa.project_id || "my-school-1980d";
   const accessToken = await getFcmAccessToken(sa);
+  const appBase = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://myschool-web.onrender.com"
+  ).replace(/\/+$/, "");
+  const iconUrl = `${appBase}/logo.png`;
+  const targetLink = payload.data?.webUrl || appBase || "/";
+
   const res = await fetch(
     `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
     {
@@ -177,6 +188,7 @@ async function sendFcmV1(
           notification: {
             title: payload.title,
             body: payload.body,
+            image: iconUrl,
           },
           data: Object.fromEntries(
             Object.entries(payload.data || {}).map(([k, v]) => [k, String(v)])
@@ -189,11 +201,23 @@ async function sendFcmV1(
               notificationPriority: "PRIORITY_MAX",
               defaultVibrateTimings: true,
               defaultLightSettings: true,
+              icon: "notification_icon",
+              color: "#6366F1",
             },
           },
           webpush: {
+            headers: {
+              Urgency: "high",
+            },
+            notification: {
+              title: payload.title,
+              body: payload.body,
+              icon: iconUrl,
+              badge: iconUrl,
+              image: iconUrl,
+            },
             fcm_options: {
-              link: process.env.NEXT_PUBLIC_APP_URL || "/",
+              link: targetLink,
             },
           },
         },
