@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate --schema=../../packages/database/schema.prisma",
     "dev": "node server.js",
-    "build": "next build",
+    "build": "prisma generate --schema=../../packages/database/schema.prisma && next build",
     "start": "node server.js",
     "lint": "next lint"
   },
