@@ -188,12 +188,16 @@ export function addNotificationListeners(opts?: {
       opts?.onResponse?.(r);
     });
 
-    // Check cold-launch notification response
-    Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (response) {
-        processNotificationResponse(response);
-      }
-    });
+    // Check cold-launch notification response after navigation tree mounts
+    setTimeout(() => {
+      Notifications.getLastNotificationResponseAsync()
+        .then((response) => {
+          if (response) {
+            processNotificationResponse(response);
+          }
+        })
+        .catch(() => {});
+    }, 1000);
 
     return () => {
       sub1.remove();
