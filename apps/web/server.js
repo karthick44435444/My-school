@@ -4,6 +4,9 @@ const next = require("next");
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 
+const fs = require("fs");
+const path = require("path");
+
 const dev = process.env.NODE_ENV !== "production";
 const port = parseInt(process.env.PORT || "3000", 10);
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -11,6 +14,23 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET environment variable is required");
 }
+
+const MIME_MAP = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".pdf": "application/pdf",
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".csv": "text/csv",
+  ".txt": "text/plain",
+};
 
 const app = next({ dev, dir: __dirname });
 const handle = app.getRequestHandler();
@@ -44,6 +64,35 @@ app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true);
+      const pathname = parsedUrl.pathname || "";
+
+      // Direct static stream for uploaded files (/uploads/...)
+      if (pathname.startsWith("/uploads/")) {
+        const rawFilename = pathname.replace(/^\/uploads\//, "");
+        const cleanFilename = path.normalize(rawFilename).replace(/^(\.\.[\/\\])+/, "");
+        const possiblePaths = [
+          path.join(__dirname, "public", "uploads", cleanFilename),
+          path.join(__dirname, ".data", "uploads", cleanFilename),
+          path.join(process.cwd(), "public", "uploads", cleanFilename),
+          path.join(process.cwd(), ".data", "uploads", cleanFilename),
+        ];
+
+        for (const p of possiblePaths) {
+          if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+            const ext = path.extname(p).toLowerCase();
+            const contentType = MIME_MAP[ext] || "application/octet-stream";
+            res.writeHead(200, {
+              "Content-Type": contentType,
+              "Cache-Control": "public, max-age=31536000, immutable",
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+            });
+            fs.createReadStream(p).pipe(res);
+            return;
+          }
+        }
+      }
+
       await handle(req, res, parsedUrl);
     } catch (err) {
       console.error("[server] Request handling error:", req.url, err);

@@ -16,19 +16,26 @@ const DEFAULT_API =
     ? "http://10.0.2.2:3000"
     : "http://localhost:3000";
 
+function sanitizeApiUrl(url?: string): string {
+  if (!url) return "";
+  let clean = url.trim().replace(/\/+$/, "");
+  clean = clean.replace(/\/api$/, "");
+  return clean;
+}
+
 let _cachedApiBase: string = (() => {
   const fromEnv =
     typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL
       ? process.env.EXPO_PUBLIC_API_URL
       : undefined;
   const extra = Constants.expoConfig?.extra as { apiUrl?: string } | undefined;
-  return (fromEnv || extra?.apiUrl || DEFAULT_API).replace(/\/$/, "");
+  return sanitizeApiUrl(fromEnv || extra?.apiUrl || DEFAULT_API);
 })();
 
 // Immediately attempt async restore of user-configured API URL into memory cache
 AsyncStorage.getItem(API_KEY).then((saved) => {
   if (saved && saved.trim()) {
-    _cachedApiBase = saved.trim().replace(/\/$/, "");
+    _cachedApiBase = sanitizeApiUrl(saved);
   }
 }).catch(() => {});
 
@@ -37,7 +44,7 @@ export async function getApiBase(): Promise<string> {
   try {
     const saved = await AsyncStorage.getItem(API_KEY);
     if (saved && saved.trim()) {
-      _cachedApiBase = saved.trim().replace(/\/$/, "");
+      _cachedApiBase = sanitizeApiUrl(saved);
       return _cachedApiBase;
     }
   } catch {
@@ -48,7 +55,7 @@ export async function getApiBase(): Promise<string> {
       ? process.env.EXPO_PUBLIC_API_URL
       : undefined;
   const extra = Constants.expoConfig?.extra as { apiUrl?: string } | undefined;
-  _cachedApiBase = (fromEnv || extra?.apiUrl || DEFAULT_API).replace(/\/$/, "");
+  _cachedApiBase = sanitizeApiUrl(fromEnv || extra?.apiUrl || DEFAULT_API);
   return _cachedApiBase;
 }
 
@@ -58,7 +65,7 @@ export function getApiBaseSync(): string {
 }
 
 export async function setApiBase(url: string) {
-  const clean = url.trim().replace(/\/$/, "");
+  const clean = sanitizeApiUrl(url);
   _cachedApiBase = clean;
   await AsyncStorage.setItem(API_KEY, clean);
 }

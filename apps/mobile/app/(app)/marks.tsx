@@ -568,8 +568,9 @@ export default function MarksScreen() {
           let url = `/api/exams?page=${pageNum}&limit=20`;
           if (query.trim()) url += `&q=${encodeURIComponent(query.trim())}`;
           if (classTab !== "ALL") {
-            const [cn] = classTab.split("||");
+            const [cn, sec] = classTab.split("||");
             if (cn) url += `&className=${encodeURIComponent(cn)}`;
+            if (sec) url += `&section=${encodeURIComponent(sec)}`;
           }
           const data = await api<any>(url);
           const examList: ExamItem[] = data.exams || [];

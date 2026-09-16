@@ -50,6 +50,24 @@ function getFileName(url: string): string {
   }
 }
 
+async function downloadAttachment(url: string, fileName?: string) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Failed to fetch file");
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = fileName || getFileName(url);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  } catch {
+    window.open(url, "_blank");
+  }
+}
+
 export default function ParentHomeworkPage() {
   const { user, loading } = useAuth(["PARENT"]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -457,15 +475,13 @@ export default function ParentHomeworkPage() {
                                         >
                                           <Eye className="w-3 h-3" /> View
                                         </button>
-                                        <a
-                                          href={url}
-                                          download={fileName}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900"
+                                        <button
+                                          type="button"
+                                          onClick={() => downloadAttachment(url, fileName)}
+                                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
                                         >
                                           <Download className="w-3 h-3" /> Download
-                                        </a>
+                                        </button>
                                       </div>
                                     </div>
                                   </div>
@@ -502,15 +518,13 @@ export default function ParentHomeworkPage() {
                                       >
                                         <ExternalLink className="w-3 h-3" /> Open
                                       </a>
-                                      <a
-                                        href={url}
-                                        download={fileName}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900"
+                                      <button
+                                        type="button"
+                                        onClick={() => downloadAttachment(url, fileName)}
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
                                       >
                                         <Download className="w-3 h-3" /> Download
-                                      </a>
+                                      </button>
                                     </div>
                                   </div>
                                 </div>
@@ -553,15 +567,13 @@ export default function ParentHomeworkPage() {
                 {getFileName(previewImage)}
               </span>
               <div className="flex items-center gap-2">
-                <a
-                  href={previewImage}
-                  download={getFileName(previewImage)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm"
+                <button
+                  type="button"
+                  onClick={() => downloadAttachment(previewImage, getFileName(previewImage))}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" /> Download
-                </a>
+                </button>
                 <button
                   type="button"
                   onClick={() => setPreviewImage(null)}

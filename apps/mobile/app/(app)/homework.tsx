@@ -14,6 +14,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -269,59 +270,14 @@ export default function HomeworkScreen() {
     setModal(true);
   };
 
-  const pickAttachment = async () => {
-    if (attachments.length >= 2) {
-      toast.error("Maximum 2 attachments");
-      return;
-    }
-    // Images, PDF, Excel
-    let uri = "";
-    let name = `file_${attachments.length + 1}`;
-    let mime = "application/octet-stream";
-    try {
-      const doc = await DocumentPicker.getDocumentAsync({
-        type: [
-          "image/*",
-          "application/pdf",
-          "application/vnd.ms-excel",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "text/csv",
-        ],
-        copyToCacheDirectory: true,
-        multiple: false,
-      });
-      if (doc.canceled || !doc.assets?.[0]) {
-        // fallback images
-        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!perm.granted) {
-          toast.error("Allow file access");
-          return;
-        }
-        const res = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          quality: 0.8,
-        });
-        if (res.canceled || !res.assets?.[0]) return;
-        uri = res.assets[0].uri;
-        name = res.assets[0].fileName || uri.split("/").pop() || name;
-        mime = res.assets[0].mimeType || "image/jpeg";
-      } else {
-        const asset = doc.assets[0];
-        uri = asset.uri;
-        name = asset.name || name;
-        mime = asset.mimeType || mime;
-      }
-    } catch {
-      toast.error("Could not open file picker");
-      return;
-    }
+  const doUploadAttachment = async (uri: string, name: string, mime: string) => {
     setUploadingAtt(true);
     try {
       const formData = new FormData();
       formData.append("file", {
-        uri,
+        uri: Platform.OS === "android" ? uri : uri.replace("file://", ""),
         name,
-        type: mime,
+        type: mime || "application/octet-stream",
       } as any);
       const base = await getApiBase();
       const token = await getToken();
@@ -340,6 +296,63 @@ export default function HomeworkScreen() {
     }
   };
 
+  const pickAttachment = () => {
+    if (attachments.length >= 2) {
+      toast.error("Maximum 2 attachments");
+      return;
+    }
+    Alert.alert(
+      "Add Attachment",
+      "Choose attachment type:",
+      [
+        {
+          text: "Photo / Image",
+          onPress: async () => {
+            try {
+              const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (!perm.granted) {
+                toast.error("Allow file access");
+                return;
+              }
+              const res = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.8,
+              });
+              if (res.canceled || !res.assets?.[0]) return;
+              const asset = res.assets[0];
+              const uri = asset.uri;
+              const name = asset.fileName || uri.split("/").pop() || `image_${attachments.length + 1}.jpg`;
+              const mime = asset.mimeType || "image/jpeg";
+              await doUploadAttachment(uri, name, mime);
+            } catch (err: any) {
+              toast.error(err?.message || "Could not pick image");
+            }
+          },
+        },
+        {
+          text: "Document (PDF / File)",
+          onPress: async () => {
+            try {
+              const doc = await DocumentPicker.getDocumentAsync({
+                type: "*/*",
+                copyToCacheDirectory: true,
+                multiple: false,
+              });
+              if (doc.canceled || !doc.assets?.[0]) return;
+              const asset = doc.assets[0];
+              const uri = asset.uri;
+              const name = asset.name || `file_${attachments.length + 1}`;
+              const mime = asset.mimeType || "application/octet-stream";
+              await doUploadAttachment(uri, name, mime);
+            } catch (err: any) {
+              toast.error(err?.message || "Could not pick document");
+            }
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
 
   const saveHw = async () => {
     if (saving || uploadingAtt) return;
@@ -384,11 +397,11 @@ export default function HomeworkScreen() {
       const fileName = getFileName(rawUrl);
       const isImg = isImageUrl(rawUrl);
 
-      const targetDir = FileSystem.documentDirectory || FileSystem.cacheDirectory || "";
-      const localUri = `${targetDir}${fileName}`;
+      const targetDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || "";
+      const localUri = `${targetDir}${Date.now()}_${fileName}`;
       const downloadRes = await FileSystem.downloadAsync(resolved, localUri);
 
-      // If it's an image, save directly to user's Photo Gallery
+      // If it's an image, try to save directly to user's Photo Gallery
       if (isImg) {
         try {
           const { status } = await MediaLibrary.requestPermissionsAsync();
@@ -398,42 +411,21 @@ export default function HomeworkScreen() {
             return;
           }
         } catch {
-          // fallback to standard file storage
+          // fallback to sharing
         }
       }
 
-      // If Android Storage Access Framework is available for direct downloads
-      if (Platform.OS === "android" && (FileSystem as any).StorageAccessFramework) {
-        try {
-          const permissions =
-            await (FileSystem as any).StorageAccessFramework.requestDirectoryPermissionsAsync();
-          if (permissions.granted) {
-            const base64Data = await FileSystem.readAsStringAsync(downloadRes.uri, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            const mimeType = isImg
-              ? "image/*"
-              : fileName.endsWith(".pdf")
-              ? "application/pdf"
-              : "application/octet-stream";
-            const createdUri = await (FileSystem as any).StorageAccessFramework.createFileAsync(
-              permissions.directoryUri,
-              fileName,
-              mimeType
-            );
-            await FileSystem.writeAsStringAsync(createdUri, base64Data, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            toast.success(`"${fileName}" downloaded successfully!`);
-            return;
-          }
-        } catch {
-          // fallback
-        }
+      // If expo-sharing is available, open share / save dialog
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(downloadRes.uri, {
+          dialogTitle: `Download ${fileName}`,
+          mimeType: isImg ? "image/*" : fileName.toLowerCase().endsWith(".pdf") ? "application/pdf" : undefined,
+          UTI: isImg ? "public.image" : fileName.toLowerCase().endsWith(".pdf") ? "com.adobe.pdf" : undefined,
+        });
+        return;
       }
 
-      // Downloaded to local files
-      toast.success(`"${fileName}" downloaded to your files!`);
+      toast.success(`"${fileName}" downloaded!`);
     } catch (err: any) {
       toast.error(err?.message || "Could not download attachment");
     }
@@ -709,10 +701,11 @@ export default function HomeworkScreen() {
           </View>
           <View style={styles.lightboxBody}>
             {previewImage && (
-              <Image
+              <ExpoImage
                 source={{ uri: previewImage }}
                 style={styles.lightboxImage}
-                resizeMode="contain"
+                contentFit="contain"
+                transition={200}
               />
             )}
           </View>

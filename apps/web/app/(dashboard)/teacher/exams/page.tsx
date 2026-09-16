@@ -118,6 +118,8 @@ export default function TeacherExamsPage() {
   ]);
 
   const [selectedClassTab, setSelectedClassTab] = useState<string>("ALL");
+  const [classCounts, setClassCounts] = useState<Record<string, number>>({});
+  const [allCount, setAllCount] = useState<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -129,6 +131,25 @@ export default function TeacherExamsPage() {
     }, 300);
     return () => clearTimeout(handler);
   }, [searchQuery]);
+
+  const loadCounts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/exams?limit=0");
+      if (res.ok) {
+        const data = await res.json();
+        const allList: any[] = data.exams || [];
+        setAllCount(allList.length);
+        const counts: Record<string, number> = {};
+        allList.forEach((e) => {
+          const key = `${e.className}||${e.section || ""}`;
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        setClassCounts(counts);
+      }
+    } catch (e) {
+      console.error("loadCounts error:", e);
+    }
+  }, []);
 
   const isClassTeacher = useMemo(
     () =>
@@ -181,8 +202,9 @@ export default function TeacherExamsPage() {
           url += `&q=${encodeURIComponent(query.trim())}`;
         }
         if (classTab !== "ALL") {
-          const [cn] = classTab.split("||");
+          const [cn, sec] = classTab.split("||");
           if (cn) url += `&className=${encodeURIComponent(cn)}`;
+          if (sec) url += `&section=${encodeURIComponent(sec)}`;
         }
         const res = await fetch(url);
         if (res.ok) {
@@ -241,8 +263,9 @@ export default function TeacherExamsPage() {
   useEffect(() => {
     if (user) {
       loadInitialData();
+      loadCounts();
     }
-  }, [user?.id]);
+  }, [user?.id, loadCounts]);
 
   useEffect(() => {
     if (user) {
@@ -355,6 +378,7 @@ export default function TeacherExamsPage() {
       toast.success("Test created");
       setShow(false);
       loadExams(1, debouncedQuery, selectedClassTab);
+      loadCounts();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -411,6 +435,7 @@ export default function TeacherExamsPage() {
       toast.success("Exam created · timetable notified");
       setShow(false);
       loadExams(1, debouncedQuery, selectedClassTab);
+      loadCounts();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -624,6 +649,7 @@ export default function TeacherExamsPage() {
       toast.success("Test updated successfully");
       setEditItem(null);
       await loadExams(page, debouncedQuery, selectedClassTab);
+      loadCounts();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -678,6 +704,7 @@ export default function TeacherExamsPage() {
       toast.success("Exam updated successfully");
       setEditItem(null);
       await loadExams(page, debouncedQuery, selectedClassTab);
+      loadCounts();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -695,6 +722,7 @@ export default function TeacherExamsPage() {
       toast.success("Exam deleted");
       setDeleteExamItem(null);
       await loadExams(page, debouncedQuery, selectedClassTab);
+      loadCounts();
     } catch (e: any) {
       toast.error(e.message || "Failed to delete exam");
     } finally {
@@ -766,6 +794,7 @@ export default function TeacherExamsPage() {
       if (!res.ok) throw new Error(data.error || "Failed");
       toast.success("Published · only updated students notified");
       await loadExams(page, debouncedQuery, selectedClassTab);
+      loadCounts();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -773,33 +802,7 @@ export default function TeacherExamsPage() {
     }
   };
 
-  // Filter exams according to Class View Tab & Subject Teacher scope & search query
-  const filteredExams = useMemo(() => {
-    return exams.filter((ex) => {
-      // Role & Subject Scope Filter
-      const isCT = isClassTeacherFor(ex.className, ex.section);
-      const isCreator = ex.createdById === user?.id;
-
-      if (!isCT && !isCreator) {
-        const assignedSubs = getAssignedSubjectsFor(ex.className, ex.section);
-        if (assignedSubs.length === 0) return false;
-
-        if (ex.type === "TEST" || !ex.subjects || ex.subjects.length === 0) {
-          const testSub = (ex.subject || "").trim().toLowerCase();
-          if (!assignedSubs.includes(testSub)) return false;
-        } else {
-          const hasMySub = (ex.subjects || []).some((s: any) =>
-            assignedSubs.includes((s.subjectName || "").trim().toLowerCase())
-          );
-          if (!hasMySub) return false;
-        }
-      }
-
-      return true;
-    });
-  }, [exams, myClasses, user, isClassTeacherFor, getAssignedSubjectsFor]);
-
-  const paginatedExams = filteredExams;
+  const paginatedExams = exams;
 
   // When opening marksMode for Subject Teacher, only show their assigned subjects
   const isMarksModeCT = marksMode ? isClassTeacherFor(marksMode.className, marksMode.section) : false;
@@ -907,15 +910,13 @@ export default function TeacherExamsPage() {
               }`}
               style={selectedClassTab === "ALL" ? { backgroundColor: theme } : undefined}
             >
-              All Classes ({exams.length})
+              All Classes ({allCount})
             </button>
             {classOptions.map((c: any) => {
               const tabKey = `${c.className}||${c.section || ""}`;
               const isSelected = selectedClassTab === tabKey;
               const isCT = c.role === "CLASS_TEACHER";
-              const count = exams.filter(
-                (e) => e.className === c.className && (!c.section || !e.section || e.section === c.section)
-              ).length;
+              const count = classCounts[tabKey] || 0;
 
               return (
                 <button
@@ -964,10 +965,6 @@ export default function TeacherExamsPage() {
             <span className="text-sm font-medium">Loading exams and marks...</span>
           </div>
         ) : exams.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-16 text-center text-slate-400 shadow-xs">
-            No exams or tests created yet
-          </div>
-        ) : filteredExams.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200/80 p-16 text-center text-slate-400 shadow-xs">
             <p className="font-bold text-slate-700">No exams match your selection</p>
             <p className="text-xs text-slate-400 mt-1">Try switching class tabs or clearing your search</p>

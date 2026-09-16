@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 export default function Avatar({
   name,
   photoUrl,
@@ -11,14 +13,19 @@ export default function Avatar({
   size?: number;
   className?: string;
 }) {
+  const [imgError, setImgError] = useState(false);
   const initial = (name || "?").charAt(0).toUpperCase();
   const style = { width: size, height: size, minWidth: size };
 
+  useEffect(() => {
+    setImgError(false);
+  }, [photoUrl]);
+
   const src =
-    photoUrl &&
+    !imgError && photoUrl &&
     (photoUrl.startsWith("http") || photoUrl.startsWith("data:") || photoUrl.startsWith("/"))
       ? photoUrl
-      : photoUrl
+      : !imgError && photoUrl
         ? `/${photoUrl}`
         : null;
 
@@ -28,6 +35,7 @@ export default function Avatar({
         src={src}
         alt={name || ""}
         style={style}
+        onError={() => setImgError(true)}
         className={`rounded-full object-cover bg-slate-100 ${className}`}
       />
     );

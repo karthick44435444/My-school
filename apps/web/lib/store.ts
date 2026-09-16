@@ -3617,12 +3617,76 @@ export function createExam(data: {
   return exam;
 }
 
-export function getExams(schoolId: string, className?: string, createdById?: string) {
+export function getExams(schoolId: string, className?: string, createdById?: string, section?: string) {
   const db = readDB() as any;
   let list = (db.exams || []).filter((e: any) => e.schoolId === schoolId);
-  if (className) list = list.filter((e: any) => e.className === className);
+  if (className) {
+    list = list.filter((e: any) => isSameClassAndSection(e.className, undefined, className, undefined));
+  }
+  if (section) {
+    list = list.filter((e: any) => !e.section || isSameClassAndSection(undefined, e.section, undefined, section));
+  }
   if (createdById) list = list.filter((e: any) => e.createdById === createdById);
-  return list.sort((a: any, b: any) => b.createdAt.localeCompare(a.createdAt));
+  return list.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+}
+
+export function getExamsForTeacher(
+  schoolId: string,
+  teacherId: string,
+  className?: string,
+  section?: string
+) {
+  const db = readDB() as any;
+  const teacherClasses = getTeacherClasses(teacherId);
+
+  let list = (db.exams || []).filter((e: any) => e.schoolId === schoolId);
+
+  // Filter exams that relate to this teacher:
+  list = list.filter((ex: any) => {
+    // 1. Teacher created this exam
+    if (ex.createdById === teacherId) return true;
+
+    // 2. Check if teacher is assigned to this exam's class
+    const matchingClass = teacherClasses.find((tc: any) =>
+      isExactClassAndSection(tc.className, tc.section, ex.className, ex.section)
+    );
+    if (!matchingClass) return false;
+
+    // 3. If Class Teacher for this class, they see all exams for this class
+    if (matchingClass.role === "CLASS_TEACHER") return true;
+
+    // 4. If Subject Teacher, check if subject matches or if they teach in this class
+    const assignedSubs = teacherClasses
+      .filter((tc: any) => isExactClassAndSection(tc.className, tc.section, ex.className, ex.section))
+      .map((tc: any) => (tc.subjectName || tc.subject || "").trim().toLowerCase())
+      .filter(Boolean);
+
+    if (assignedSubs.length === 0) {
+      // If no specific subject restriction recorded, they are mapped to the class
+      return true;
+    }
+
+    if (ex.type === "TEST" || !ex.subjects || ex.subjects.length === 0) {
+      const testSub = (ex.subject || "").trim().toLowerCase();
+      if (!testSub || assignedSubs.includes(testSub)) return true;
+    } else {
+      const hasMySub = (ex.subjects || []).some((s: any) =>
+        assignedSubs.includes((s.subjectName || "").trim().toLowerCase())
+      );
+      if (hasMySub) return true;
+    }
+
+    return false;
+  });
+
+  if (className) {
+    list = list.filter((e: any) => isSameClassAndSection(e.className, undefined, className, undefined));
+  }
+  if (section) {
+    list = list.filter((e: any) => !e.section || isSameClassAndSection(undefined, e.section, undefined, section));
+  }
+
+  return list.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 }
 
 export function deleteExam(examId: string, schoolId: string, userId?: string, role?: string) {

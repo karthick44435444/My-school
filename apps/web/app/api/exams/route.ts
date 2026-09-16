@@ -4,6 +4,7 @@ import {
   createExam,
   updateExam,
   getExams,
+  getExamsForTeacher,
   deleteExam,
   saveMarks,
   publishExam,
@@ -25,7 +26,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const studentId = searchParams.get("studentId");
     const examId = searchParams.get("examId");
-    const className = searchParams.get("className") || undefined;
+    let rawClassName = searchParams.get("className") || undefined;
+    let section = searchParams.get("section") || undefined;
+
+    let className = rawClassName;
+    if (rawClassName && rawClassName.includes("||")) {
+      const [cPart, sPart] = rawClassName.split("||");
+      className = cPart || undefined;
+      section = section || sPart || undefined;
+    }
 
     if (examId) {
       const detail = getExamWithMarks(examId);
@@ -134,7 +143,10 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
     const limit = allParam ? 0 : Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
 
-    let exams = getExams(auth.schoolId, className, undefined);
+    let exams =
+      auth.role === "TEACHER"
+        ? getExamsForTeacher(auth.schoolId, auth.userId, className, section)
+        : getExams(auth.schoolId, className, undefined, section);
 
     if (q) {
       exams = exams.filter((e: any) => {

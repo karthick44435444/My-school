@@ -2,19 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
+import { v2 as cloudinary } from "cloudinary";
+
+// Configure Cloudinary if environment variables exist
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({
+    cloudinary_url: process.env.CLOUDINARY_URL,
+  });
+} else if (
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
 
 /**
  * POST /api/upload
  * multipart form: file
- * Returns { url: "/uploads/..." }
- * Stores under public/uploads (or .data/uploads served via API)
+ * Returns { url: "https://..." or "/uploads/..." }
+ * Uploads to Cloudinary when configured, or persists under public/uploads & .data/uploads
  */
 export async function POST(req: NextRequest) {
   try {
-    const auth = await getAuthUser();
-    // Allow school registration without auth for logo - optional
-    // if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
     const form = await req.formData();
     const file = form.get("file") as File | null;
     if (!file) {
@@ -49,16 +64,50 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    // 1. Cloudinary upload if configured (Best for Render / Vercel cloud deployments)
+    const isCloudinaryConfigured = Boolean(
+      process.env.CLOUDINARY_URL ||
+      (process.env.CLOUDINARY_CLOUD_NAME &&
+       process.env.CLOUDINARY_API_KEY &&
+       process.env.CLOUDINARY_API_SECRET)
+    );
+
+    if (isCloudinaryConfigured) {
+      try {
+        const base64Data = buffer.toString("base64");
+        const mimeType = file.type || "image/jpeg";
+        const fileUri = `data:${mimeType};base64,${base64Data}`;
+
+        const uploadResult = await cloudinary.uploader.upload(fileUri, {
+          folder: "myschool_uploads",
+          resource_type: "auto",
+        });
+
+        return NextResponse.json({
+          success: true,
+          url: uploadResult.secure_url,
+          name: file.name || uploadResult.public_id,
+        });
+      } catch (cloudErr: any) {
+        console.error("[Cloudinary Upload Error, falling back to disk]:", cloudErr?.message || cloudErr);
+      }
+    }
+
+    // 2. Local disk upload fallback
     const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const dataDir = path.join(process.cwd(), ".data", "uploads");
+
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
     }
 
     const originalFullName = file.name || "attachment";
     const lastDot = originalFullName.lastIndexOf(".");
     const rawBaseName = lastDot > 0 ? originalFullName.substring(0, lastDot) : originalFullName;
 
-    // Clean base name (preserve letters, digits, underscores, hyphens)
     let cleanBaseName = rawBaseName.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_");
     if (!cleanBaseName) cleanBaseName = "attachment";
     cleanBaseName = cleanBaseName.slice(0, 50);
@@ -75,12 +124,12 @@ export async function POST(req: NextRequest) {
     }
 
     let filename = `${cleanBaseName}.${safeExt}`;
-    if (fs.existsSync(path.join(uploadDir, filename))) {
+    if (fs.existsSync(path.join(uploadDir, filename)) || fs.existsSync(path.join(dataDir, filename))) {
       filename = `${cleanBaseName}_${Math.random().toString(36).slice(2, 6)}.${safeExt}`;
     }
-    const filepath = path.join(uploadDir, filename);
 
-    fs.writeFileSync(filepath, buffer);
+    fs.writeFileSync(path.join(uploadDir, filename), buffer);
+    fs.writeFileSync(path.join(dataDir, filename), buffer);
 
     const url = `/uploads/${filename}`;
     return NextResponse.json({ success: true, url, name: file.name || filename });
