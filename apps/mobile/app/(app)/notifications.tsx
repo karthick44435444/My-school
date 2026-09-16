@@ -172,29 +172,6 @@ export default function NotificationsScreen() {
     load(page + 1, true);
   };
 
-  const [testingPush, setTestingPush] = useState(false);
-  const handleTestPush = async () => {
-    if (testingPush) return;
-    setTestingPush(true);
-    try {
-      const { setupPushForUser, triggerLocalNotification } = await import("@/lib/notifications");
-      await setupPushForUser().catch(() => {});
-      // 1. Immediately drop down head-up banner pop-up with sound
-      await triggerLocalNotification({
-        title: "🔔 My School Test Notification",
-        body: "Real-time push notifications are working smoothly across your device with sound & pop-up!",
-      });
-      // 2. Dispatch to backend API
-      const { testPush } = await import("@/lib/api");
-      await testPush().catch(() => {});
-      load(1, false);
-    } catch (e: any) {
-      Alert.alert("Notice", e?.message || "Failed to trigger test notification.");
-    } finally {
-      setTestingPush(false);
-    }
-  };
-
   return (
     <View style={styles.root}>
       <FlatList
@@ -226,43 +203,12 @@ export default function NotificationsScreen() {
           initialLoading ? (
             <ActivityIndicator size="large" color={themeColor} style={{ marginVertical: 32 }} />
           ) : (
-            <View style={{ alignItems: "center", paddingVertical: 32 }}>
-              <Empty message="No notifications yet" />
-              <Pressable
-                onPress={handleTestPush}
-                disabled={testingPush}
-                style={{
-                  marginTop: 12,
-                  backgroundColor: themeColor || "#6366F1",
-                  paddingHorizontal: 16,
-                  paddingVertical: 10,
-                  borderRadius: 8,
-                }}
-              >
-                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>
-                  {testingPush ? "Sending test…" : "🔔 Send Test Notification"}
-                </Text>
-              </Pressable>
-            </View>
+            <Empty message="No notifications yet" />
           )
         }
         ListHeaderComponent={
-          <View style={{ marginBottom: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View style={{ marginBottom: 10 }}>
             <Text style={styles.hint}>Tap a notification to open details</Text>
-            <Pressable
-              onPress={handleTestPush}
-              disabled={testingPush}
-              style={{
-                backgroundColor: (themeColor || "#6366F1") + "18",
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-                borderRadius: 6,
-              }}
-            >
-              <Text style={{ color: themeColor || "#6366F1", fontWeight: "700", fontSize: 11 }}>
-                {testingPush ? "Sending…" : "Test Push"}
-              </Text>
-            </Pressable>
           </View>
         }
         renderItem={({ item, index }) => {

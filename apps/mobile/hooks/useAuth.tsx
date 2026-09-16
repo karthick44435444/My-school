@@ -40,13 +40,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const cached = await loadUser();
-      if (cached) setUser(cached);
+      if (cached) {
+        setUser(cached);
+      }
       try {
         const me = await fetchMe();
-        setUser(me);
-      } catch {
-        await clearToken();
-        setUser(null);
+        if (me) {
+          setUser(me);
+        }
+      } catch (err: any) {
+        const msg = String(err?.message || "").toLowerCase();
+        // Only clear token if the backend explicitly rejected credentials (401 Unauthorized / Token Expired)
+        if (msg.includes("401") || msg.includes("unauthorized") || msg.includes("jwt expired") || msg.includes("invalid token")) {
+          await clearToken();
+          setUser(null);
+        } else if (cached) {
+          // Keep the session active with cached user profile (offline / temporary server restart)
+          setUser(cached);
+        }
       }
     } finally {
       setLoading(false);

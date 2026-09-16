@@ -13,7 +13,8 @@ export interface JWTPayload {
 }
 
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+  // 10 years (3650 days) — persistent login until explicit user logout or app uninstall
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "3650d" });
 }
 
 export function verifyToken(token: string): JWTPayload | null {
@@ -63,7 +64,7 @@ export function setAuthCookie(token: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 3650, // 10 years (persistent session until explicit logout)
     path: "/",
   };
 }
