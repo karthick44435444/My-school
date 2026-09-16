@@ -3,37 +3,9 @@
  * with support for Web, Mobile, Expo Push, and OneSignal.
  */
 
-import fs from "fs";
-import path from "path";
-import crypto from "crypto";
 import { getFirebaseAdminApp } from "./firebaseAdmin";
 import { getMessaging as getAdminMessaging } from "firebase-admin/messaging";
-
-const DATA_DIR = path.join(process.cwd(), ".data");
-const DB_FILE = path.join(DATA_DIR, "db.json");
-
-function readDB(): any {
-  if (!fs.existsSync(DB_FILE)) return { pushTokens: [] };
-  try {
-    return JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
-  } catch {
-    return { pushTokens: [] };
-  }
-}
-
-function writeDB(data: any) {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  let full: any = {};
-  if (fs.existsSync(DB_FILE)) {
-    try {
-      full = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
-    } catch {
-      full = {};
-    }
-  }
-  full.pushTokens = data.pushTokens || full.pushTokens || [];
-  fs.writeFileSync(DB_FILE, JSON.stringify(full, null, 2));
-}
+import { readDB, writeDB, prisma } from "./store";
 
 export function isPushEnabled() {
   if (process.env.PUSH_ENABLED === "false") return false;
@@ -53,6 +25,28 @@ export function savePushToken(userId: string, token: string, platform?: string) 
     updatedAt: new Date().toISOString(),
   });
   writeDB(db);
+
+  // Sync to PostgreSQL if Prisma connected
+  if (prisma && process.env.DATABASE_URL) {
+    prisma.pushToken.upsert({
+      where: {
+        userId_token: {
+          userId,
+          token,
+        },
+      },
+      create: {
+        userId,
+        token,
+        platform: platform || "web",
+        updatedAt: new Date(),
+      },
+      update: {
+        platform: platform || "web",
+        updatedAt: new Date(),
+      },
+    }).catch(() => {});
+  }
 
   // Background sync to Firestore if configured
   (async () => {
@@ -81,6 +75,13 @@ export function removePushToken(userId: string, token?: string) {
     (t: any) => t.userId !== userId || (token ? t.token !== token : false)
   );
   writeDB(db);
+  if (prisma && process.env.DATABASE_URL) {
+    if (token) {
+      prisma.pushToken.deleteMany({ where: { userId, token } }).catch(() => {});
+    } else {
+      prisma.pushToken.deleteMany({ where: { userId } }).catch(() => {});
+    }
+  }
   return { success: true };
 }
 
@@ -89,6 +90,9 @@ export function removePushTokenByValue(token: string) {
   if (!db.pushTokens) return;
   db.pushTokens = db.pushTokens.filter((t: any) => t.token !== token);
   writeDB(db);
+  if (prisma && process.env.DATABASE_URL) {
+    prisma.pushToken.deleteMany({ where: { token } }).catch(() => {});
+  }
 }
 
 export function getTokensForUser(userId: string): string[] {

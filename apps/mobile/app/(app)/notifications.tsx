@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -176,11 +177,18 @@ export default function NotificationsScreen() {
     if (testingPush) return;
     setTestingPush(true);
     try {
+      const { setupPushForUser } = await import("@/lib/notifications");
+      await setupPushForUser().catch(() => {});
       const { testPush } = await import("@/lib/api");
-      await testPush();
+      const res = await testPush();
       load(1, false);
-    } catch {
-      /* ignore */
+      if (res?.success) {
+        Alert.alert("Notification Sent", "Test notification triggered. You should receive a push notification momentarily!");
+      } else {
+        Alert.alert("Test Push Sent", res?.reason || "Notification triggered. Check notifications list.");
+      }
+    } catch (e: any) {
+      Alert.alert("Notice", e?.message || "Failed to trigger test notification.");
     } finally {
       setTestingPush(false);
     }

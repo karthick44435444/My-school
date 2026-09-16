@@ -880,7 +880,7 @@ export async function syncToPostgres(db: DB) {
   }
 }
 
-function writeDB(db: DB) {
+export function writeDB(db: DB) {
   ensureDataDir();
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
   if (process.env.DATABASE_URL) {

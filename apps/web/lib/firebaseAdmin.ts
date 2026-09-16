@@ -5,16 +5,34 @@ import fs from "fs";
 import path from "path";
 
 function getServiceAccount(): any | null {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
   if (raw) {
     try {
-      const sa = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (sa && typeof sa.private_key === "string") {
-        sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+      let parsed: any;
+      if (raw.startsWith("{")) {
+        parsed = JSON.parse(raw);
+      } else if (raw.startsWith('"') && raw.endsWith('"')) {
+        // Double stringified JSON
+        parsed = JSON.parse(JSON.parse(raw));
+      } else {
+        // Try base64 decoded or direct parse
+        try {
+          const b64 = Buffer.from(raw, "base64").toString("utf-8");
+          if (b64.startsWith("{")) {
+            parsed = JSON.parse(b64);
+          }
+        } catch {}
+        if (!parsed) {
+          parsed = JSON.parse(raw);
+        }
       }
-      return sa;
+
+      if (parsed && typeof parsed.private_key === "string") {
+        parsed.private_key = parsed.private_key.replace(/\\n/g, "\n");
+      }
+      return parsed;
     } catch (e) {
-      console.error("[firebaseAdmin] Invalid FIREBASE_SERVICE_ACCOUNT_JSON", e);
+      console.error("[firebaseAdmin] Invalid FIREBASE_SERVICE_ACCOUNT_JSON:", e);
     }
   }
 
