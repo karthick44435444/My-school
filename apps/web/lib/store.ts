@@ -110,13 +110,136 @@ export interface StoredAnnouncement {
   createdAt: string;
 }
 
-interface DB {
+export interface StoredSubject {
+  id: string;
+  schoolId: string;
+  name: string;
+  code?: string;
+  isActive?: boolean;
+  createdAt?: string;
+}
+
+export interface StoredTeacherClass {
+  id: string;
+  schoolId: string;
+  teacherId: string;
+  className: string;
+  section: string;
+  role?: "CLASS_TEACHER" | "SUBJECT_TEACHER";
+  subject?: string;
+  subjectId?: string;
+  subjectName?: string;
+  createdAt?: string;
+}
+
+export interface ExamSplit {
+  title: string;
+  maxMarks: number;
+}
+
+export interface ExamSubject {
+  id: string;
+  subjectName: string;
+  date: string;
+  maxMarks: number;
+  passMarks?: number;
+  splits: ExamSplit[];
+}
+
+export interface StoredExam {
+  id: string;
+  schoolId: string;
+  name: string;
+  className?: string;
+  section?: string;
+  subject?: string;
+  subjectId?: string;
+  maxMarks?: number;
+  passMarks?: number;
+  date?: string;
+  description?: string;
+  createdById: string;
+  createdAt: string;
+  type?: "TEST" | "EXAM" | string;
+  examType?: string;
+  subjects?: any[];
+  published?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface StoredMark {
+  id: string;
+  examId: string;
+  studentId: string;
+  marks?: number;
+  marksObtained?: number;
+  maxMarks?: number;
+  grade?: string;
+  remarks?: string;
+  enteredById?: string;
+  enteredAt?: string;
+  gradedById?: string;
+  gradedAt?: string;
+  subjectId?: string;
+  splits?: Record<string, number>;
+}
+
+export interface StoredReadReceipt {
+  id: string;
+  userId: string;
+  type?: "ANNOUNCEMENT" | "HOMEWORK" | string;
+  targetType?: string;
+  targetId?: string;
+  itemId?: string;
+  entityId?: string;
+  readAt: string;
+}
+
+export interface StoredNotification {
+  id: string;
+  schoolId: string;
+  userId: string;
+  title: string;
+  body: string;
+  type: string;
+  read: boolean;
+  meta?: any;
+  createdAt: string;
+}
+
+export interface StoredPushToken {
+  userId: string;
+  token: string;
+  platform: string;
+  updatedAt: string;
+}
+
+export interface StoredOtp {
+  id: string;
+  userId: string;
+  code: string;
+  purpose: string;
+  expiresAt: string;
+  used: boolean;
+  createdAt: string;
+}
+
+export interface DB {
   schools: StoredSchool[];
   users: StoredUser[];
   attendances: StoredAttendance[];
   classes: StoredClass[];
   homeworks: StoredHomework[];
   announcements: StoredAnnouncement[];
+  subjects?: StoredSubject[];
+  teacherClasses?: StoredTeacherClass[];
+  exams?: StoredExam[];
+  marks?: StoredMark[];
+  notifications?: StoredNotification[];
+  pushTokens?: StoredPushToken[];
+  readReceipts?: StoredReadReceipt[];
+  otps?: StoredOtp[];
 }
 
 function ensureDataDir() {
@@ -128,10 +251,15 @@ function ensureDataDir() {
   }
 }
 
-export function readDB(): DB {
+let _postgresHydrated = false;
+let _isHydrating = false;
+
+function readDBFromFile(): DB {
   ensureDataDir();
   const raw = fs.readFileSync(DB_FILE, "utf-8");
   const data = JSON.parse(raw);
+  if (!data.schools) data.schools = [];
+  if (!data.users) data.users = [];
   if (!data.attendances) data.attendances = [];
   if (!data.classes) data.classes = [];
   if (!data.homeworks) data.homeworks = [];
@@ -143,11 +271,243 @@ export function readDB(): DB {
   if (!data.marks) data.marks = [];
   if (!data.readReceipts) data.readReceipts = [];
   if (!data.otps) data.otps = [];
+  if (!data.pushTokens) data.pushTokens = [];
   return data as DB;
 }
 
-async function syncToPostgres(db: DB) {
-  if (!prisma) return;
+export async function hydrateFromPostgres(): Promise<DB | null> {
+  if (!prisma || !process.env.DATABASE_URL || _isHydrating) return null;
+  _isHydrating = true;
+  try {
+    const schoolCount = await prisma.school.count();
+    if (schoolCount === 0) {
+      // Postgres is currently empty, seed it from local DB
+      const local = readDBFromFile();
+      if (local.schools.length > 0) {
+        await syncToPostgres(local);
+      }
+      _postgresHydrated = true;
+      return null;
+    }
+
+    // Load all records from PostgreSQL
+    const [
+      schools,
+      users,
+      classes,
+      subjects,
+      teacherClasses,
+      homeworks,
+      announcements,
+      attendances,
+      exams,
+      marks,
+      notifications,
+      pushTokens,
+      readReceipts,
+    ] = await Promise.all([
+      prisma.school.findMany(),
+      prisma.user.findMany(),
+      prisma.class.findMany(),
+      prisma.subject.findMany(),
+      prisma.teacherClass.findMany(),
+      prisma.homework.findMany(),
+      prisma.announcement.findMany(),
+      prisma.attendance.findMany(),
+      prisma.exam.findMany(),
+      prisma.examMark.findMany(),
+      prisma.notification.findMany({ orderBy: { createdAt: "desc" }, take: 2000 }),
+      prisma.pushToken.findMany(),
+      prisma.readReceipt.findMany(),
+    ]);
+
+    const hydrated: DB = {
+      schools: schools.map((s) => ({
+        id: s.id,
+        schoolCode: s.schoolCode,
+        name: s.name,
+        displayName: s.displayName || undefined,
+        location: s.location,
+        email: s.email,
+        phone: s.phone || undefined,
+        themeColor: s.themeColor,
+        logoUrl: s.logoUrl || undefined,
+        plan: s.plan,
+        billingCycle: s.billingCycle,
+        createdAt: s.createdAt.toISOString(),
+      })),
+      users: users.map((u) => ({
+        id: u.id,
+        schoolId: u.schoolId,
+        schoolCode: u.schoolCode || "",
+        role: u.role as any,
+        username: u.username,
+        email: u.email,
+        passwordHash: u.passwordHash,
+        firstName: u.firstName,
+        lastName: u.lastName || undefined,
+        phone: u.phone || undefined,
+        photoUrl: u.photoUrl || undefined,
+        gender: u.gender || undefined,
+        education: u.education || undefined,
+        qualification: u.qualification || undefined,
+        teacherType: u.teacherType || undefined,
+        className: u.className || undefined,
+        section: u.section || undefined,
+        rollNumber: u.rollNumber || undefined,
+        rollNo: u.rollNo || undefined,
+        dateOfBirth: u.dateOfBirth || undefined,
+        parentEmail: u.parentEmail || undefined,
+        parentName: u.parentName || undefined,
+        childrenIds: Array.isArray(u.childrenIds) ? (u.childrenIds as string[]) : [],
+        isActive: u.isActive,
+        createdAt: u.createdAt.toISOString(),
+        createdById: u.createdById || undefined,
+      })),
+      classes: classes.map((c) => ({
+        id: c.id,
+        schoolId: c.schoolId,
+        name: c.name,
+        section: c.section,
+        classTeacherId: c.classTeacherId || undefined,
+        order: c.order,
+        isActive: c.isActive,
+        createdAt: c.createdAt.toISOString(),
+      })),
+      subjects: subjects.map((sub: any) => ({
+        id: sub.id,
+        schoolId: sub.schoolId,
+        name: sub.name,
+        code: sub.code || undefined,
+        createdAt: new Date().toISOString(),
+      })),
+      teacherClasses: teacherClasses.map((tc: any) => ({
+        id: tc.id,
+        schoolId: tc.schoolId,
+        teacherId: tc.teacherId,
+        className: tc.className,
+        section: tc.section,
+        subject: tc.subject || undefined,
+        subjectId: undefined,
+        createdAt: tc.createdAt.toISOString(),
+      })),
+      homeworks: homeworks.map((h: any) => ({
+        id: h.id,
+        schoolId: h.schoolId,
+        className: h.className,
+        section: h.section || undefined,
+        subject: h.subject || undefined,
+        title: h.title,
+        description: h.description,
+        attachmentUrl: h.attachmentUrl || undefined,
+        attachments: Array.isArray(h.attachments)
+          ? (h.attachments as string[])
+          : h.attachmentUrl
+          ? [h.attachmentUrl]
+          : [],
+        createdById: h.createdById,
+        createdByName: h.createdByName || undefined,
+        createdAt: h.createdAt.toISOString(),
+        expiresAt: h.expiresAt ? h.expiresAt.toISOString() : new Date(Date.now() + 7 * 86400000).toISOString(),
+      })),
+      announcements: announcements.map((a: any) => ({
+        id: a.id,
+        schoolId: a.schoolId,
+        title: a.title,
+        content: a.content,
+        target: a.target,
+        className: a.className || undefined,
+        section: a.section || undefined,
+        createdById: a.createdById,
+        createdByName: a.createdByName || undefined,
+        createdAt: a.createdAt.toISOString(),
+      })),
+      attendances: attendances.map((att: any) => ({
+        id: att.id,
+        schoolId: att.schoolId,
+        studentId: att.studentId || undefined,
+        teacherId: att.teacherId || undefined,
+        date: typeof att.date === "string" ? att.date : new Date(att.date).toISOString().split("T")[0],
+        status: att.status as any,
+        markedById: att.markedById || undefined,
+        remarks: att.remarks || undefined,
+        markedAt: att.markedAt.toISOString(),
+        notificationSent: att.notificationSent,
+      })),
+      exams: exams.map((e: any) => ({
+        id: e.id,
+        schoolId: e.schoolId,
+        name: e.name,
+        examType: e.type || "EXAM",
+        className: e.className || undefined,
+        section: e.section || undefined,
+        subject: (e.subjects as any)?.[0]?.subject || "",
+        subjectId: (e.subjects as any)?.[0]?.subjectId || undefined,
+        maxMarks: e.maxMarks || 100,
+        passMarks: e.passMarks || 35,
+        date: typeof e.date === "string" ? e.date : (e.startDate || ""),
+        description: e.description || undefined,
+        createdById: e.createdById,
+        createdAt: e.createdAt.toISOString(),
+      })),
+      marks: marks.map((m: any) => ({
+        id: m.id,
+        examId: m.examId,
+        studentId: m.studentId,
+        marksObtained: m.marks ?? 0,
+        grade: m.grade || undefined,
+        remarks: m.remarks || undefined,
+        gradedById: m.enteredById || undefined,
+        gradedAt: m.enteredAt ? m.enteredAt.toISOString() : new Date().toISOString(),
+      })),
+      notifications: notifications.map((n: any) => ({
+        id: n.id,
+        schoolId: n.schoolId || "",
+        userId: n.userId,
+        title: n.title,
+        body: n.body,
+        type: n.type as any,
+        read: n.read ?? n.isRead ?? false,
+        meta: n.meta as any,
+        createdAt: n.createdAt.toISOString(),
+      })),
+      pushTokens: pushTokens.map((pt: any) => ({
+        userId: pt.userId,
+        token: pt.token,
+        platform: pt.platform || "web",
+        updatedAt: pt.updatedAt.toISOString(),
+      })),
+      readReceipts: readReceipts.map((rr: any) => ({
+        id: rr.id,
+        userId: rr.userId,
+        targetType: rr.entityType || rr.type || "ANNOUNCEMENT",
+        targetId: rr.entityId || rr.itemId || "",
+        readAt: rr.readAt.toISOString(),
+      })),
+      otps: [],
+    };
+
+    ensureDataDir();
+    fs.writeFileSync(DB_FILE, JSON.stringify(hydrated, null, 2));
+    _postgresHydrated = true;
+    return hydrated;
+  } catch (err: any) {
+    console.error("[PostgreSQL Hydration Notice]:", err?.message || err);
+    return null;
+  } finally {
+    _isHydrating = false;
+  }
+}
+
+export function readDB(): DB {
+  if (!_postgresHydrated && process.env.DATABASE_URL && !_isHydrating) {
+    hydrateFromPostgres().catch(() => {});
+  }
+  return readDBFromFile();
+}
+
+export async function syncToPostgres(db: DB) {
+  if (!prisma || !process.env.DATABASE_URL) return;
   try {
     // 1. Sync Schools
     if (Array.isArray(db.schools) && db.schools.length > 0) {
@@ -268,6 +628,247 @@ async function syncToPostgres(db: DB) {
             order: typeof c.order === "number" ? c.order : 0,
             isActive: c.isActive !== false,
             classTeacherId: c.classTeacherId || null,
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 4. Sync Subjects
+    if (Array.isArray(db.subjects) && db.subjects.length > 0) {
+      for (const s of db.subjects) {
+        await prisma.subject.upsert({
+          where: { id: s.id },
+          create: {
+            id: s.id,
+            schoolId: s.schoolId,
+            name: s.name,
+            code: s.code || null,
+          },
+          update: {
+            name: s.name,
+            code: s.code || null,
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 4b. Sync Teacher Classes
+    if (Array.isArray(db.teacherClasses) && db.teacherClasses.length > 0) {
+      for (const tc of db.teacherClasses) {
+        await prisma.teacherClass.upsert({
+          where: { id: tc.id },
+          create: {
+            id: tc.id,
+            schoolId: tc.schoolId,
+            teacherId: tc.teacherId,
+            className: tc.className,
+            section: tc.section || "A",
+            role: tc.role || "CLASS_TEACHER",
+            subject: tc.subject || tc.subjectName || "",
+            createdAt: tc.createdAt ? new Date(tc.createdAt) : new Date(),
+          },
+          update: {
+            className: tc.className,
+            section: tc.section || "A",
+            role: tc.role || "CLASS_TEACHER",
+            subject: tc.subject || tc.subjectName || "",
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 5. Sync Homeworks
+    if (Array.isArray(db.homeworks) && db.homeworks.length > 0) {
+      for (const h of db.homeworks) {
+        await prisma.homework.upsert({
+          where: { id: h.id },
+          create: {
+            id: h.id,
+            schoolId: h.schoolId,
+            className: h.className,
+            section: h.section || null,
+            subject: h.subject || "General",
+            title: h.title,
+            description: h.description,
+            attachmentUrl: h.attachmentUrl || null,
+            attachments: Array.isArray(h.attachments) ? h.attachments : h.attachmentUrl ? [h.attachmentUrl] : [],
+            createdById: h.createdById,
+            createdByName: h.createdByName || null,
+            createdAt: h.createdAt ? new Date(h.createdAt) : new Date(),
+            expiresAt: h.expiresAt ? new Date(h.expiresAt) : new Date(Date.now() + 7 * 86400000),
+          },
+          update: {
+            title: h.title,
+            description: h.description,
+            attachmentUrl: h.attachmentUrl || null,
+            attachments: Array.isArray(h.attachments) ? h.attachments : h.attachmentUrl ? [h.attachmentUrl] : [],
+            createdByName: h.createdByName || null,
+            expiresAt: h.expiresAt ? new Date(h.expiresAt) : new Date(Date.now() + 7 * 86400000),
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 6. Sync Announcements
+    if (Array.isArray(db.announcements) && db.announcements.length > 0) {
+      for (const a of db.announcements) {
+        await prisma.announcement.upsert({
+          where: { id: a.id },
+          create: {
+            id: a.id,
+            schoolId: a.schoolId,
+            title: a.title,
+            content: a.content,
+            target: (a.target as any) || "ALL",
+            className: a.className || null,
+            section: a.section || null,
+            createdById: a.createdById,
+            createdByName: a.createdByName || null,
+            createdAt: a.createdAt ? new Date(a.createdAt) : new Date(),
+          },
+          update: {
+            title: a.title,
+            content: a.content,
+            target: (a.target as any) || "ALL",
+            className: a.className || null,
+            section: a.section || null,
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 7. Sync Exams
+    if (Array.isArray(db.exams) && db.exams.length > 0) {
+      for (const e of db.exams) {
+        await prisma.exam.upsert({
+          where: { id: e.id },
+          create: {
+            id: e.id,
+            schoolId: e.schoolId,
+            name: e.name,
+            type: e.examType || "EXAM",
+            className: e.className || null,
+            section: e.section || null,
+            maxMarks: e.maxMarks || 100,
+            passMarks: e.passMarks || 35,
+            date: e.date || null,
+            description: e.description || null,
+            createdById: e.createdById,
+            createdAt: e.createdAt ? new Date(e.createdAt) : new Date(),
+          },
+          update: {
+            name: e.name,
+            type: e.examType || "EXAM",
+            className: e.className || null,
+            section: e.section || null,
+            maxMarks: e.maxMarks || 100,
+            passMarks: e.passMarks || 35,
+            date: e.date || null,
+            description: e.description || null,
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 8. Sync Marks
+    if (Array.isArray(db.marks) && db.marks.length > 0) {
+      for (const m of db.marks) {
+        await prisma.examMark.upsert({
+          where: { id: m.id },
+          create: {
+            id: m.id,
+            examId: m.examId,
+            studentId: m.studentId,
+            marks: m.marksObtained ?? 0,
+            grade: m.grade || null,
+            remarks: m.remarks || null,
+            enteredById: m.gradedById || null,
+            enteredAt: m.gradedAt ? new Date(m.gradedAt) : new Date(),
+          },
+          update: {
+            marks: m.marksObtained ?? 0,
+            grade: m.grade || null,
+            remarks: m.remarks || null,
+            enteredById: m.gradedById || null,
+            enteredAt: m.gradedAt ? new Date(m.gradedAt) : new Date(),
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 9. Sync Attendance
+    if (Array.isArray(db.attendances) && db.attendances.length > 0) {
+      for (const att of db.attendances) {
+        const attDate = typeof att.date === "string" ? att.date : new Date(att.date).toISOString().split("T")[0];
+        await prisma.attendance.upsert({
+          where: { id: att.id },
+          create: {
+            id: att.id,
+            schoolId: att.schoolId,
+            studentId: att.studentId || null,
+            teacherId: att.teacherId || null,
+            date: attDate,
+            status: (att.status as any) || "PRESENT",
+            markedById: att.markedById || null,
+            remarks: att.remarks || null,
+            markedAt: att.markedAt ? new Date(att.markedAt) : new Date(),
+            notificationSent: Boolean(att.notificationSent),
+          },
+          update: {
+            status: (att.status as any) || "PRESENT",
+            remarks: att.remarks || null,
+            markedAt: att.markedAt ? new Date(att.markedAt) : new Date(),
+            notificationSent: Boolean(att.notificationSent),
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 10. Sync Notifications (latest 200)
+    if (Array.isArray(db.notifications) && db.notifications.length > 0) {
+      const recentNotifications = db.notifications.slice(0, 200);
+      for (const n of recentNotifications) {
+        await prisma.notification.upsert({
+          where: { id: n.id },
+          create: {
+            id: n.id,
+            userId: n.userId,
+            schoolId: n.schoolId || null,
+            title: n.title,
+            body: n.body,
+            type: (n.type as any) || "GENERAL",
+            read: Boolean(n.read),
+            isRead: Boolean(n.read),
+            meta: n.meta || null,
+            createdAt: n.createdAt ? new Date(n.createdAt) : new Date(),
+          },
+          update: {
+            read: Boolean(n.read),
+            isRead: Boolean(n.read),
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 11. Sync Push Tokens
+    if (Array.isArray(db.pushTokens) && db.pushTokens.length > 0) {
+      for (const pt of db.pushTokens) {
+        await prisma.pushToken.upsert({
+          where: {
+            userId_token: {
+              userId: pt.userId,
+              token: pt.token,
+            },
+          },
+          create: {
+            userId: pt.userId,
+            token: pt.token,
+            platform: pt.platform || "web",
+            updatedAt: pt.updatedAt ? new Date(pt.updatedAt) : new Date(),
+          },
+          update: {
+            platform: pt.platform || "web",
+            updatedAt: pt.updatedAt ? new Date(pt.updatedAt) : new Date(),
           },
         }).catch(() => {});
       }
@@ -3070,79 +3671,6 @@ export function getAnnouncements(schoolId: string, role: string, className?: str
 }
 
 // ====================== SUBJECTS & TEACHER CLASS MAP ======================
-
-export interface StoredSubject {
-  id: string;
-  schoolId: string;
-  name: string;
-  isActive: boolean;
-}
-
-export interface StoredTeacherClass {
-  id: string;
-  schoolId: string;
-  teacherId: string;
-  className: string;
-  section: string;
-  role: "CLASS_TEACHER" | "SUBJECT_TEACHER";
-  subjectId?: string;
-  subjectName?: string;
-}
-
-export interface ExamSplit {
-  title: string;
-  maxMarks: number;
-}
-
-export interface ExamSubject {
-  id: string;
-  subjectName: string;
-  date: string;
-  maxMarks: number;
-  passMarks?: number;
-  splits: ExamSplit[];
-}
-
-export interface StoredExam {
-  id: string;
-  schoolId: string;
-  name: string;
-  className: string;
-  section?: string;
-  subject?: string;
-  maxMarks: number;
-  passMarks?: number;
-  date: string;
-  createdById: string;
-  createdAt: string;
-  /** TEST = simple single subject; EXAM = multi-subject big exam */
-  type?: "TEST" | "EXAM";
-  subjects?: ExamSubject[];
-  published?: boolean;
-  dateFrom?: string;
-  dateTo?: string;
-}
-
-export interface StoredMark {
-  id: string;
-  examId: string;
-  studentId: string;
-  marks: number;
-  maxMarks: number;
-  enteredById: string;
-  enteredAt: string;
-  /** For multi-subject exams */
-  subjectId?: string;
-  splits?: Record<string, number>;
-}
-
-export interface StoredReadReceipt {
-  id: string;
-  userId: string;
-  type: "ANNOUNCEMENT" | "HOMEWORK";
-  itemId: string;
-  readAt: string;
-}
 
 // extend readDB defaults - patched below if needed
 
