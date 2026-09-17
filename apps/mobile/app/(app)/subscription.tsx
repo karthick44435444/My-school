@@ -76,9 +76,89 @@ export default function SubscriptionScreen() {
 
   if (loading && !subscription) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size='large' color={color} />
-      </View>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: TAB_BAR_CLEARANCE + 32 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Skeleton */}
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Subscription & Plan</Text>
+            <View style={[styles.statusBadge, { backgroundColor: '#E2E8F0' }]}>
+              <ActivityIndicator size="small" color={color} />
+              <Text style={[styles.statusText, { color: '#64748B', marginLeft: 4 }]}>Loading...</Text>
+            </View>
+          </View>
+          <Text style={styles.subtitle}>
+            Manage school subscription and renewal plans.
+          </Text>
+        </View>
+
+        {/* Current Active Plan Skeleton Card */}
+        <View style={[styles.currentCard, { backgroundColor: color }]}>
+          <View style={styles.currentCardTop}>
+            <View style={styles.planIconCircle}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.currentCardLabel}>CURRENT ACTIVE PLAN</Text>
+              <View style={styles.skeletonTitle} />
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Valid date and Days Left Loaders */}
+          <View style={styles.currentCardMeta}>
+            <View style={styles.metaItem}>
+              <Ionicons name="calendar-outline" size={16} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.metaLabel}>Valid Until:</Text>
+              <View style={styles.loaderMetaRow}>
+                <ActivityIndicator size="small" color="#FFFFFF" style={{ transform: [{ scale: 0.7 }] }} />
+                <Text style={styles.metaValueLoading}>Fetching...</Text>
+              </View>
+            </View>
+
+            <View style={styles.metaItem}>
+              <Ionicons name="time-outline" size={16} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.metaLabel}>Days Left:</Text>
+              <View style={styles.loaderMetaRow}>
+                <ActivityIndicator size="small" color="#FCD34D" style={{ transform: [{ scale: 0.7 }] }} />
+                <Text style={[styles.metaValueLoading, { color: '#FDE68A' }]}>Calculating...</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.priceRow}>
+            <Text style={styles.currentRateText}>Active Rate</Text>
+            <View style={styles.skeletonRate} />
+          </View>
+        </View>
+
+        {/* Available Plans Skeleton Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Available Upgrade Plans</Text>
+          <Text style={styles.sectionSub}>Choose a plan to extend school service instantly</Text>
+        </View>
+
+        {/* 3 Skeleton Cards */}
+        {[1, 2, 3].map((idx) => (
+          <View key={idx} style={[styles.planCard, { opacity: 0.75 }]}>
+            <View style={styles.planCardHeader}>
+              <View style={[styles.skeletonBlock, { width: 140, height: 20, marginBottom: 8 }]} />
+              <View style={[styles.skeletonBlock, { width: '85%', height: 14 }]} />
+            </View>
+            <View style={[styles.skeletonBlock, { width: 100, height: 32, marginVertical: spacing.md }]} />
+            <View style={{ gap: 8, marginVertical: spacing.sm }}>
+              <View style={[styles.skeletonBlock, { width: '70%', height: 14 }]} />
+              <View style={[styles.skeletonBlock, { width: '80%', height: 14 }]} />
+              <View style={[styles.skeletonBlock, { width: '60%', height: 14 }]} />
+            </View>
+            <View style={[styles.skeletonBlock, { width: '100%', height: 44, marginTop: spacing.md, borderRadius: radius.lg }]} />
+          </View>
+        ))}
+      </ScrollView>
     );
   }
 
@@ -564,5 +644,32 @@ const styles = StyleSheet.create({
   bold: {
     fontWeight: '700',
     color: '#0F172A',
+  },
+  loaderMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaValueLoading: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  skeletonTitle: {
+    width: 160,
+    height: 24,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: radius.md,
+    marginTop: 6,
+  },
+  skeletonRate: {
+    width: 90,
+    height: 24,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: radius.md,
+  },
+  skeletonBlock: {
+    backgroundColor: '#E2E8F0',
+    borderRadius: radius.md,
   },
 });

@@ -310,7 +310,7 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
       pushTokens,
       readReceipts,
     ] = await Promise.all([
-      prisma.school.findMany(),
+      prisma.school.findMany({ include: { subscription: true } }),
       prisma.user.findMany(),
       prisma.class.findMany(),
       prisma.subject.findMany(),
@@ -326,20 +326,26 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
     ]);
 
     const hydrated: DB = {
-      schools: schools.map((s) => ({
-        id: s.id,
-        schoolCode: s.schoolCode,
-        name: s.name,
-        displayName: s.displayName || undefined,
-        location: s.location,
-        email: s.email,
-        phone: s.phone || undefined,
-        themeColor: s.themeColor,
-        logoUrl: s.logoUrl || undefined,
-        plan: s.plan,
-        billingCycle: s.billingCycle,
-        createdAt: s.createdAt.toISOString(),
-      })),
+      schools: schools.map((s: any) => {
+        const sub = s.subscription;
+        const expiresAt = sub?.endDate ? sub.endDate.toISOString() : undefined;
+        return {
+          id: s.id,
+          schoolCode: s.schoolCode,
+          name: s.name,
+          displayName: s.displayName || undefined,
+          location: s.location,
+          email: s.email,
+          phone: s.phone || undefined,
+          themeColor: s.themeColor,
+          logoUrl: s.logoUrl || undefined,
+          plan: s.plan,
+          billingCycle: s.billingCycle,
+          planExpiresAt: expiresAt,
+          planStatus: sub?.isActive === false ? "EXPIRED" : (expiresAt && new Date(expiresAt).getTime() <= Date.now() ? "EXPIRED" : "ACTIVE"),
+          createdAt: s.createdAt.toISOString(),
+        };
+      }),
       users: users.map((u) => ({
         id: u.id,
         schoolId: u.schoolId,
@@ -5299,6 +5305,24 @@ export async function upgradeSchoolSubscription(schoolId: string, planId: string
         data: {
           plan: targetPlan.id,
           billingCycle: school.billingCycle,
+        },
+      }).catch(() => {});
+
+      await prisma.subscription.upsert({
+        where: { schoolId },
+        create: {
+          schoolId,
+          plan: targetPlan.id === "OFFER_MONTHLY" ? "BASIC" : (targetPlan.id === "ANNUAL" ? "PREMIUM" : "STANDARD"),
+          billingCycle: targetPlan.id === "ANNUAL" ? "YEARLY" : "MONTHLY",
+          startDate: new Date(),
+          endDate: new Date(newExpiry),
+          isActive: true,
+        },
+        update: {
+          plan: targetPlan.id === "OFFER_MONTHLY" ? "BASIC" : (targetPlan.id === "ANNUAL" ? "PREMIUM" : "STANDARD"),
+          billingCycle: targetPlan.id === "ANNUAL" ? "YEARLY" : "MONTHLY",
+          endDate: new Date(newExpiry),
+          isActive: true,
         },
       }).catch(() => {});
     } catch {}
