@@ -192,21 +192,34 @@ export async function checkAndMarkNotificationReadFromUrl(): Promise<string | nu
   try {
     const params = new URLSearchParams(window.location.search);
     const notifId = params.get("markRead");
-    if (notifId) {
-      // Mark read via API
-      await fetch("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: notifId }),
-      }).catch(() => {});
+    const itemId = params.get("highlightId") || params.get("itemId");
+    const readType = params.get("readType") || params.get("type");
+
+    if (notifId || (itemId && readType)) {
+      if (notifId) {
+        await fetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: notifId }),
+        }).catch(() => {});
+      }
+
+      if (itemId && readType) {
+        await fetch("/api/read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: readType.toUpperCase(), itemId }),
+        }).catch(() => {});
+      }
 
       // Clean the query parameter from URL without reloading
-      params.delete("markRead");
+      if (notifId) params.delete("markRead");
+      if (params.get("readType")) params.delete("readType");
       const cleanSearch = params.toString();
       const newUrl =
         window.location.pathname + (cleanSearch ? `?${cleanSearch}` : "") + window.location.hash;
       window.history.replaceState({}, document.title, newUrl);
-      return notifId;
+      return notifId || itemId;
     }
   } catch (e) {
     console.warn("[push:web] markRead URL check error", e);

@@ -48,6 +48,14 @@ self.addEventListener("notificationclick", (event) => {
     }).catch(() => {});
   }
 
+  if (data.itemId && data.type) {
+    fetch("/api/read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: data.type, itemId: data.itemId }),
+    }).catch(() => {});
+  }
+
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       // If there's an existing window with matching origin, focus & navigate

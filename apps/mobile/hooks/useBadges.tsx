@@ -167,10 +167,16 @@ export function BadgeProvider({ children }: { children: React.ReactNode }) {
       }
     })();
 
-    // 3. Instant refresh on incoming push notification
+    // 3. Instant refresh on incoming push notification & when tapping notification
     const unsubPush = addNotificationListeners({
       onReceive: () => {
         refresh();
+      },
+      onResponse: () => {
+        setN((prev) => Math.max(0, prev - 1));
+        setTimeout(() => {
+          refresh();
+        }, 300);
       },
     });
 

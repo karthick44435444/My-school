@@ -212,6 +212,8 @@ export async function processNotificationResponse(
   try {
     const data = (response.notification.request.content.data || {}) as Record<string, any>;
     const notifId = data.notificationId || data.id;
+    const itemId = data.itemId || data.highlightId;
+    const type = String(data.type || "").toUpperCase();
 
     // 1. Mark notification as read on the backend
     if (notifId) {
@@ -221,7 +223,24 @@ export async function processNotificationResponse(
       }).catch(() => {});
     }
 
-    // 2. Navigate to destination screen
+    // 2. If it's a specific entity (HOMEWORK, ANNOUNCEMENT, MARKS), also mark read receipt
+    if (itemId) {
+      if (type.includes("HOMEWORK") || type.includes("HW")) {
+        api("/api/read", { method: "POST", body: { type: "HOMEWORK", itemId: String(itemId) } }).catch(() => {});
+      } else if (type.includes("ANNOUNCE") || type.includes("NOTICE")) {
+        api("/api/read", { method: "POST", body: { type: "ANNOUNCEMENT", itemId: String(itemId) } }).catch(() => {});
+      } else if (type.includes("MARK") || type.includes("EXAM") || type.includes("TEST")) {
+        api("/api/read", { method: "POST", body: { type: "MARKS", itemId: String(itemId) } }).catch(() => {});
+      }
+    }
+
+    // 3. Clear system notifications / badge
+    try {
+      Notifications.dismissNotificationAsync(response.notification.request.identifier).catch(() => {});
+      Notifications.setBadgeCountAsync(0).catch(() => {});
+    } catch {}
+
+    // 4. Navigate to destination screen
     const target = resolveRouteFromNotification(data);
     if (target.path) {
       if (target.params) {
