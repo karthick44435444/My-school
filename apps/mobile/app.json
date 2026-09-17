@@ -34,7 +34,7 @@
           "color": "#6366F1",
           "sounds": [
             "./assets/sounds/notification_sound.ogg",
-            "./assets/sounds/notification_sound.wav"
+            "./assets/sounds/notification_sound_ios.wav"
           ]
         }
       ]

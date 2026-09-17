@@ -76,7 +76,7 @@ export async function triggerLocalNotification(payload: {
       content: {
         title: payload.title,
         body: payload.body,
-        sound: Platform.OS === "ios" ? "notification_sound.wav" : "notification_sound.ogg",
+        sound: Platform.OS === "ios" ? "notification_sound_ios.wav" : "notification_sound.ogg",
         data: payload.data || {},
         badge: 1,
         color: "#6366F1",

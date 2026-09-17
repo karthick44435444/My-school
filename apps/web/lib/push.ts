@@ -117,7 +117,7 @@ async function sendExpoPush(
 ) {
   const messages = tokens.map((to) => ({
     to,
-    sound: "notification_sound.wav",
+    sound: "notification_sound.ogg",
     title: payload.title,
     body: payload.body,
     data: payload.data || {},
@@ -186,7 +186,7 @@ async function sendFcmAdmin(
       apns: {
         payload: {
           aps: {
-            sound: "notification_sound.wav",
+            sound: "notification_sound_ios.wav",
             badge: 1,
           },
         },
