@@ -168,7 +168,6 @@ async function sendFcmAdmin(
       notification: {
         title: payload.title,
         body: payload.body,
-        imageUrl: iconUrl,
       },
       data: stringData,
       android: {
@@ -180,7 +179,8 @@ async function sendFcmAdmin(
           defaultVibrateTimings: true,
           defaultSound: true,
           defaultLightSettings: true,
-          color: "#6366F1",
+          color: "#4F46E5",
+          icon: "notification_icon",
         },
       },
       webpush: {
@@ -192,8 +192,7 @@ async function sendFcmAdmin(
           body: payload.body,
           icon: iconUrl,
           badge: iconUrl,
-          image: iconUrl,
-          requireInteraction: true,
+          requireInteraction: false,
         },
         fcmOptions: {
           link: targetLink,

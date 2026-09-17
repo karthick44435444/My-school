@@ -15,13 +15,10 @@ self.addEventListener("push", (event) => {
   const body = notification.body || data.body || "You have a new update";
   const icon = notification.icon || data.icon || "/logo.png";
   const badge = notification.badge || data.badge || "/logo.png";
-  const image = notification.image || data.image || undefined;
-
   const options = {
     body,
     icon,
     badge,
-    image,
     data: {
       url: data.url || (data.notificationId ? `/?markRead=${data.notificationId}` : "/"),
       notificationId: data.notificationId,
@@ -30,7 +27,7 @@ self.addEventListener("push", (event) => {
       ...data,
     },
     tag: data.notificationId || "myschool-notif",
-    renotify: true,
+    renotify: false,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
