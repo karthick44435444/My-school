@@ -433,9 +433,6 @@ export default function StudentsScreen() {
   const validate = () => {
     const e: FieldErr = {};
     if (!form.firstName.trim()) e.firstName = "First name is required";
-    if (!form.email.trim()) e.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-      e.email = "Enter a valid email";
     if (!form.phone?.trim()) e.phone = "Phone is required";
     else if (form.phone.replace(/\D/g, "").length < 8)
       e.phone = "Enter a valid phone number";
@@ -452,13 +449,6 @@ export default function StudentsScreen() {
         e.parentEmail = "Enter a valid parent email";
     } else if (form.parentEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.parentEmail.trim())) {
       e.parentEmail = "Enter a valid parent email";
-    }
-    if (
-      form.email.trim() &&
-      form.parentEmail.trim() &&
-      form.email.trim().toLowerCase() === form.parentEmail.trim().toLowerCase()
-    ) {
-      e.parentEmail = "Student email and Parent email cannot be the same";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -554,7 +544,7 @@ export default function StudentsScreen() {
           body: {
             firstName: form.firstName,
             lastName: form.lastName,
-            email: form.email,
+            email: form.email?.trim() || undefined,
             phone: form.phone,
             gender: form.gender,
             rollNumber: form.rollNumber?.trim() || undefined,
@@ -571,7 +561,7 @@ export default function StudentsScreen() {
           role: "STUDENT",
           firstName: form.firstName,
           lastName: form.lastName,
-          email: form.email,
+          email: form.email?.trim() || undefined,
           phone: form.phone,
           gender: form.gender,
           rollNumber: form.rollNumber?.trim() || undefined,
@@ -1260,17 +1250,6 @@ export default function StudentsScreen() {
                 }}
               />
               {!!errors.rollNumber && <Text style={styles.err}>{errors.rollNumber}</Text>}
-
-              <Label>Email *</Label>
-              <Input
-                value={form.email}
-                autoCapitalize="none"
-                onChangeText={(t) => {
-                  setForm((f) => ({ ...f, email: t }));
-                  setErrors((e) => ({ ...e, email: undefined }));
-                }}
-              />
-              {!!errors.email && <Text style={styles.err}>{errors.email}</Text>}
 
               <Label>Phone *</Label>
               <PhoneField

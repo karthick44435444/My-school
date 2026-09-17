@@ -206,7 +206,6 @@ export default function TeacherStudentsPage() {
   const validateCreate = () => {
     const next = collectErrors({
       firstName: validateName(form.firstName, "First name"),
-      email: validateEmail(form.email, true),
       phone: validatePhone(form.phone, { required: true, countryCode: phoneCountry }),
       dateOfBirth: validateRequired(form.dateOfBirth, "Date of birth"),
       parentName: validateName(form.parentName, "Parent name"),
@@ -229,11 +228,12 @@ export default function TeacherStudentsPage() {
     }
     setCreating(true);
     try {
+      const { email, ...cleanForm } = form;
       const res = await fetch("/api/users/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          ...cleanForm,
           role: "STUDENT",
           className: activeMapping.className,
           section: activeMapping.section || "A",
@@ -260,7 +260,6 @@ export default function TeacherStudentsPage() {
     if (!editUser) return false;
     const next = collectErrors({
       firstName: validateName(editUser.firstName, "First name"),
-      email: validateEmail(editUser.email, true),
       phone: validatePhone(editUser.phone, { required: true, countryCode: editPhoneCountry }),
       dateOfBirth: validateRequired(editUser.dateOfBirth, "Date of birth"),
       parentName: validateName(editUser.parentName, "Parent name"),
@@ -717,26 +716,6 @@ export default function TeacherStudentsPage() {
                   {errors.rollNumber && <p className="mt-1 text-xs text-red-600">{errors.rollNumber}</p>}
                 </div>
 
-                {/* Email */}
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={form.email || ""}
-                    onChange={(e) => {
-                      setForm({ ...form, email: e.target.value });
-                      setErrors((er) => ({ ...er, email: "" }));
-                    }}
-                    placeholder="Email"
-                    className={`w-full px-3.5 py-2.5 rounded-xl border outline-none text-sm focus:ring-2 focus:ring-indigo-500 ${
-                      errors.email ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                    }`}
-                  />
-                  {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
-                </div>
-
                 {/* Phone */}
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1">
@@ -979,26 +958,6 @@ export default function TeacherStudentsPage() {
                     }`}
                   />
                   {editErrors.rollNumber && <p className="mt-1 text-xs text-red-600">{editErrors.rollNumber}</p>}
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={editUser.email || ""}
-                    onChange={(e) => {
-                      setEditUser({ ...editUser, email: e.target.value });
-                      setEditErrors((er) => ({ ...er, email: "" }));
-                    }}
-                    placeholder="Email"
-                    className={`w-full px-3.5 py-2.5 rounded-xl border outline-none text-sm focus:ring-2 focus:ring-indigo-500 ${
-                      editErrors.email ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                    }`}
-                  />
-                  {editErrors.email && <p className="mt-1 text-xs text-red-600">{editErrors.email}</p>}
                 </div>
 
                 {/* Phone */}

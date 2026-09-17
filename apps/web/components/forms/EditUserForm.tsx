@@ -125,9 +125,11 @@ export default function EditUserForm({
   const validate = () => {
     const base: Record<string, string> = {
       firstName: validateName(form.firstName, "First name"),
-      email: validateEmail(form.email, true),
       phone: validatePhone(form.phone, { required: phoneRequired, countryCode: phoneCountry }),
     };
+    if (role !== "STUDENT") {
+      base.email = validateEmail(form.email, true);
+    }
     if (role === "STUDENT") {
       const classVal = form.className && form.className !== "||" ? form.className : "";
       base.className = validateRequired(classVal, "Class");
@@ -138,13 +140,6 @@ export default function EditUserForm({
       base.parentEmail = validateEmail(form.parentEmail, true);
       if (form.rollNumber && form.rollNumber.trim() && !/^\d+$/.test(form.rollNumber.trim())) {
         base.rollNumber = "Roll number must contain only numbers";
-      }
-      if (
-        form.email &&
-        form.parentEmail &&
-        form.email.trim().toLowerCase() === form.parentEmail.trim().toLowerCase()
-      ) {
-        base.parentEmail = "Student email and Parent email cannot be the same";
       }
     }
     const next = collectErrors(base);
@@ -180,7 +175,7 @@ export default function EditUserForm({
       const body: any = {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim() || undefined,
-        email: form.email.trim(),
+        email: role === "STUDENT" ? undefined : (form.email.trim() || undefined),
         phone: form.phone || undefined,
         gender: form.gender || undefined,
         photoUrl: form.photoUrl || undefined,
@@ -307,15 +302,17 @@ export default function EditUserForm({
             </FormField>
           )}
 
-          <FormField label="Email *" error={errors.email}>
-            <input
-              type="email"
-              className={inputCls(errors.email)}
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              placeholder="Email"
-            />
-          </FormField>
+          {role !== "STUDENT" && (
+            <FormField label="Email *" error={errors.email}>
+              <input
+                type="email"
+                className={inputCls(errors.email)}
+                value={form.email}
+                onChange={(e) => set("email", e.target.value)}
+                placeholder="Email"
+              />
+            </FormField>
+          )}
 
           <FormField label={phoneRequired ? "Phone *" : "Phone"} error={errors.phone}>
             <PhoneInput

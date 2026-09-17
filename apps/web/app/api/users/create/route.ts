@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     if (!body.firstName?.trim()) {
       return NextResponse.json({ error: "First name is required" }, { status: 400 });
     }
-    if (!body.email?.trim()) {
+    if ((role === "PRINCIPAL" || role === "TEACHER") && !body.email?.trim()) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
     if (!body.phone?.trim()) {
