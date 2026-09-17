@@ -3746,16 +3746,89 @@ function matchesClassTarget(a: any, className?: string, section?: string): boole
   return true;
 }
 
-export function getAnnouncements(schoolId: string, role: string, className?: string, section?: string) {
-  const db = readDB();
-  let list = db.announcements.filter((a) => a.schoolId === schoolId);
+export function getAnnouncements(
+  schoolId: string,
+  role: string,
+  className?: string,
+  section?: string,
+  userId?: string
+) {
+  const db = readDB() as any;
+  let list = (db.announcements || []).filter((a: any) => a.schoolId === schoolId);
 
-  list = list.filter((a) => {
+  // If Parent, resolve all their active children in this school to know which classes the parent can see
+  let parentKids: any[] = [];
+  if (role === "PARENT" && userId) {
+    const parentUser = (db.users || []).find((u: any) => u.id === userId);
+    const pEmail = normalizeEmail(parentUser?.email);
+    const pUser = normalizeEmail(parentUser?.username);
+    const parentStoredIds = Array.isArray(parentUser?.childrenIds) ? parentUser.childrenIds.map(String) : [];
+
+    parentKids = (db.users || []).filter((u: any) => {
+      if (u.schoolId !== schoolId || u.role !== "STUDENT" || u.isActive === false) return false;
+      const sParentEmail = normalizeEmail(u.parentEmail);
+      const matchEmail = sParentEmail && (sParentEmail === pEmail || sParentEmail === pUser);
+      const matchIds = parentStoredIds.includes(String(u.id));
+      return matchEmail || matchIds;
+    });
+  }
+
+  list = list.filter((a: any) => {
+    // 1. Author can ALWAYS see the notice they created
+    if (userId && a.createdById === userId) return true;
+
     const hasClass = !!(a.className || (Array.isArray(a.classes) && a.classes.length > 0));
+    const isTeacherNotice = a.createdByRole === "TEACHER";
 
+    // 2. If notice was posted by a TEACHER:
+    if (isTeacherNotice) {
+      // Principal and Admin NEVER see teacher-to-class notices
+      if (role === "ADMIN" || role === "PRINCIPAL") {
+        return false;
+      }
+
+      // Other teachers only see it if specifically targeted to TEACHERS_ONLY
+      if (role === "TEACHER") {
+        return a.target === "TEACHERS_ONLY";
+      }
+
+      // If targeted to TEACHERS_ONLY, students & parents cannot see it
+      if (a.target === "TEACHERS_ONLY") {
+        return false;
+      }
+
+      // For STUDENT role:
+      if (role === "STUDENT") {
+        if (a.target === "PARENTS_ONLY") return false;
+        return hasClass ? matchesClassTarget(a, className, section) : true;
+      }
+
+      // For PARENT role:
+      if (role === "PARENT") {
+        if (a.target === "STUDENTS_ONLY") return false;
+        if (!hasClass) return true;
+        if (parentKids.length > 0) {
+          return parentKids.some((k) => matchesClassTarget(a, k.className, k.section));
+        }
+        return className ? matchesClassTarget(a, className, section) : false;
+      }
+
+      return false;
+    }
+
+    // 3. If notice was posted by ADMIN or PRINCIPAL (or institutional):
     if (a.target === "ALL") {
-      if (hasClass && (role === "STUDENT" || role === "PARENT")) {
-        return matchesClassTarget(a, className, section);
+      if (hasClass) {
+        if (role === "STUDENT") {
+          return matchesClassTarget(a, className, section);
+        }
+        if (role === "PARENT") {
+          if (parentKids.length > 0) {
+            return parentKids.some((k) => matchesClassTarget(a, k.className, k.section));
+          }
+          return className ? matchesClassTarget(a, className, section) : false;
+        }
+        return role === "ADMIN" || role === "PRINCIPAL" || role === "TEACHER";
       }
       return true;
     }
@@ -3763,13 +3836,17 @@ export function getAnnouncements(schoolId: string, role: string, className?: str
     if (a.target === "PARENTS_ONLY") {
       if (role === "ADMIN" || role === "PRINCIPAL") return true;
       if (role === "PARENT") {
-        return hasClass ? matchesClassTarget(a, className, section) : true;
+        if (!hasClass) return true;
+        if (parentKids.length > 0) {
+          return parentKids.some((k) => matchesClassTarget(a, k.className, k.section));
+        }
+        return className ? matchesClassTarget(a, className, section) : false;
       }
       return false;
     }
 
     if (a.target === "STUDENTS_ONLY") {
-      if (role === "ADMIN" || role === "PRINCIPAL" || role === "TEACHER") return true;
+      if (role === "ADMIN" || role === "PRINCIPAL") return true;
       if (role === "STUDENT") {
         return hasClass ? matchesClassTarget(a, className, section) : true;
       }
@@ -3781,15 +3858,23 @@ export function getAnnouncements(schoolId: string, role: string, className?: str
     }
 
     if (a.target === "CLASS") {
-      if (role === "ADMIN" || role === "PRINCIPAL") return false;
-      if (role === "TEACHER") return true;
-      return matchesClassTarget(a, className, section);
+      if (role === "ADMIN" || role === "PRINCIPAL" || role === "TEACHER") return true;
+      if (role === "STUDENT") {
+        return matchesClassTarget(a, className, section);
+      }
+      if (role === "PARENT") {
+        if (parentKids.length > 0) {
+          return parentKids.some((k) => matchesClassTarget(a, k.className, k.section));
+        }
+        return className ? matchesClassTarget(a, className, section) : false;
+      }
+      return false;
     }
 
     return true;
   });
 
-  list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  list.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
   return list;
 }
 
@@ -4978,7 +5063,7 @@ export function getUnreadCounts(userId: string, schoolId: string, role: string, 
   }).length;
 
   // Announcements
-  const anns = getAnnouncements(schoolId, role, className, section);
+  const anns = getAnnouncements(schoolId, role, className, section, userId);
   const filteredAnns = anns.filter((a: any) => a.createdById !== userId);
   const announcementsCount = filteredAnns.filter((a: any) => !readAnn.has(a.id)).length;
 

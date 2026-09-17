@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       const full = findUserById(auth.userId);
       const className = full?.user.className;
       const section = full?.user.section;
-      list = getAnnouncements(auth.schoolId, auth.role, className, section);
+      list = getAnnouncements(auth.schoolId, auth.role, className, section, auth.userId);
     }
 
     if (targetFilter && targetFilter !== "ALL") {
