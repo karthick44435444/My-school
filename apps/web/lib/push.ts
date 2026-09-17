@@ -117,7 +117,7 @@ async function sendExpoPush(
 ) {
   const messages = tokens.map((to) => ({
     to,
-    sound: "default" as const,
+    sound: "notification_sound.wav",
     title: payload.title,
     body: payload.body,
     data: payload.data || {},
@@ -174,13 +174,21 @@ async function sendFcmAdmin(
         priority: "high",
         notification: {
           channelId: "default",
-          sound: "default",
+          sound: "notification_sound",
           priority: "max",
           defaultVibrateTimings: true,
-          defaultSound: true,
+          defaultSound: false,
           defaultLightSettings: true,
           color: "#4F46E5",
           icon: "notification_icon",
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "notification_sound.wav",
+            badge: 1,
+          },
         },
       },
       webpush: {
