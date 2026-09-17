@@ -94,31 +94,46 @@ export function BadgeProvider({ children }: { children: React.ReactNode }) {
 
   const markHomeworkSeen = useCallback(async (ids: string[]) => {
     if (!ids || !ids.length) return;
-    await Promise.all(
-      ids.map((id) =>
-        api("/api/read", { method: "POST", body: { type: "HOMEWORK", itemId: String(id) } }).catch(() => {})
-      )
-    );
+    try {
+      await api("/api/read", { method: "POST", body: { type: "HOMEWORK", itemIds: ids.map(String) } });
+    } catch {
+      await Promise.all(
+        ids.map((id) =>
+          api("/api/read", { method: "POST", body: { type: "HOMEWORK", itemId: String(id) } }).catch(() => {})
+        )
+      );
+    }
+    setH(0);
     await refresh();
   }, [refresh]);
 
   const markAnnouncementsSeen = useCallback(async (ids: string[]) => {
     if (!ids || !ids.length) return;
-    await Promise.all(
-      ids.map((id) =>
-        api("/api/read", { method: "POST", body: { type: "ANNOUNCEMENT", itemId: String(id) } }).catch(() => {})
-      )
-    );
+    try {
+      await api("/api/read", { method: "POST", body: { type: "ANNOUNCEMENT", itemIds: ids.map(String) } });
+    } catch {
+      await Promise.all(
+        ids.map((id) =>
+          api("/api/read", { method: "POST", body: { type: "ANNOUNCEMENT", itemId: String(id) } }).catch(() => {})
+        )
+      );
+    }
+    setA(0);
     await refresh();
   }, [refresh]);
 
   const markMarksSeen = useCallback(async (ids: string[]) => {
     if (!ids || !ids.length) return;
-    await Promise.all(
-      ids.map((id) =>
-        api("/api/read", { method: "POST", body: { type: "MARKS", itemId: String(id) } }).catch(() => {})
-      )
-    );
+    try {
+      await api("/api/read", { method: "POST", body: { type: "MARKS", itemIds: ids.map(String) } });
+    } catch {
+      await Promise.all(
+        ids.map((id) =>
+          api("/api/read", { method: "POST", body: { type: "MARKS", itemId: String(id) } }).catch(() => {})
+        )
+      );
+    }
+    setM(0);
     await refresh();
   }, [refresh]);
 

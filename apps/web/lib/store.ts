@@ -484,9 +484,11 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
       readReceipts: readReceipts.map((rr: any) => ({
         id: rr.id,
         userId: rr.userId,
+        type: rr.type || rr.entityType || "ANNOUNCEMENT",
+        itemId: rr.itemId || rr.entityId || "",
         targetType: rr.entityType || rr.type || "ANNOUNCEMENT",
         targetId: rr.entityId || rr.itemId || "",
-        readAt: rr.readAt.toISOString(),
+        readAt: rr.readAt ? (typeof rr.readAt === "string" ? rr.readAt : rr.readAt.toISOString()) : new Date().toISOString(),
       })),
       otps: [],
     };
@@ -873,6 +875,34 @@ export async function syncToPostgres(db: DB) {
           update: {
             platform: pt.platform || "web",
             updatedAt: pt.updatedAt ? new Date(pt.updatedAt) : new Date(),
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 12. Sync Read Receipts
+    if (Array.isArray(db.readReceipts) && db.readReceipts.length > 0) {
+      for (const rr of db.readReceipts.slice(-500)) {
+        const type = rr.type || rr.targetType || "ANNOUNCEMENT";
+        const itemId = rr.itemId || rr.targetId || "";
+        if (!rr.userId || !itemId) continue;
+        const rrId = rr.id || `rr_${rr.userId}_${itemId}`;
+        await prisma.readReceipt.upsert({
+          where: { id: rrId },
+          create: {
+            id: rrId,
+            userId: rr.userId,
+            type,
+            itemId,
+            entityType: type,
+            entityId: itemId,
+            readAt: rr.readAt ? new Date(rr.readAt) : new Date(),
+          },
+          update: {
+            type,
+            itemId,
+            entityType: type,
+            entityId: itemId,
           },
         }).catch(() => {});
       }
@@ -2961,6 +2991,26 @@ export function deleteClass(classId: string, schoolId: string) {
   db.classes.splice(clsIndex, 1);
 
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    (async () => {
+      try {
+        await prisma.teacherClass.deleteMany({
+          where: {
+            schoolId,
+            className,
+            ...(section ? { section } : {}),
+          },
+        }).catch(() => {});
+        await prisma.class.deleteMany({
+          where: { id: classId, schoolId },
+        });
+      } catch (err: any) {
+        console.error("[deleteClass Postgres Error]:", err?.message);
+      }
+    })();
+  }
+
   return { success: true };
 }
 
@@ -3248,6 +3298,8 @@ export function deleteUser(userId: string, schoolId: string) {
   const user = db.users[userIndex];
   if (user.role === "ADMIN") throw new Error("Cannot delete Admin");
 
+  const removedParentIds: string[] = [];
+
   // 1. If TEACHER:
   if (user.role === "TEACHER") {
     // Unassign as primary classTeacher from all classes
@@ -3319,7 +3371,11 @@ export function deleteUser(userId: string, schoolId: string) {
             (Array.isArray(u.childrenIds) && u.childrenIds.includes(s.id)) ||
             (s.parentEmail && (normalizeEmail(s.parentEmail) === pEmail || normalizeEmail(s.parentEmail) === pUser))
         );
-        return hasChild;
+        if (!hasChild) {
+          removedParentIds.push(u.id);
+          return false;
+        }
+        return true;
       }
       return true;
     });
@@ -3350,6 +3406,31 @@ export function deleteUser(userId: string, schoolId: string) {
   }
 
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    (async () => {
+      try {
+        if (removedParentIds && removedParentIds.length > 0) {
+          for (const pid of removedParentIds) {
+            await prisma.notification.deleteMany({ where: { userId: pid } }).catch(() => {});
+            await prisma.pushToken.deleteMany({ where: { userId: pid } }).catch(() => {});
+            await prisma.readReceipt.deleteMany({ where: { userId: pid } }).catch(() => {});
+            await prisma.user.deleteMany({ where: { id: pid, schoolId } }).catch(() => {});
+          }
+        }
+        await prisma.attendance.deleteMany({ where: { OR: [{ studentId: userId }, { teacherId: userId }] } }).catch(() => {});
+        await prisma.examMark.deleteMany({ where: { studentId: userId } }).catch(() => {});
+        await prisma.teacherClass.deleteMany({ where: { teacherId: userId, schoolId } }).catch(() => {});
+        await prisma.notification.deleteMany({ where: { userId } }).catch(() => {});
+        await prisma.pushToken.deleteMany({ where: { userId } }).catch(() => {});
+        await prisma.readReceipt.deleteMany({ where: { userId } }).catch(() => {});
+        await prisma.user.deleteMany({ where: { id: userId, schoolId } });
+      } catch (err: any) {
+        console.error("[deleteUser Postgres Error]:", err?.message);
+      }
+    })();
+  }
+
   return { success: true };
 }
 
@@ -3496,7 +3577,26 @@ export function deleteHomework(id: string, schoolId: string) {
   const idx = db.homeworks.findIndex((h) => h.id === id && h.schoolId === schoolId);
   if (idx < 0) throw new Error("Homework not found");
   db.homeworks.splice(idx, 1);
+  if ((db as any).readReceipts) {
+    (db as any).readReceipts = (db as any).readReceipts.filter(
+      (rr: any) => rr.itemId !== id && rr.targetId !== id
+    );
+  }
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    (async () => {
+      try {
+        await prisma.homework.deleteMany({ where: { id, schoolId } });
+        await prisma.readReceipt.deleteMany({
+          where: { OR: [{ itemId: id }, { entityId: id }] },
+        }).catch(() => {});
+      } catch (err: any) {
+        console.error("[deleteHomework Postgres Error]:", err?.message);
+      }
+    })();
+  }
+
   return { success: true };
 }
 
@@ -3595,9 +3695,25 @@ export function deleteAnnouncement(id: string, schoolId: string, userId?: string
   }
   db.announcements = db.announcements.filter((a) => a.id !== id);
   if ((db as any).readReceipts) {
-    (db as any).readReceipts = (db as any).readReceipts.filter((rr: any) => rr.itemId !== id);
+    (db as any).readReceipts = (db as any).readReceipts.filter(
+      (rr: any) => rr.itemId !== id && rr.targetId !== id
+    );
   }
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    (async () => {
+      try {
+        await prisma.announcement.deleteMany({ where: { id, schoolId } });
+        await prisma.readReceipt.deleteMany({
+          where: { OR: [{ itemId: id }, { entityId: id }] },
+        }).catch(() => {});
+      } catch (err: any) {
+        console.error("[deleteAnnouncement Postgres Error]:", err?.message);
+      }
+    })();
+  }
+
   return { success: true };
 }
 
@@ -3920,46 +4036,17 @@ export function deleteTeacherClassMapping(
 ) {
   const db = readDB() as any;
   if (!db.teacherClasses) db.teacherClasses = [];
-  const idx = db.teacherClasses.findIndex(
+  let idx = db.teacherClasses.findIndex(
     (t: any) => (t.id === mappingId || t.mappingId === mappingId) && (!t.schoolId || t.schoolId === schoolId)
   );
   if (idx < 0) {
-    const byIdIdx = db.teacherClasses.findIndex((t: any) => t.id === mappingId);
-    if (byIdIdx < 0) {
-      if (mappingId.startsWith("tc_ct_")) {
-        return { success: true };
-      }
-      throw new Error("Mapping not found");
+    idx = db.teacherClasses.findIndex((t: any) => t.id === mappingId || t.mappingId === mappingId);
+  }
+  if (idx < 0) {
+    if (mappingId.startsWith("tc_ct_")) {
+      return { success: true };
     }
-    const removed = db.teacherClasses.splice(byIdIdx, 1)[0];
-    if (removed.role === "CLASS_TEACHER") {
-      const cls = (db.classes || []).find(
-        (c: any) =>
-          c.schoolId === schoolId &&
-          isExactClassAndSection(c.name, c.section, removed.className, removed.section) &&
-          c.classTeacherId === removed.teacherId
-      );
-      if (cls) cls.classTeacherId = undefined;
-
-      const teacher = (db.users || []).find((u: any) => u.id === removed.teacherId);
-      if (teacher) {
-        const remainingCt = (db.teacherClasses || []).find(
-          (t: any) => t.teacherId === teacher.id && t.role === "CLASS_TEACHER"
-        );
-        if (remainingCt) {
-          teacher.className = remainingCt.className;
-          teacher.section = remainingCt.section;
-        } else {
-          teacher.teacherType = "SUBJECT_TEACHER";
-          if (isExactClassAndSection(teacher.className, teacher.section, removed.className, removed.section)) {
-            teacher.className = undefined;
-            teacher.section = undefined;
-          }
-        }
-      }
-    }
-    writeDB(db);
-    return { success: true };
+    throw new Error("Mapping not found");
   }
 
   const removed = db.teacherClasses.splice(idx, 1)[0];
@@ -3990,6 +4077,13 @@ export function deleteTeacherClassMapping(
     }
   }
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    prisma.teacherClass.deleteMany({
+      where: { id: mappingId, schoolId },
+    }).catch((err: any) => console.error("[deleteTeacherClassMapping Postgres Error]:", err?.message));
+  }
+
   return { success: true };
 }
 
@@ -4239,7 +4333,28 @@ export function deleteExam(examId: string, schoolId: string, userId?: string, ro
   }
   db.exams = db.exams.filter((e: any) => e.id !== examId);
   if (db.marks) db.marks = db.marks.filter((m: any) => m.examId !== examId);
+  if (db.readReceipts) {
+    db.readReceipts = db.readReceipts.filter(
+      (rr: any) => rr.itemId !== examId && rr.targetId !== examId
+    );
+  }
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    (async () => {
+      try {
+        await prisma.examMark.deleteMany({ where: { examId } }).catch(() => {});
+        await prisma.examSubject.deleteMany({ where: { examId } }).catch(() => {});
+        await prisma.exam.deleteMany({ where: { id: examId, schoolId } });
+        await prisma.readReceipt.deleteMany({
+          where: { OR: [{ itemId: examId }, { entityId: examId }] },
+        }).catch(() => {});
+      } catch (err: any) {
+        console.error("[deleteExam Postgres Error]:", err?.message);
+      }
+    })();
+  }
+
   return { success: true };
 }
 
@@ -4747,6 +4862,14 @@ export function markNotificationRead(id: string, userId: string) {
     n.read = true;
     writeDB(db);
   }
+
+  if (prisma && process.env.DATABASE_URL) {
+    prisma.notification.updateMany({
+      where: { id, userId },
+      data: { read: true, isRead: true },
+    }).catch((err: any) => console.error("[markNotificationRead Postgres Error]:", err?.message));
+  }
+
   return n;
 }
 
@@ -4756,6 +4879,14 @@ export function markAllNotificationsRead(userId: string) {
     if (n.userId === userId) n.read = true;
   });
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    prisma.notification.updateMany({
+      where: { userId },
+      data: { read: true, isRead: true },
+    }).catch((err: any) => console.error("[markAllNotificationsRead Postgres Error]:", err?.message));
+  }
+
   return { success: true };
 }
 
@@ -4775,11 +4906,39 @@ export function getUnreadNotificationCount(userId: string) {
 export function markAsRead(userId: string, type: "ANNOUNCEMENT" | "HOMEWORK" | "MARKS" | string, itemId: string) {
   const db = readDB() as any;
   if (!db.readReceipts) db.readReceipts = [];
-  const exists = db.readReceipts.find((r: any) => r.userId === userId && r.type === type && r.itemId === itemId);
+  const exists = db.readReceipts.find(
+    (r: any) =>
+      r.userId === userId &&
+      (r.type === type || r.targetType === type) &&
+      (r.itemId === itemId || r.targetId === itemId)
+  );
   if (exists) return exists;
-  const rec = { id: `rr_${Date.now()}`, userId, type, itemId, readAt: new Date().toISOString() };
+  const rec = {
+    id: `rr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    userId,
+    type,
+    itemId,
+    targetType: type,
+    targetId: itemId,
+    readAt: new Date().toISOString(),
+  };
   db.readReceipts.push(rec);
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    prisma.readReceipt.create({
+      data: {
+        id: rec.id,
+        userId,
+        type,
+        itemId,
+        entityType: type,
+        entityId: itemId,
+        readAt: new Date(),
+      },
+    }).catch((err: any) => console.error("[markAsRead Postgres Error]:", err?.message));
+  }
+
   return rec;
 }
 
@@ -4791,9 +4950,21 @@ export function getReadReceipts(userId: string) {
 export function getUnreadCounts(userId: string, schoolId: string, role: string, className?: string, section?: string) {
   const db = readDB() as any;
   const receipts = (db.readReceipts || []).filter((r: any) => r.userId === userId);
-  const readAnn = new Set(receipts.filter((r: any) => r.type === "ANNOUNCEMENT").map((r: any) => r.itemId));
-  const readHw = new Set(receipts.filter((r: any) => r.type === "HOMEWORK").map((r: any) => r.itemId));
-  const readMarks = new Set(receipts.filter((r: any) => r.type === "MARKS").map((r: any) => r.itemId));
+  const readAnn = new Set(
+    receipts
+      .filter((r: any) => r.type === "ANNOUNCEMENT" || r.targetType === "ANNOUNCEMENT")
+      .map((r: any) => r.itemId || r.targetId)
+  );
+  const readHw = new Set(
+    receipts
+      .filter((r: any) => r.type === "HOMEWORK" || r.targetType === "HOMEWORK")
+      .map((r: any) => r.itemId || r.targetId)
+  );
+  const readMarks = new Set(
+    receipts
+      .filter((r: any) => r.type === "MARKS" || r.targetType === "MARKS")
+      .map((r: any) => r.itemId || r.targetId)
+  );
 
   // Notifications (filtered for last 30 days)
   const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
