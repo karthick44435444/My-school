@@ -428,8 +428,10 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
         target: a.target,
         className: a.className || undefined,
         section: a.section || undefined,
+        classes: a.classes || undefined,
         createdById: a.createdById,
         createdByName: a.createdByName || undefined,
+        createdByRole: a.createdByRole || undefined,
         createdAt: a.createdAt.toISOString(),
       })),
       attendances: attendances.map((att: any) => ({
@@ -3760,11 +3762,8 @@ export async function deleteAnnouncement(id: string, schoolId: string, userId?: 
   const db = readDB();
   const ann = db.announcements.find((a) => a.id === id && a.schoolId === schoolId);
   if (!ann) throw new Error("Notice not found");
-  if (role === "TEACHER" && ann.createdById !== userId) {
-    throw new Error("You can only delete notices you created");
-  }
-  if (role === "PRINCIPAL" && (ann.createdByRole === "ADMIN" || ann.createdById !== userId)) {
-    throw new Error("You can only delete notices you created");
+  if (userId && ann.createdById !== userId) {
+    throw new Error("You can only delete your own posted notices");
   }
   db.announcements = db.announcements.filter((a) => a.id !== id);
   if ((db as any).readReceipts) {
@@ -3849,7 +3848,9 @@ export function getAnnouncements(
     if (userId && a.createdById === userId) return true;
 
     const hasClass = !!(a.className || (Array.isArray(a.classes) && a.classes.length > 0));
-    const isTeacherNotice = a.createdByRole === "TEACHER";
+    const creator = (db.users || []).find((u: any) => u.id === a.createdById);
+    const creatorRole = (a.createdByRole || creator?.role || "").toUpperCase();
+    const isTeacherNotice = creatorRole === "TEACHER";
 
     // 2. If notice was posted by a TEACHER:
     if (isTeacherNotice) {
@@ -3871,13 +3872,12 @@ export function getAnnouncements(
       // For STUDENT role:
       if (role === "STUDENT") {
         if (a.target === "PARENTS_ONLY") return false;
-        return hasClass ? matchesClassTarget(a, className, section) : true;
+        return hasClass ? matchesClassTarget(a, className, section) : false;
       }
 
       // For PARENT role:
       if (role === "PARENT") {
         if (a.target === "STUDENTS_ONLY") return false;
-        if (!hasClass) return true;
         if (parentKids.length > 0) {
           return parentKids.some((k) => matchesClassTarget(a, k.className, k.section));
         }
@@ -3929,7 +3929,10 @@ export function getAnnouncements(
     }
 
     if (a.target === "CLASS") {
-      if (role === "ADMIN" || role === "PRINCIPAL" || role === "TEACHER") return true;
+      if (role === "ADMIN" || role === "PRINCIPAL") return true;
+      if (role === "TEACHER") {
+        return false;
+      }
       if (role === "STUDENT") {
         return matchesClassTarget(a, className, section);
       }

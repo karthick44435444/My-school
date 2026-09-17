@@ -231,14 +231,16 @@ export default function AdminAnnouncementsPage() {
                             {a.className ? ` · Class ${a.className}${a.section ? `-${a.section}` : ""}` : ""}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteId(a.id)}
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
-                          title="Delete notice"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {a.createdById === user.id && (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteId(a.id)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
+                            title="Delete notice"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                       <p className="text-sm text-slate-700 mt-3 whitespace-pre-wrap leading-relaxed">{a.content}</p>
                       <div className="flex justify-end items-center mt-3 pt-2 border-t border-slate-50">

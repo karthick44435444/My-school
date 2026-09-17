@@ -270,26 +270,11 @@ export default function AnnouncementsScreen() {
 
   const onLongPress = (item: Item) => {
     const own = item.createdById === user?.id;
-    if (user?.role === "ADMIN") {
-      setConfirmDel(item);
+    if (!own) {
+      toast.error("You can only delete your own notices");
       return;
     }
-    if (user?.role === "PRINCIPAL") {
-      if (item.createdByRole === "ADMIN" || !own) {
-        toast.error("You can only delete your own notices");
-        return;
-      }
-      setConfirmDel(item);
-      return;
-    }
-    if (user?.role === "TEACHER") {
-      if (!own) {
-        toast.error("You can only remove your own notices");
-        return;
-      }
-      setConfirmDel(item);
-      return;
-    }
+    setConfirmDel(item);
   };
 
   if (loading && list.length === 0) return <Loading />;

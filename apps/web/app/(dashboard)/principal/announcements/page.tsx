@@ -239,7 +239,7 @@ export default function PrincipalAnnouncementsPage() {
                             {a.className ? ` · Class ${a.className}${a.section ? `-${a.section}` : ""}` : ""}
                           </div>
                         </div>
-                        {a.createdById === user.id && a.createdByRole !== "ADMIN" && (
+                        {a.createdById === user.id && (
                           <button
                             type="button"
                             onClick={() => setDeleteId(a.id)}
