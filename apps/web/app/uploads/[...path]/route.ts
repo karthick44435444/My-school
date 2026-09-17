@@ -21,17 +21,34 @@ const MIME_MAP: Record<string, string> = {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  props: { params: any }
 ) {
   try {
-    const rawPath = Array.isArray(params.path) ? params.path.join("/") : params.path || "";
-    // Clean and prevent path traversal
-    const safeFilename = path.normalize(rawPath).replace(/^(\.\.[\/\\])+/, "");
+    const resolvedParams: any =
+      props?.params && typeof props.params.then === "function"
+        ? await props.params
+        : props?.params;
+
+    let rawPath = Array.isArray(resolvedParams?.path)
+      ? resolvedParams.path.join("/")
+      : resolvedParams?.path || "";
+
+    if (!rawPath) {
+      const pathname = req.nextUrl?.pathname || "";
+      rawPath = pathname.replace(/^\/?uploads\/?/, "");
+    }
+
+    rawPath = decodeURIComponent(rawPath).split("?")[0].replace(/^\/+/, "");
+    const safeBaseFilename = path.basename(rawPath);
+    const safeRelPath = path.normalize(rawPath).replace(/^(\.\.[\/\\])+/, "");
 
     const possiblePaths = [
-      path.join(process.cwd(), "public", "uploads", safeFilename),
-      path.join(process.cwd(), ".data", "uploads", safeFilename),
-      path.join(process.cwd(), "public", safeFilename),
+      path.join(process.cwd(), "public", "uploads", safeBaseFilename),
+      path.join(process.cwd(), ".data", "uploads", safeBaseFilename),
+      path.join(process.cwd(), "public", safeBaseFilename),
+      path.join(process.cwd(), "public", "uploads", safeRelPath),
+      path.join(process.cwd(), ".data", "uploads", safeRelPath),
+      path.join(process.cwd(), safeRelPath),
     ];
 
     let filePath: string | null = null;
@@ -43,7 +60,10 @@ export async function GET(
     }
 
     if (!filePath) {
-      return new NextResponse("File not found", { status: 404 });
+      return new NextResponse("File not found", {
+        status: 404,
+        headers: { "Access-Control-Allow-Origin": "*" },
+      });
     }
 
     const fileBuffer = fs.readFileSync(filePath);
@@ -62,4 +82,15 @@ export async function GET(
   } catch {
     return new NextResponse("Internal Server Error", { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+    },
+  });
 }

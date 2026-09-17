@@ -4,21 +4,24 @@ import {
   Easing,
   Image,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 import { Colors } from "@/constants/theme";
 
-const SLIDER_WIDTH = 110;
-const INDICATOR_WIDTH = 45;
+const SLIDER_WIDTH = 150;
+const INDICATOR_WIDTH = 55;
 
 interface AppSplashLoaderProps {
   themeColor?: string;
+  appName?: string;
 }
 
 export function AppSplashLoader({
   themeColor,
+  appName = "My School",
 }: AppSplashLoaderProps) {
-  const activeColor = themeColor || Colors.primary || "#6366F1";
+  const activeColor = themeColor || Colors.primary || "#4F46E5";
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -29,22 +32,22 @@ export function AppSplashLoader({
     // 1. Fade-in entry
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 300,
+      duration: 350,
       useNativeDriver: true,
     }).start();
 
-    // 2. Subtle breathing pulse for the icon
+    // 2. Subtle gentle breathing pulse for the center logo
     const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1.04,
-          duration: 1000,
+          duration: 1100,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 0.98,
-          duration: 1000,
+          duration: 1100,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
@@ -52,19 +55,19 @@ export function AppSplashLoader({
     );
     pulseLoop.start();
 
-    // 3. Smooth sliding animation for the loading progress slider
+    // 3. Smooth sliding animation for the bottom progress indicator
     const slideLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(slideAnim, {
           toValue: 1,
-          duration: 1200,
-          easing: Easing.inOut(Easing.sin),
+          duration: 1100,
+          easing: Easing.inOut(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 1200,
-          easing: Easing.inOut(Easing.sin),
+          duration: 1100,
+          easing: Easing.inOut(Easing.cubic),
           useNativeDriver: true,
         }),
       ])
@@ -77,7 +80,7 @@ export function AppSplashLoader({
     };
   }, [fadeAnim, pulseAnim, slideAnim]);
 
-  // Interpolate translateX for the animated slider
+  // Interpolate translateX for the animated slider thumb
   const translateX = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, SLIDER_WIDTH - INDICATOR_WIDTH],
@@ -85,14 +88,14 @@ export function AppSplashLoader({
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        {/* Small centered App Icon with small corner radius */}
+      {/* Center Section: Large App Logo & Title */}
+      <Animated.View style={[styles.centerContent, { opacity: fadeAnim }]}>
         <Animated.View
           style={[
             styles.iconWrapper,
             {
               transform: [{ scale: pulseAnim }],
-              borderColor: activeColor + "25",
+              borderColor: activeColor + "20",
               shadowColor: activeColor,
             },
           ]}
@@ -104,11 +107,20 @@ export function AppSplashLoader({
           />
         </Animated.View>
 
-        {/* Animated Slider Bar at the bottom with corner radius */}
+        <Text style={styles.appNameText}>{appName}</Text>
+        <Text style={styles.appSubText}>School Management System</Text>
+      </Animated.View>
+
+      {/* Bottom Center Section: Sleek Sliding Loader */}
+      <Animated.View style={[styles.bottomContainer, { opacity: fadeAnim }]}>
         <View
           style={[
             styles.sliderTrack,
-            { width: SLIDER_WIDTH, backgroundColor: activeColor + "15", borderColor: activeColor + "25" },
+            {
+              width: SLIDER_WIDTH,
+              backgroundColor: activeColor + "18",
+              borderColor: activeColor + "25",
+            },
           ]}
         >
           <Animated.View
@@ -133,41 +145,63 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
   },
-  content: {
+  centerContent: {
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 24,
   },
   iconWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
+    width: 96,
+    height: 96,
+    borderRadius: 24,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    padding: 4,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    padding: 10,
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 6,
     marginBottom: 16,
   },
   iconImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 6,
+    borderRadius: 16,
+  },
+  appNameText: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.4,
+    textAlign: "center",
+  },
+  appSubText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#64748B",
+    marginTop: 4,
+    textAlign: "center",
+  },
+  bottomContainer: {
+    position: "absolute",
+    bottom: 54,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
   },
   sliderTrack: {
-    height: 3.5,
-    borderRadius: 3.5,
+    height: 4.5,
+    borderRadius: 99,
     overflow: "hidden",
     borderWidth: 0.5,
     position: "relative",
   },
   sliderThumb: {
     height: "100%",
-    borderRadius: 3.5,
+    borderRadius: 99,
   },
 });

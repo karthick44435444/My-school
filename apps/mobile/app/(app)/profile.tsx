@@ -504,13 +504,15 @@ export default function ProfileScreen() {
                   </View>
 
                   {/* Camera upload badge */}
-                  <Pressable
-                    onPress={pickPhoto}
-                    disabled={uploading}
-                    style={[styles.cameraButton, { backgroundColor: color }]}
-                  >
-                    <Ionicons name="camera" size={15} color="#fff" />
-                  </Pressable>
+                  {canEditProfile && (
+                    <Pressable
+                      onPress={pickPhoto}
+                      disabled={uploading}
+                      style={[styles.cameraButton, { backgroundColor: color }]}
+                    >
+                      <Ionicons name="camera" size={15} color="#fff" />
+                    </Pressable>
+                  )}
                 </View>
 
                 {/* Name & Badges */}
