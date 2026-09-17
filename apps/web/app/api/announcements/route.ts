@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
       ? selectedClasses.map((c) => (c.section ? `${c.className}-${c.section}` : c.className)).join(", ")
       : body.className;
 
-    const ann = createAnnouncement({
+    const ann = await createAnnouncement({
       schoolId: auth.schoolId,
       title: body.title,
       content: body.content,
@@ -230,7 +230,7 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-    deleteAnnouncement(id, auth.schoolId, auth.userId, auth.role);
+    await deleteAnnouncement(id, auth.schoolId, auth.userId, auth.role);
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 400 });

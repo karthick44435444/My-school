@@ -336,7 +336,7 @@ export default function SubscriptionScreen() {
                     />
                     <Text style={styles.upgradeButtonText}>
                       {isCurrent
-                        ? ('Recharge / Extend (' + plan.billingInterval + ')')
+                        ? 'Recharge / Extend'
                         : ('Upgrade to ' + plan.name)}
                     </Text>
                   </>

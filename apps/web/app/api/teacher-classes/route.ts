@@ -126,7 +126,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Mapping id required" }, { status: 400 });
     }
 
-    deleteTeacherClassMapping(id, auth.schoolId);
+    await deleteTeacherClassMapping(id, auth.schoolId);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed" }, { status: 500 });

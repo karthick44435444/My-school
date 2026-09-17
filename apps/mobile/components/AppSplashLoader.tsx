@@ -1,12 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import {
-  Animated,
-  Easing,
-  Image,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
 import { Colors } from "@/constants/theme";
 
 const SLIDER_WIDTH = 150;
@@ -51,7 +44,7 @@ export function AppSplashLoader({
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     pulseLoop.start();
 
@@ -70,7 +63,7 @@ export function AppSplashLoader({
           easing: Easing.inOut(Easing.cubic),
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     slideLoop.start();
 
@@ -108,7 +101,7 @@ export function AppSplashLoader({
         </Animated.View>
 
         <Text style={styles.appNameText}>{appName}</Text>
-        <Text style={styles.appSubText}>School Management System</Text>
+        <Text style={styles.appSubText}>School Management</Text>
       </Animated.View>
 
       {/* Bottom Center Section: Sleek Sliding Loader */}

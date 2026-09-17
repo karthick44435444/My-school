@@ -225,7 +225,7 @@ export default function AdminSubscriptionPage() {
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch mb-10 w-full max-w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch mb-10 w-full max-w-full pt-4">
           {loading ? (
             Array.from({ length: 3 }).map((_, idx) => (
               <div
@@ -256,7 +256,7 @@ export default function AdminSubscriptionPage() {
                   key={plan.id}
                   whileHover={{ y: -4 }}
                   transition={{ duration: 0.2 }}
-                  className={`relative rounded-3xl bg-white p-6 sm:p-8 border flex flex-col justify-between transition-all overflow-hidden ${
+                  className={`relative rounded-3xl bg-white pt-8 pb-6 px-6 sm:pt-9 sm:pb-8 sm:px-8 border flex flex-col justify-between transition-all overflow-visible ${
                     plan.popular
                       ? "border-indigo-600 ring-2 ring-indigo-600/20 shadow-xl"
                       : isOffer
@@ -266,10 +266,10 @@ export default function AdminSubscriptionPage() {
                 >
                   {plan.badge && (
                     <div
-                      className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-[10px] font-black uppercase tracking-wider shadow-md ${
+                      className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-white text-[11px] font-black uppercase tracking-wider shadow-lg whitespace-nowrap z-20 ${
                         isOffer
-                          ? "bg-gradient-to-r from-amber-500 to-orange-500"
-                          : "bg-gradient-to-r from-indigo-600 to-purple-600"
+                          ? "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 ring-2 ring-white"
+                          : "bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 ring-2 ring-white"
                       }`}
                     >
                       {plan.badge}
@@ -328,7 +328,7 @@ export default function AdminSubscriptionPage() {
                       {isCurrent ? (
                         <>
                           <Zap className="w-3.5 h-3.5" />
-                          Recharge / Extend ({plan.billingInterval})
+                          <span>Recharge / Extend</span>
                         </>
                       ) : (
                         <>
@@ -355,19 +355,12 @@ export default function AdminSubscriptionPage() {
                 Subscription Guarantee & Expiration Rules
               </h3>
               <p className="text-xs text-slate-500">
-                Reliable access with proactive notifications
+                Reliable access with continuous institutional data protection
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-600 mt-4">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-              <strong className="block text-slate-900 font-bold mb-1">
-                🔔 3-Tier Expiration Reminders
-              </strong>
-              Admins receive automated alerts at 7 days, 2 days, and on the day of plan expiry via in-app push and email.
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600 mt-4">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
               <strong className="block text-slate-900 font-bold mb-1">
                 🔒 Data Retention & Security

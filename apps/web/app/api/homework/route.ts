@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "title and className required" }, { status: 400 });
     }
 
-    const hw = createHomework({
+    const hw = await createHomework({
       schoolId: auth.schoolId,
       className: body.className,
       section: body.section,
@@ -170,7 +170,7 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-    deleteHomework(id, auth.schoolId);
+    await deleteHomework(id, auth.schoolId);
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

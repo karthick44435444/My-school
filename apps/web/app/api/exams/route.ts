@@ -459,7 +459,7 @@ export async function DELETE(req: NextRequest) {
       }
     }
 
-    deleteExam(id, auth.schoolId, auth.userId, auth.role);
+    await deleteExam(id, auth.schoolId, auth.userId, auth.role);
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

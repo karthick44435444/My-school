@@ -2939,7 +2939,7 @@ export function updateClass(
   return cls;
 }
 
-export function deleteClass(classId: string, schoolId: string) {
+export async function deleteClass(classId: string, schoolId: string) {
   const db = readDB() as any;
   const clsIndex = (db.classes || []).findIndex((c: any) => c.id === classId && c.schoolId === schoolId);
   if (clsIndex === -1) throw new Error("Class not found");
@@ -2999,22 +2999,20 @@ export function deleteClass(classId: string, schoolId: string) {
   writeDB(db);
 
   if (prisma && process.env.DATABASE_URL) {
-    (async () => {
-      try {
-        await prisma.teacherClass.deleteMany({
-          where: {
-            schoolId,
-            className,
-            ...(section ? { section } : {}),
-          },
-        }).catch(() => {});
-        await prisma.class.deleteMany({
-          where: { id: classId, schoolId },
-        });
-      } catch (err: any) {
-        console.error("[deleteClass Postgres Error]:", err?.message);
-      }
-    })();
+    try {
+      await prisma.teacherClass.deleteMany({
+        where: {
+          schoolId,
+          className,
+          ...(section ? { section } : {}),
+        },
+      }).catch(() => {});
+      await prisma.class.deleteMany({
+        where: { id: classId, schoolId },
+      });
+    } catch (err: any) {
+      console.error("[deleteClass Postgres Error]:", err?.message);
+    }
   }
 
   return { success: true };
@@ -3297,7 +3295,7 @@ export function updateUser(userId: string, data: Partial<{
   return safe;
 }
 
-export function deleteUser(userId: string, schoolId: string) {
+export async function deleteUser(userId: string, schoolId: string) {
   const db = readDB() as any;
   const userIndex = db.users.findIndex((u: any) => u.id === userId && u.schoolId === schoolId);
   if (userIndex === -1) throw new Error("User not found");
@@ -3414,27 +3412,25 @@ export function deleteUser(userId: string, schoolId: string) {
   writeDB(db);
 
   if (prisma && process.env.DATABASE_URL) {
-    (async () => {
-      try {
-        if (removedParentIds && removedParentIds.length > 0) {
-          for (const pid of removedParentIds) {
-            await prisma.notification.deleteMany({ where: { userId: pid } }).catch(() => {});
-            await prisma.pushToken.deleteMany({ where: { userId: pid } }).catch(() => {});
-            await prisma.readReceipt.deleteMany({ where: { userId: pid } }).catch(() => {});
-            await prisma.user.deleteMany({ where: { id: pid, schoolId } }).catch(() => {});
-          }
+    try {
+      if (removedParentIds && removedParentIds.length > 0) {
+        for (const pid of removedParentIds) {
+          await prisma.notification.deleteMany({ where: { userId: pid } }).catch(() => {});
+          await prisma.pushToken.deleteMany({ where: { userId: pid } }).catch(() => {});
+          await prisma.readReceipt.deleteMany({ where: { userId: pid } }).catch(() => {});
+          await prisma.user.deleteMany({ where: { id: pid, schoolId } }).catch(() => {});
         }
-        await prisma.attendance.deleteMany({ where: { OR: [{ studentId: userId }, { teacherId: userId }] } }).catch(() => {});
-        await prisma.examMark.deleteMany({ where: { studentId: userId } }).catch(() => {});
-        await prisma.teacherClass.deleteMany({ where: { teacherId: userId, schoolId } }).catch(() => {});
-        await prisma.notification.deleteMany({ where: { userId } }).catch(() => {});
-        await prisma.pushToken.deleteMany({ where: { userId } }).catch(() => {});
-        await prisma.readReceipt.deleteMany({ where: { userId } }).catch(() => {});
-        await prisma.user.deleteMany({ where: { id: userId, schoolId } });
-      } catch (err: any) {
-        console.error("[deleteUser Postgres Error]:", err?.message);
       }
-    })();
+      await prisma.attendance.deleteMany({ where: { OR: [{ studentId: userId }, { teacherId: userId }] } }).catch(() => {});
+      await prisma.examMark.deleteMany({ where: { studentId: userId } }).catch(() => {});
+      await prisma.teacherClass.deleteMany({ where: { teacherId: userId, schoolId } }).catch(() => {});
+      await prisma.notification.deleteMany({ where: { userId } }).catch(() => {});
+      await prisma.pushToken.deleteMany({ where: { userId } }).catch(() => {});
+      await prisma.readReceipt.deleteMany({ where: { userId } }).catch(() => {});
+      await prisma.user.deleteMany({ where: { id: userId, schoolId } });
+    } catch (err: any) {
+      console.error("[deleteUser Postgres Error]:", err?.message);
+    }
   }
 
   return { success: true };
@@ -3533,7 +3529,7 @@ export function getSchool(schoolId: string) {
 
 // ====================== HOMEWORK ======================
 
-export function createHomework(data: {
+export async function createHomework(data: {
   schoolId: string;
   className: string;
   section?: string;
@@ -3565,6 +3561,41 @@ export function createHomework(data: {
   };
   db.homeworks.push(hw);
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    try {
+      await prisma.homework.upsert({
+        where: { id: hw.id },
+        create: {
+          id: hw.id,
+          schoolId: hw.schoolId,
+          className: hw.className,
+          section: hw.section || null,
+          subject: hw.subject || null,
+          title: hw.title,
+          description: hw.description,
+          attachmentUrl: hw.attachmentUrl || null,
+          attachments: hw.attachments ? (hw.attachments as any) : undefined,
+          createdById: hw.createdById,
+          createdByName: hw.createdByName || null,
+          createdAt: new Date(hw.createdAt),
+          expiresAt: new Date(hw.expiresAt),
+        },
+        update: {
+          className: hw.className,
+          section: hw.section || null,
+          subject: hw.subject || null,
+          title: hw.title,
+          description: hw.description,
+          attachmentUrl: hw.attachmentUrl || null,
+          attachments: hw.attachments ? (hw.attachments as any) : undefined,
+        },
+      });
+    } catch (err: any) {
+      console.error("[createHomework Postgres Error]:", err?.message);
+    }
+  }
+
   return hw;
 }
 
@@ -3578,7 +3609,7 @@ export function getHomeworks(schoolId: string, filters?: { className?: string; s
   return list;
 }
 
-export function deleteHomework(id: string, schoolId: string) {
+export async function deleteHomework(id: string, schoolId: string) {
   const db = readDB();
   const idx = db.homeworks.findIndex((h) => h.id === id && h.schoolId === schoolId);
   if (idx < 0) throw new Error("Homework not found");
@@ -3591,16 +3622,14 @@ export function deleteHomework(id: string, schoolId: string) {
   writeDB(db);
 
   if (prisma && process.env.DATABASE_URL) {
-    (async () => {
-      try {
-        await prisma.homework.deleteMany({ where: { id, schoolId } });
-        await prisma.readReceipt.deleteMany({
-          where: { OR: [{ itemId: id }, { entityId: id }] },
-        }).catch(() => {});
-      } catch (err: any) {
-        console.error("[deleteHomework Postgres Error]:", err?.message);
-      }
-    })();
+    try {
+      await prisma.homework.deleteMany({ where: { id, schoolId } });
+      await prisma.readReceipt.deleteMany({
+        where: { OR: [{ itemId: id }, { entityId: id }] },
+      }).catch(() => {});
+    } catch (err: any) {
+      console.error("[deleteHomework Postgres Error]:", err?.message);
+    }
   }
 
   return { success: true };
@@ -3657,7 +3686,7 @@ export function getStudentsForClassTeacher(schoolId: string, teacherId: string) 
 
 // ====================== ANNOUNCEMENTS ======================
 
-export function createAnnouncement(data: {
+export async function createAnnouncement(data: {
   schoolId: string;
   title: string;
   content: string;
@@ -3686,10 +3715,48 @@ export function createAnnouncement(data: {
   };
   db.announcements.push(ann);
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    try {
+      const validTargets = ["ALL", "PARENTS_ONLY", "STUDENTS_ONLY", "TEACHERS_ONLY", "SPECIFIC_CLASS", "SPECIFIC_SECTION", "MY_STUDENTS", "CLASS"];
+      const targetEnum = validTargets.includes(ann.target as string) ? ann.target : "ALL";
+
+      await prisma.announcement.upsert({
+        where: { id: ann.id },
+        create: {
+          id: ann.id,
+          schoolId: ann.schoolId,
+          title: ann.title,
+          content: ann.content,
+          target: targetEnum as any,
+          targetRole: ann.target,
+          className: ann.className || null,
+          section: ann.section || null,
+          classes: ann.classes ? (ann.classes as any) : undefined,
+          createdById: ann.createdById,
+          createdByName: ann.createdByName || null,
+          createdByRole: ann.createdByRole || null,
+          createdAt: new Date(ann.createdAt),
+        },
+        update: {
+          title: ann.title,
+          content: ann.content,
+          target: targetEnum as any,
+          targetRole: ann.target,
+          className: ann.className || null,
+          section: ann.section || null,
+          classes: ann.classes ? (ann.classes as any) : undefined,
+        },
+      });
+    } catch (err: any) {
+      console.error("[createAnnouncement Postgres Error]:", err?.message);
+    }
+  }
+
   return ann;
 }
 
-export function deleteAnnouncement(id: string, schoolId: string, userId?: string, role?: string) {
+export async function deleteAnnouncement(id: string, schoolId: string, userId?: string, role?: string) {
   const db = readDB();
   const ann = db.announcements.find((a) => a.id === id && a.schoolId === schoolId);
   if (!ann) throw new Error("Notice not found");
@@ -3708,16 +3775,14 @@ export function deleteAnnouncement(id: string, schoolId: string, userId?: string
   writeDB(db);
 
   if (prisma && process.env.DATABASE_URL) {
-    (async () => {
-      try {
-        await prisma.announcement.deleteMany({ where: { id, schoolId } });
-        await prisma.readReceipt.deleteMany({
-          where: { OR: [{ itemId: id }, { entityId: id }] },
-        }).catch(() => {});
-      } catch (err: any) {
-        console.error("[deleteAnnouncement Postgres Error]:", err?.message);
-      }
-    })();
+    try {
+      await prisma.announcement.deleteMany({ where: { id, schoolId } });
+      await prisma.readReceipt.deleteMany({
+        where: { OR: [{ itemId: id }, { entityId: id }] },
+      }).catch(() => {});
+    } catch (err: any) {
+      console.error("[deleteAnnouncement Postgres Error]:", err?.message);
+    }
   }
 
   return { success: true };
@@ -4121,7 +4186,7 @@ export function getTeacherClassesUnique(teacherId: string) {
   });
 }
 
-export function deleteTeacherClassMapping(
+export async function deleteTeacherClassMapping(
   mappingId: string,
   schoolId: string
 ) {
@@ -4170,9 +4235,13 @@ export function deleteTeacherClassMapping(
   writeDB(db);
 
   if (prisma && process.env.DATABASE_URL) {
-    prisma.teacherClass.deleteMany({
-      where: { id: mappingId, schoolId },
-    }).catch((err: any) => console.error("[deleteTeacherClassMapping Postgres Error]:", err?.message));
+    try {
+      await prisma.teacherClass.deleteMany({
+        where: { id: mappingId, schoolId },
+      });
+    } catch (err: any) {
+      console.error("[deleteTeacherClassMapping Postgres Error]:", err?.message);
+    }
   }
 
   return { success: true };
@@ -4190,32 +4259,47 @@ export function getStudentsForTeacher(schoolId: string, teacherId: string) {
             u.schoolId === schoolId &&
             u.role === "STUDENT" &&
             u.isActive &&
-            isExactClassAndSection(u.className, u.section, teacher.className, teacher.section)
+            isSameClassAndSection(u.className, u.section, teacher.className, teacher.section)
         )
-        .map(({ passwordHash, ...r }: any) => r)
-        .sort((a: any, b: any) => (a.firstName || "").localeCompare(b.firstName || ""));
+        .sort((a: any, b: any) => {
+          const rA = a.rollNumber ? parseInt(a.rollNumber) || 9999 : 9999;
+          const rB = b.rollNumber ? parseInt(b.rollNumber) || 9999 : 9999;
+          if (rA !== rB) return rA - rB;
+          return (a.firstName || "").localeCompare(b.firstName || "");
+        });
     }
     return [];
   }
-  return (db.users || [])
-    .filter(
-      (u: any) =>
-        u.schoolId === schoolId &&
-        u.role === "STUDENT" &&
-        u.isActive &&
-        maps.some((m: any) => isExactClassAndSection(u.className, u.section, m.className, m.section))
-    )
-    .map(({ passwordHash, ...r }: any) => r)
-    .sort((a: any, b: any) => (a.firstName || "").localeCompare(b.firstName || ""));
+
+  const list = (db.users || []).filter((u: any) => {
+    if (u.schoolId !== schoolId || u.role !== "STUDENT" || !u.isActive) return false;
+    return maps.some((m: any) => isSameClassAndSection(u.className, u.section, m.className, m.section));
+  });
+
+  return list.sort((a: any, b: any) => {
+    const rA = a.rollNumber ? parseInt(a.rollNumber) || 9999 : 9999;
+    const rB = b.rollNumber ? parseInt(b.rollNumber) || 9999 : 9999;
+    if (rA !== rB) return rA - rB;
+    return (a.firstName || "").localeCompare(b.firstName || "");
+  });
 }
+
+export function getTeacherMappings(teacherId: string) {
+  const db = readDB() as any;
+  if (!db.teacherClasses) db.teacherClasses = [];
+  return db.teacherClasses.filter((t: any) => t.teacherId === teacherId);
+}
+
+// ====================== EXAMS & MARKS ======================
 
 export function createExam(data: {
   schoolId: string;
   name: string;
-  className: string;
+  className?: string;
   section?: string;
   subject?: string;
-  maxMarks: number;
+  subjectId?: string;
+  maxMarks?: number;
   passMarks?: number;
   date: string;
   createdById: string;
@@ -4413,7 +4497,7 @@ export function getExamsForTeacher(
   return list.sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 }
 
-export function deleteExam(examId: string, schoolId: string, userId?: string, role?: string) {
+export async function deleteExam(examId: string, schoolId: string, userId?: string, role?: string) {
   const db = readDB() as any;
   if (!db.exams) db.exams = [];
   const exam = db.exams.find((e: any) => e.id === examId && e.schoolId === schoolId);
@@ -4432,18 +4516,16 @@ export function deleteExam(examId: string, schoolId: string, userId?: string, ro
   writeDB(db);
 
   if (prisma && process.env.DATABASE_URL) {
-    (async () => {
-      try {
-        await prisma.examMark.deleteMany({ where: { examId } }).catch(() => {});
-        await prisma.examSubject.deleteMany({ where: { examId } }).catch(() => {});
-        await prisma.exam.deleteMany({ where: { id: examId, schoolId } });
-        await prisma.readReceipt.deleteMany({
-          where: { OR: [{ itemId: examId }, { entityId: examId }] },
-        }).catch(() => {});
-      } catch (err: any) {
-        console.error("[deleteExam Postgres Error]:", err?.message);
-      }
-    })();
+    try {
+      await prisma.examMark.deleteMany({ where: { examId } }).catch(() => {});
+      await prisma.examSubject.deleteMany({ where: { examId } }).catch(() => {});
+      await prisma.exam.deleteMany({ where: { id: examId, schoolId } });
+      await prisma.readReceipt.deleteMany({
+        where: { OR: [{ itemId: examId }, { entityId: examId }] },
+      }).catch(() => {});
+    } catch (err: any) {
+      console.error("[deleteExam Postgres Error]:", err?.message);
+    }
   }
 
   return { success: true };
