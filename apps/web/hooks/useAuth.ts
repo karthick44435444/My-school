@@ -24,6 +24,10 @@ export interface AuthUser {
   parentName?: string;
   parentEmail?: string;
   dateOfBirth?: string;
+  plan?: string;
+  planStatus?: string;
+  planExpiresAt?: string | null;
+  isSubscriptionExpired?: boolean;
   childrenIds?: string[];
 }
 

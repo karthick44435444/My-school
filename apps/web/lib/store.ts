@@ -2,10 +2,11 @@
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
-import { generateSchoolCode, generateTempPassword, generateUsername, formatDobToPassword } from "@myschool/shared";
+import { generateSchoolCode, generateTempPassword, generateUsername, formatDobToPassword, SUBSCRIPTION_PLANS, SubscriptionPlanInfo } from "@myschool/shared";
 import { prisma } from "@myschool/database";
 
-export { prisma };
+export { prisma, SUBSCRIPTION_PLANS };
+export type { SubscriptionPlanInfo };
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
@@ -22,6 +23,9 @@ export interface StoredSchool {
   logoUrl?: string;
   plan: string;
   billingCycle: string;
+  planExpiresAt?: string;
+  planStatus?: "ACTIVE" | "EXPIRED" | "TRIAL";
+  lastExpiryNotificationSent?: "7_DAYS" | "2_DAYS" | "EXPIRED" | null;
   createdAt: string;
 }
 
@@ -1039,8 +1043,11 @@ export function createSchool(data: {
     phone: data.phone ? data.phone.trim() : undefined,
     themeColor: data.themeColor,
     logoUrl: data.logoUrl,
-    plan: data.plan,
-    billingCycle: data.billingCycle,
+    plan: data.plan || "OFFER_MONTHLY",
+    billingCycle: data.billingCycle || "MONTHLY",
+    planExpiresAt: new Date(Date.now() + (data.billingCycle === "YEARLY" ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+    planStatus: "ACTIVE",
+    lastExpiryNotificationSent: null,
     createdAt: new Date().toISOString(),
   };
 
@@ -4964,3 +4971,245 @@ export function resetPasswordWithOtp(schoolCode: string, usernameOrEmail: string
   writeDB(db);
   return { success: true };
 }
+
+// ==================== SUBSCRIPTION & EXPIRATION HELPERS ====================
+
+export function getSchoolSubscription(schoolId: string) {
+  const db = readDB();
+  const school = db.schools.find((s) => s.id === schoolId);
+  if (!school) return null;
+
+  // Default to 30 days if not set
+  const expiresAt = school.planExpiresAt || new Date(new Date(school.createdAt || Date.now()).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const expiryTimestamp = new Date(expiresAt).getTime();
+  const now = Date.now();
+  const diffMs = expiryTimestamp - now;
+  const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  const isExpired = school.planStatus === "EXPIRED" || diffMs <= 0;
+  const status = isExpired ? "EXPIRED" : (school.planStatus || "ACTIVE");
+
+  const currentPlan = SUBSCRIPTION_PLANS.find((p) => p.id === school.plan) || SUBSCRIPTION_PLANS[0];
+
+  return {
+    schoolId: school.id,
+    schoolName: school.name,
+    schoolCode: school.schoolCode,
+    planId: school.plan || "OFFER_MONTHLY",
+    currentPlan,
+    billingCycle: school.billingCycle || "MONTHLY",
+    planExpiresAt: expiresAt,
+    daysRemaining,
+    isExpired,
+    status,
+    availablePlans: SUBSCRIPTION_PLANS,
+  };
+}
+
+export function isSchoolSubscriptionExpired(school: StoredSchool | null | undefined): boolean {
+  if (!school) return false;
+  if (school.planStatus === "EXPIRED") return true;
+  if (!school.planExpiresAt) return false;
+  return new Date(school.planExpiresAt).getTime() <= Date.now();
+}
+
+export async function upgradeSchoolSubscription(schoolId: string, planId: string) {
+  const db = readDB();
+  const schoolIndex = db.schools.findIndex((s) => s.id === schoolId);
+  if (schoolIndex === -1) throw new Error("School not found");
+
+  const targetPlan = SUBSCRIPTION_PLANS.find((p) => p.id === planId) || SUBSCRIPTION_PLANS[0];
+  const school = db.schools[schoolIndex];
+
+  const now = Date.now();
+  let currentExpiry = school.planExpiresAt ? new Date(school.planExpiresAt).getTime() : now;
+  // If already expired or in the past, start extension from now
+  const baseTime = currentExpiry > now ? currentExpiry : now;
+  const newExpiry = new Date(baseTime + targetPlan.durationDays * 24 * 60 * 60 * 1000).toISOString();
+
+  school.plan = targetPlan.id;
+  school.billingCycle = targetPlan.billingInterval.toUpperCase().replace(/\s+/g, "_");
+  school.planExpiresAt = newExpiry;
+  school.planStatus = "ACTIVE";
+  school.lastExpiryNotificationSent = null;
+
+  db.schools[schoolIndex] = school;
+  writeDB(db);
+
+  // Sync to Prisma DB if active
+  if (prisma && process.env.DATABASE_URL) {
+    try {
+      await prisma.school.update({
+        where: { id: schoolId },
+        data: {
+          plan: targetPlan.id,
+          billingCycle: school.billingCycle,
+        },
+      }).catch(() => {});
+    } catch {}
+  }
+
+  // Notify School Admin
+  const adminUsers = db.users.filter((u) => u.schoolId === schoolId && u.role === "ADMIN" && u.isActive);
+  const expiryFormatted = new Date(newExpiry).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  for (const admin of adminUsers) {
+    createNotification({
+      schoolId,
+      userId: admin.id,
+      title: "🎉 Subscription Activated!",
+      body: `Your school subscription is upgraded to "${targetPlan.name}". Access is active until ${expiryFormatted}.`,
+      type: "SUBSCRIPTION",
+      meta: { planId: targetPlan.id, expiresAt: newExpiry },
+    });
+
+    // Send push notification asynchronously
+    (async () => {
+      try {
+        const { notifyUser } = await import("./push");
+        await notifyUser(admin.id, {
+          title: "🎉 Subscription Activated!",
+          body: `Your school subscription is upgraded to "${targetPlan.name}". Valid until ${expiryFormatted}.`,
+          type: "SUBSCRIPTION",
+          data: { url: "/admin/subscription", route: "subscription" },
+        });
+      } catch {}
+    })();
+  }
+
+  return getSchoolSubscription(schoolId);
+}
+
+export async function checkAndDispatchExpiryNotifications() {
+  const db = readDB();
+  const now = Date.now();
+  let updated = false;
+  const results: any[] = [];
+
+  for (const school of db.schools) {
+    if (!school.planExpiresAt) {
+      // Default to 30 days from creation if missing
+      school.planExpiresAt = new Date(new Date(school.createdAt || now).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      school.planStatus = "ACTIVE";
+      updated = true;
+    }
+
+    const expiryTime = new Date(school.planExpiresAt).getTime();
+    const diffMs = expiryTime - now;
+    const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const expiryDateStr = new Date(school.planExpiresAt).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
+    const admins = db.users.filter((u) => u.schoolId === school.id && u.role === "ADMIN" && u.isActive);
+
+    // 1. Expired (<= 0 days)
+    if (daysRemaining <= 0) {
+      if (school.planStatus !== "EXPIRED" || school.lastExpiryNotificationSent !== "EXPIRED") {
+        school.planStatus = "EXPIRED";
+        school.lastExpiryNotificationSent = "EXPIRED";
+        updated = true;
+
+        for (const admin of admins) {
+          createNotification({
+            schoolId: school.id,
+            userId: admin.id,
+            title: "⚠️ Subscription Expired",
+            body: `Your school subscription expired on ${expiryDateStr}. Please recharge or upgrade your plan now to restore full access.`,
+            type: "SUBSCRIPTION_EXPIRED",
+            meta: { schoolId: school.id, expired: true },
+          });
+
+          (async () => {
+            try {
+              const { notifyUser } = await import("./push");
+              await notifyUser(admin.id, {
+                title: "⚠️ Subscription Expired",
+                body: `Your school subscription expired on ${expiryDateStr}. Tap to recharge and continue service.`,
+                type: "SUBSCRIPTION_EXPIRED",
+                email: admin.email,
+                data: { url: "/admin/subscription", route: "subscription" },
+              });
+            } catch {}
+          })();
+        }
+
+        results.push({ schoolId: school.id, status: "EXPIRED_ALERT_SENT" });
+      }
+    }
+    // 2. 2 Days Before Expiry
+    else if (daysRemaining <= 2 && school.lastExpiryNotificationSent !== "2_DAYS" && school.lastExpiryNotificationSent !== "EXPIRED") {
+      school.lastExpiryNotificationSent = "2_DAYS";
+      updated = true;
+
+      for (const admin of admins) {
+        createNotification({
+          schoolId: school.id,
+          userId: admin.id,
+          title: "⏳ Subscription Expiring in 2 Days",
+          body: `Your school subscription will expire on ${expiryDateStr} (2 days left). Recharge now to prevent service disruption.`,
+          type: "SUBSCRIPTION_REMINDER",
+          meta: { schoolId: school.id, daysRemaining: 2 },
+        });
+
+        (async () => {
+          try {
+            const { notifyUser } = await import("./push");
+            await notifyUser(admin.id, {
+              title: "⏳ Subscription Expiring in 2 Days",
+              body: `Your school subscription will expire on ${expiryDateStr}. Tap to renew seamlessly.`,
+              type: "SUBSCRIPTION_REMINDER",
+              email: admin.email,
+              data: { url: "/admin/subscription", route: "subscription" },
+            });
+          } catch {}
+        })();
+      }
+
+      results.push({ schoolId: school.id, status: "2_DAYS_ALERT_SENT" });
+    }
+    // 3. 7 Days (1 Week) Before Expiry
+    else if (daysRemaining <= 7 && !school.lastExpiryNotificationSent) {
+      school.lastExpiryNotificationSent = "7_DAYS";
+      updated = true;
+
+      for (const admin of admins) {
+        createNotification({
+          schoolId: school.id,
+          userId: admin.id,
+          title: "📅 Subscription Reminder (1 Week Left)",
+          body: `Your school subscription will expire in 7 days on ${expiryDateStr}. Check out available upgrade options.`,
+          type: "SUBSCRIPTION_REMINDER",
+          meta: { schoolId: school.id, daysRemaining: 7 },
+        });
+
+        (async () => {
+          try {
+            const { notifyUser } = await import("./push");
+            await notifyUser(admin.id, {
+              title: "📅 Subscription Reminder (1 Week Left)",
+              body: `Your school subscription expires in 7 days on ${expiryDateStr}. Tap to manage subscription.`,
+              type: "SUBSCRIPTION_REMINDER",
+              email: admin.email,
+              data: { url: "/admin/subscription", route: "subscription" },
+            });
+          } catch {}
+        })();
+      }
+
+      results.push({ schoolId: school.id, status: "7_DAYS_ALERT_SENT" });
+    }
+  }
+
+  if (updated) {
+    writeDB(db);
+  }
+
+  return { success: true, processed: results };
+}
+

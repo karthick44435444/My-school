@@ -66,6 +66,10 @@ export async function POST(req: NextRequest) {
         schoolDisplayName: school?.displayName || null,
         schoolLogo: school?.logoUrl || null,
         themeColor: school?.themeColor || "#6366F1",
+        plan: school?.plan || "OFFER_MONTHLY",
+        planStatus: school?.planStatus || "ACTIVE",
+        planExpiresAt: school?.planExpiresAt || null,
+        isSubscriptionExpired: school ? (school.planStatus === "EXPIRED" || (school.planExpiresAt ? new Date(school.planExpiresAt).getTime() <= Date.now() : false)) : false,
         childrenIds,
       },
     });

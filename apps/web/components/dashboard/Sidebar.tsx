@@ -3,6 +3,8 @@
 import { formatPersonName, toTitleCase } from "@/lib/utils";
 
 import PushRegistrar from "@/components/shared/PushRegistrar";
+import SubscriptionExpiredBlocker from "@/components/shared/SubscriptionExpiredBlocker";
+import { clearAuthCache } from "@/hooks/useAuth";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +14,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, Users, GraduationCap, UserPlus, BookOpen,
   ClipboardList, Megaphone, School, Calendar, BarChart3, FileText, Bell,
-  X, Loader2, MapPin, Mail, Phone, Edit3, Building2, Sparkles, Menu
+  X, Loader2, MapPin, Mail, Phone, Edit3, Building2, Sparkles, Menu, CreditCard
 } from "lucide-react";
 
 interface SidebarProps {
@@ -26,6 +28,10 @@ interface SidebarProps {
     themeColor?: string;
     schoolLogo?: string | null;
     photoUrl?: string | null;
+    plan?: string;
+    planStatus?: string;
+    planExpiresAt?: string | null;
+    isSubscriptionExpired?: boolean;
   };
 }
 
@@ -38,6 +44,7 @@ const MENUS: Record<string, { label: string; href: string; icon: any; badgeKey?:
     { label: "Teachers", href: "/admin/teachers", icon: GraduationCap },
     { label: "Students", href: "/admin/students", icon: Users },
     { label: "Notices", href: "/admin/announcements", icon: Megaphone, badgeKey: "announcements" },
+    { label: "Subscription", href: "/admin/subscription", icon: CreditCard },
   ],
   PRINCIPAL: [
     { label: "Dashboard", href: "/principal", icon: LayoutDashboard },
@@ -125,6 +132,9 @@ export default function Sidebar({ user }: SidebarProps) {
   });
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isExpired = user.isSubscriptionExpired || (school && (school.planStatus === "EXPIRED" || (school.planExpiresAt && new Date(school.planExpiresAt).getTime() <= Date.now())));
+  const shouldBlock = isExpired && (user.role !== "ADMIN" || pathname !== "/admin/subscription");
 
   // Pre-load all routes into client cache for 0ms transitions
   useEffect(() => {
@@ -344,6 +354,17 @@ export default function Sidebar({ user }: SidebarProps) {
   return (
     <>
     <PushRegistrar userId={user?.id} />
+
+    {shouldBlock && (
+      <SubscriptionExpiredBlocker
+        role={user.role}
+        schoolName={user.schoolName}
+        onRefresh={() => {
+          clearAuthCache();
+          window.location.reload();
+        }}
+      />
+    )}
 
     {/* Mobile Top Header */}
     <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200 z-30 px-3 sm:px-4 flex items-center justify-between shadow-xs">

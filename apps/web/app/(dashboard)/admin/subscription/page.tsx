@@ -1,0 +1,410 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  CreditCard, Check, Sparkles, AlertCircle, Clock, ShieldCheck,
+  Calendar, ArrowRight, Zap, CheckCircle2, RefreshCw, Loader2, ChevronRight
+} from "lucide-react";
+import { toast } from "sonner";
+import Sidebar from "@/components/dashboard/Sidebar";
+import { useAuth, clearAuthCache } from "@/hooks/useAuth";
+import type { SubscriptionPlanInfo } from "@myschool/shared";
+
+export default function AdminSubscriptionPage() {
+  const { user, loading: authLoading } = useAuth(["ADMIN"]);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [upgradingPlanId, setUpgradingPlanId] = useState<string | null>(null);
+  const [selectedPlanToUpgrade, setSelectedPlanToUpgrade] = useState<SubscriptionPlanInfo | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    loadSubscription();
+  }, [user]);
+
+  const loadSubscription = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/subscription");
+      if (res.ok) {
+        const data = await res.json();
+        setSubscription(data.subscription);
+      } else {
+        toast.error("Failed to load subscription details");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Network error loading subscription");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpgrade = async (plan: SubscriptionPlanInfo) => {
+    try {
+      setUpgradingPlanId(plan.id);
+      const res = await fetch("/api/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: plan.id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upgrade plan");
+      }
+
+      toast.success(data.message || "Plan successfully activated!");
+      setSelectedPlanToUpgrade(null);
+      clearAuthCache();
+      await loadSubscription();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upgrade");
+    } finally {
+      setUpgradingPlanId(null);
+    }
+  };
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      </div>
+    );
+  }
+
+  const isExpired = subscription?.isExpired;
+  const daysLeft = subscription?.daysRemaining ?? 0;
+  const expiryDate = subscription?.planExpiresAt
+    ? new Date(subscription.planExpiresAt).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "--";
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      <Sidebar user={user} />
+
+      <main className="flex-1 p-4 sm:p-8 md:p-10 max-w-7xl mx-auto w-full overflow-y-auto">
+        {/* Header */}
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide uppercase bg-indigo-100 text-indigo-700">
+                Billing & Subscription
+              </span>
+              {isExpired ? (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide uppercase bg-rose-100 text-rose-700 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> Expired
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide uppercase bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Active
+                </span>
+              )}
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              School Subscription Management
+            </h1>
+            <p className="text-sm text-slate-600 mt-1">
+              Manage your plan, check renewal dates, and upgrade school capacity.
+            </p>
+          </div>
+
+          <button
+            onClick={loadSubscription}
+            disabled={loading}
+            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-indigo-600" : ""}`} />
+            Refresh Status
+          </button>
+        </div>
+
+        {/* Current Plan Overview Banner */}
+        <div
+          className={`relative rounded-3xl p-6 sm:p-8 mb-10 overflow-hidden text-white shadow-xl transition-all ${
+            isExpired
+              ? "bg-gradient-to-br from-rose-600 via-rose-700 to-rose-900"
+              : "bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900"
+          }`}
+        >
+          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-10 -top-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="max-w-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-amber-300" />
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">
+                  Current Active Plan
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+                {subscription?.currentPlan?.name || "1-Month Special Offer"}
+              </h2>
+              <p className="text-sm text-indigo-100/90 mt-2 leading-relaxed">
+                {subscription?.currentPlan?.description || "Special introductory plan with complete access for teachers, students, and parents."}
+              </p>
+
+              <div className="mt-6 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 text-xs font-semibold">
+                  <Calendar className="w-4 h-4 text-indigo-200" />
+                  <span>
+                    Valid Until: <strong className="text-white font-bold">{expiryDate}</strong>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 text-xs font-semibold">
+                  <Clock className="w-4 h-4 text-amber-300" />
+                  <span>
+                    {isExpired ? (
+                      <strong className="text-rose-200">Expired ({Math.abs(daysLeft)} days ago)</strong>
+                    ) : (
+                      <span>
+                        Remaining: <strong className="text-emerald-300 font-bold">{daysLeft} Days</strong>
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Price Pill / Action */}
+            <div className="flex flex-col items-start lg:items-end justify-center border-t lg:border-t-0 lg:border-l border-white/10 pt-4 lg:pt-0 lg:pl-8">
+              <span className="text-xs text-indigo-200 uppercase font-bold tracking-wider">
+                Current Rate
+              </span>
+              <div className="text-3xl sm:text-5xl font-black mt-1 flex items-baseline gap-1">
+                <span>₹{subscription?.currentPlan?.price ?? 99}</span>
+                <span className="text-sm font-medium text-indigo-200">
+                  /{subscription?.currentPlan?.billingInterval || "1 Month"}
+                </span>
+              </div>
+              <span className="text-xs text-indigo-200/80 mt-1">
+                Automatic 7-day, 2-day & last-day reminders enabled
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Plan Upgrade Selection */}
+        <div className="mb-6">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Choose or Extend Your Subscription
+          </h2>
+          <p className="text-sm text-slate-600 mt-1">
+            Select any plan to instantly recharge or upgrade. No hidden fees, instant activation.
+          </p>
+        </div>
+
+        {/* Plans Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mb-12">
+          {(subscription?.availablePlans || []).map((plan: SubscriptionPlanInfo) => {
+            const isCurrent = subscription?.planId === plan.id;
+            const isOffer = plan.id === "OFFER_MONTHLY";
+
+            return (
+              <motion.div
+                key={plan.id}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                className={`relative rounded-3xl bg-white p-6 sm:p-8 border flex flex-col justify-between transition-all ${
+                  plan.popular
+                    ? "border-indigo-600 ring-2 ring-indigo-600/20 shadow-xl"
+                    : isOffer
+                    ? "border-amber-400 ring-2 ring-amber-400/20 shadow-lg"
+                    : "border-slate-200 shadow-md hover:shadow-xl"
+                }`}
+              >
+                {plan.badge && (
+                  <div
+                    className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-[10px] font-black uppercase tracking-wider shadow-md ${
+                      isOffer
+                        ? "bg-gradient-to-r from-amber-500 to-orange-500"
+                        : "bg-gradient-to-r from-indigo-600 to-purple-600"
+                    }`}
+                  >
+                    {plan.badge}
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
+                    {isCurrent && !isExpired && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200">
+                        Current
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-2 mb-4 flex items-baseline gap-1">
+                    <span className="text-3xl sm:text-4xl font-black text-slate-900">
+                      ₹{plan.price.toLocaleString()}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500">
+                      /{plan.billingInterval}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-500 leading-relaxed mb-6">
+                    {plan.description}
+                  </p>
+
+                  <div className="border-t border-slate-100 my-4" />
+
+                  <ul className="space-y-2.5 mb-8">
+                    {plan.features.map((feat, fi) => (
+                      <li key={fi} className="flex items-start gap-2.5 text-xs text-slate-600">
+                        <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                        <span className="leading-tight">{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <button
+                    onClick={() => setSelectedPlanToUpgrade(plan)}
+                    disabled={upgradingPlanId !== null}
+                    className={`w-full py-3 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer ${
+                      plan.popular
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20 active:scale-95"
+                        : isOffer
+                        ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 active:scale-95"
+                        : "bg-slate-900 hover:bg-black text-white active:scale-95"
+                    }`}
+                  >
+                    {isCurrent ? (
+                      <>
+                        <Zap className="w-3.5 h-3.5" />
+                        Recharge / Extend ({plan.billingInterval})
+                      </>
+                    ) : (
+                      <>
+                        <span>Upgrade to {plan.name}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Feature Policy & Security Box */}
+        <div className="rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-base">
+                Subscription Guarantee & Expiration Rules
+              </h3>
+              <p className="text-xs text-slate-500">
+                Reliable access with proactive notifications
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-600 mt-4">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+              <strong className="block text-slate-900 font-bold mb-1">
+                🔔 3-Tier Expiration Reminders
+              </strong>
+              Admins receive automated alerts at 7 days, 2 days, and on the day of plan expiry via in-app push and email.
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+              <strong className="block text-slate-900 font-bold mb-1">
+                🔒 Data Retention & Security
+              </strong>
+              Even when a plan expires, student records, attendance, marks, and historical data remain 100% intact and restore instantly upon recharge.
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+              <strong className="block text-slate-900 font-bold mb-1">
+                ⚡ Instant Roll-over
+              </strong>
+              Upgrading or recharging before expiry adds extra days to your current remaining balance seamlessly without loss.
+            </div>
+          </div>
+        </div>
+
+        {/* Confirmation Modal */}
+        {selectedPlanToUpgrade && (
+          <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-7 h-7" />
+              </div>
+
+              <h3 className="text-xl font-black text-slate-900">
+                Confirm Plan Upgrade
+              </h3>
+              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                You are activating the <strong>{selectedPlanToUpgrade.name}</strong> for <strong>₹{selectedPlanToUpgrade.price}</strong> ({selectedPlanToUpgrade.billingInterval}).
+              </p>
+
+              <div className="my-4 p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-left text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Plan Duration:</span>
+                  <span className="font-bold text-slate-900">+{selectedPlanToUpgrade.durationDays} Days</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Amount Payable:</span>
+                  <span className="font-bold text-indigo-700 text-sm">₹{selectedPlanToUpgrade.price}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Status After Activation:</span>
+                  <span className="font-bold text-emerald-600">Active</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlanToUpgrade(null)}
+                  disabled={upgradingPlanId !== null}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpgrade(selectedPlanToUpgrade)}
+                  disabled={upgradingPlanId !== null}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
+                >
+                  {upgradingPlanId ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Activating...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Confirm & Activate
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

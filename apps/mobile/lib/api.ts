@@ -84,6 +84,10 @@ export type MobileUser = {
   section?: string;
   parentName?: string;
   phone?: string;
+  plan?: string;
+  planStatus?: string;
+  planExpiresAt?: string | null;
+  isSubscriptionExpired?: boolean;
   childrenIds?: string[];
 };
 
@@ -236,3 +240,17 @@ export async function registerPushToken(token: string, platform: string) {
 export async function testPush() {
   return api("/api/push", { method: "POST", body: { action: "test" } });
 }
+
+export async function fetchSubscription(): Promise<any> {
+  const data = await api<{ success: boolean; subscription: any }>("/api/subscription");
+  return data.subscription;
+}
+
+export async function upgradeSubscription(planId: string): Promise<any> {
+  const data = await api<{ success: boolean; message: string; subscription: any }>("/api/subscription", {
+    method: "POST",
+    body: { planId },
+  });
+  return data;
+}
+

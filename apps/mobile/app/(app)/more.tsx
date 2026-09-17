@@ -61,6 +61,13 @@ export default function MoreScreen() {
         title: "Operations & Communication",
         items: [
           {
+            icon: "card-outline",
+            label: "Subscription & Plans",
+            sub: "Active plan, expiry date & recharge/upgrade",
+            href: "/(app)/subscription",
+            color: "#6366F1",
+          },
+          {
             icon: "business",
             label: "School Profile & Settings",
             sub: "School branding, logo & contact info",
