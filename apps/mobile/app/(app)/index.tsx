@@ -1590,12 +1590,12 @@ function buildCards(
   if (role === "TEACHER") {
     return [
       {
-        key: "marks",
-        label: "Marks & Exams",
-        icon: "medal",
-        href: "/(app)/marks",
-        color: "#8B5CF6",
-        value: s("exams") ?? badges.marks,
+        key: "students",
+        label: "Students",
+        icon: "people",
+        href: "/(app)/students",
+        color: "#6366F1",
+        value: teacherStudentCount != null ? teacherStudentCount : (s("totalStudents") ?? s("students")),
       },
     ];
   }

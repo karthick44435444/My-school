@@ -46,6 +46,9 @@ export default function TopBar() {
       map["/(app)/teachers"] = "Teachers";
       map["/students"] = "Students";
       map["/(app)/students"] = "Students";
+    } else if (user?.role === "TEACHER") {
+      map["/students"] = "Students";
+      map["/(app)/students"] = "Students";
     }
     return map;
   }, [user?.role]);
