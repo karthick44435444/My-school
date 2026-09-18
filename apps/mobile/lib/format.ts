@@ -155,3 +155,28 @@ export function cleanPhone(p?: string | null): string {
   return s;
 }
 
+export function normalizeClassName(name?: string | null): string {
+  if (!name) return "";
+  return String(name).trim().toLowerCase().replace(/^class\s+/i, "");
+}
+
+export function normalizeSection(sec?: string | null): string {
+  if (!sec) return "";
+  return String(sec).trim().toLowerCase();
+}
+
+export function isSameClassAndSection(
+  clsA?: string | null,
+  secA?: string | null,
+  clsB?: string | null,
+  secB?: string | null
+): boolean {
+  const cA = normalizeClassName(clsA);
+  const cB = normalizeClassName(clsB);
+  if (cA !== cB) return false;
+  const sA = normalizeSection(secA);
+  const sB = normalizeSection(secB);
+  return !sA || !sB ? true : sA === sB;
+}
+
+

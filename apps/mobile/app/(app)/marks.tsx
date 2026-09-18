@@ -29,7 +29,7 @@ import { Badge, Button, Empty, Input, Label, Loading } from "@/components/ui";
 import { SearchBar, matchesSearch } from "@/components/SearchBar";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { Colors, spacing, radius } from "@/constants/theme";
-import { str, formatPersonName, toTitleCase, formatDateDDMMYYYY } from "@/lib/format";
+import { str, formatPersonName, toTitleCase, formatDateDDMMYYYY, isSameClassAndSection } from "@/lib/format";
 import { TAB_BAR_CLEARANCE } from "@/constants/layout";
 
 type MarkRow = {
@@ -983,14 +983,20 @@ export default function MarksScreen() {
     try {
       const [detail, usersRes] = await Promise.all([
         api<any>(`/api/exams?examId=${encodeURIComponent(exam.id)}`),
-        api<any>("/api/users/list"),
+        api<any>("/api/users/list?role=STUDENT&limit=all"),
       ]);
       const allStudents = (usersRes.users || []).filter(
         (u: any) =>
           u.role === "STUDENT" &&
-          u.className === exam.className &&
-          (!exam.section || u.section === exam.section)
+          u.isActive !== false &&
+          isSameClassAndSection(u.className, u.section, exam.className, exam.section)
       );
+      allStudents.sort((a: any, b: any) => {
+        const rA = a.rollNumber ? parseInt(a.rollNumber) || 9999 : 9999;
+        const rB = b.rollNumber ? parseInt(b.rollNumber) || 9999 : 9999;
+        if (rA !== rB) return rA - rB;
+        return (a.firstName || "").localeCompare(b.firstName || "");
+      });
       setStudents(allStudents);
 
       const mObj: Record<string, Record<string, string>> = {};
@@ -1216,14 +1222,20 @@ export default function MarksScreen() {
     try {
       const [detail, usersRes] = await Promise.all([
         api<any>(`/api/exams?examId=${encodeURIComponent(ex.id)}`),
-        api<any>("/api/users/list"),
+        api<any>("/api/users/list?role=STUDENT&limit=all"),
       ]);
       const classStudents = (usersRes.users || []).filter(
         (u: any) =>
           u.role === "STUDENT" &&
-          u.className === ex.className &&
-          (!ex.section || u.section === ex.section)
+          u.isActive !== false &&
+          isSameClassAndSection(u.className, u.section, ex.className, ex.section)
       );
+      classStudents.sort((a: any, b: any) => {
+        const rA = a.rollNumber ? parseInt(a.rollNumber) || 9999 : 9999;
+        const rB = b.rollNumber ? parseInt(b.rollNumber) || 9999 : 9999;
+        if (rA !== rB) return rA - rB;
+        return (a.firstName || "").localeCompare(b.firstName || "");
+      });
 
       const isExam = ex.type === "EXAM";
       const subs = isExam && ex.subjects?.length ? ex.subjects : [

@@ -30,7 +30,7 @@ import {
   exportExamTimetablePDF,
   downloadExamTimetableImage,
 } from "@/lib/examExportClient";
-import { formatDDMMYYYY } from "@/lib/validation";
+import { formatDDMMYYYY, isSameClassAndSection } from "@/lib/validation";
 import Pagination from "@/components/shared/Pagination";
 
 function toCap(s?: string) {
@@ -226,7 +226,7 @@ export default function TeacherExamsPage() {
   const loadInitialData = async () => {
     try {
       const [sRes, cRes] = await Promise.all([
-        fetch("/api/users/list?role=STUDENT"),
+        fetch("/api/users/list?role=STUDENT&limit=all"),
         fetch("/api/teacher-classes"),
       ]);
       if (sRes.ok) setStudents((await sRes.json()).users || []);
@@ -299,7 +299,7 @@ export default function TeacherExamsPage() {
 
   const classStudents = (className: string, section?: string) =>
     students.filter(
-      (s) => s.className === className && (!section || s.section === section)
+      (s) => isSameClassAndSection(s.className, s.section, className, section)
     );
 
   const openMarks = async (exam: any, initialSubjectId?: string) => {

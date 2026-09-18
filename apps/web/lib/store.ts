@@ -482,19 +482,23 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
             createdAt: e.createdAt ? e.createdAt.toISOString() : new Date().toISOString(),
           };
         }),
-        marks: marks.map((m: any) => ({
-          id: m.id,
-          examId: m.examId,
-          studentId: m.studentId,
-          marks: m.marks ?? 0,
-          marksObtained: m.marks ?? 0,
-          maxMarks: m.maxMarks || 100,
-          subjectId: m.subjectId || undefined,
-          grade: m.grade || undefined,
-          remarks: m.remarks || undefined,
-          enteredById: m.enteredById || undefined,
-          enteredAt: m.enteredAt ? m.enteredAt.toISOString() : new Date().toISOString(),
-        })),
+        marks: marks.map((m: any) => {
+          const markVal = Number(m.marks != null ? m.marks : (m.marksObtained != null ? m.marksObtained : 0)) || 0;
+          return {
+            id: m.id,
+            examId: m.examId,
+            studentId: m.studentId,
+            marks: markVal,
+            marksObtained: markVal,
+            maxMarks: m.maxMarks != null ? Number(m.maxMarks) : 100,
+            subjectId: m.subjectId || undefined,
+            grade: m.grade || undefined,
+            remarks: m.remarks || undefined,
+            splits: m.splits || undefined,
+            enteredById: m.enteredById || undefined,
+            enteredAt: m.enteredAt ? (typeof m.enteredAt === "string" ? m.enteredAt : m.enteredAt.toISOString()) : new Date().toISOString(),
+          };
+        }),
         notifications: notifications.map((n: any) => ({
           id: n.id,
           schoolId: n.schoolId || "",
@@ -833,24 +837,31 @@ export async function syncToPostgres(db: DB) {
     // 8. Sync Marks
     if (Array.isArray(db.marks) && db.marks.length > 0) {
       for (const m of db.marks) {
+        const markVal = Number(m.marks != null ? m.marks : (m.marksObtained != null ? m.marksObtained : 0)) || 0;
         await prisma.examMark.upsert({
           where: { id: m.id },
           create: {
             id: m.id,
             examId: m.examId,
             studentId: m.studentId,
-            marks: m.marksObtained ?? 0,
+            subjectId: m.subjectId || null,
+            marks: markVal,
+            maxMarks: m.maxMarks != null ? Number(m.maxMarks) : 100,
             grade: m.grade || null,
             remarks: m.remarks || null,
-            enteredById: m.gradedById || null,
-            enteredAt: m.gradedAt ? new Date(m.gradedAt) : new Date(),
+            splits: m.splits ? (m.splits as any) : undefined,
+            enteredById: m.enteredById || m.gradedById || null,
+            enteredAt: m.enteredAt ? new Date(m.enteredAt) : (m.gradedAt ? new Date(m.gradedAt) : new Date()),
           },
           update: {
-            marks: m.marksObtained ?? 0,
+            subjectId: m.subjectId || null,
+            marks: markVal,
+            maxMarks: m.maxMarks != null ? Number(m.maxMarks) : 100,
             grade: m.grade || null,
             remarks: m.remarks || null,
-            enteredById: m.gradedById || null,
-            enteredAt: m.gradedAt ? new Date(m.gradedAt) : new Date(),
+            splits: m.splits ? (m.splits as any) : undefined,
+            enteredById: m.enteredById || m.gradedById || null,
+            enteredAt: m.enteredAt ? new Date(m.enteredAt) : (m.gradedAt ? new Date(m.gradedAt) : new Date()),
           },
         }).catch(() => {});
       }
@@ -4592,9 +4603,9 @@ export async function deleteExam(examId: string, schoolId: string, userId?: stri
   const db = readDB() as any;
   if (!db.exams) db.exams = [];
   const exam = db.exams.find((e: any) => e.id === examId && e.schoolId === schoolId);
-  if (!exam) throw new Error("Exam not found");
+
   // Teachers can only delete their own or if class teacher
-  if (role === "TEACHER" && exam.createdById && exam.createdById !== userId) {
+  if (role === "TEACHER" && exam && exam.createdById && exam.createdById !== userId) {
     const teacherClasses = getTeacherClasses(userId!);
     const isClassTeacher = teacherClasses.some(
       (tc: any) =>
@@ -4605,7 +4616,8 @@ export async function deleteExam(examId: string, schoolId: string, userId?: stri
       throw new Error("You can only delete exams you created or manage as class teacher");
     }
   }
-  db.exams = db.exams.filter((e: any) => e.id !== examId);
+
+  db.exams = (db.exams || []).filter((e: any) => e.id !== examId);
   if (db.marks) db.marks = db.marks.filter((m: any) => m.examId !== examId);
   if (db.readReceipts) {
     db.readReceipts = db.readReceipts.filter(
@@ -4618,10 +4630,10 @@ export async function deleteExam(examId: string, schoolId: string, userId?: stri
     try {
       await prisma.examMark.deleteMany({ where: { examId } }).catch(() => {});
       await prisma.examSubject.deleteMany({ where: { examId } }).catch(() => {});
-      await prisma.exam.deleteMany({ where: { id: examId, schoolId } });
       await prisma.readReceipt.deleteMany({
         where: { OR: [{ itemId: examId }, { entityId: examId }] },
       }).catch(() => {});
+      await prisma.exam.deleteMany({ where: { id: examId, schoolId } });
     } catch (err: any) {
       console.error("[deleteExam Postgres Error]:", err?.message);
     }
@@ -4772,11 +4784,11 @@ export async function saveMarks(
         m.studentId === r.studentId &&
         (subjectId ? m.subjectId === subjectId : !m.subjectId)
     );
-    let maxMarks = Number(r.maxMarks) || exam.maxMarks;
+    let maxMarks = Number(r.maxMarks) || exam.maxMarks || 100;
     let validatedSplits: Record<string, number> | undefined = undefined;
     if (subjectId && exam.subjects) {
       const sub = exam.subjects.find((s: any) => s.id === subjectId);
-      if (sub) maxMarks = sub.maxMarks;
+      if (sub && sub.maxMarks) maxMarks = Number(sub.maxMarks);
     }
 
     let marks = Number(r.marks) || 0;
@@ -4794,11 +4806,13 @@ export async function saveMarks(
 
     marks = Math.min(maxMarks, Math.max(0, marks));
 
+    const entryId = idx >= 0 ? db.marks[idx].id : `mark_${examId}_${r.studentId}_${subjectId || "main"}`;
     const entry = {
-      id: idx >= 0 ? db.marks[idx].id : `mark_${Date.now()}_${r.studentId}_${subjectId || "main"}`,
+      id: entryId,
       examId,
       studentId: r.studentId,
       marks,
+      marksObtained: marks,
       maxMarks,
       enteredById,
       enteredAt: new Date().toISOString(),
@@ -4810,7 +4824,7 @@ export async function saveMarks(
 
     if (notify) {
       if (!db.notifications) db.notifications = [];
-      const student = db.users.find((u: any) => u.id === r.studentId);
+      const student = (db.users || []).find((u: any) => u.id === r.studentId);
       if (student) {
         const title = "Marks published";
         const body = `${exam.name}${exam.subject ? " (" + exam.subject + ")" : ""}: ${marks}/${maxMarks}`;
@@ -4826,7 +4840,7 @@ export async function saveMarks(
           createdAt: new Date().toISOString(),
         });
         if (student.parentEmail) {
-          const parent = db.users.find(
+          const parent = (db.users || []).find(
             (u: any) =>
               u.role === "PARENT" &&
               u.schoolId === student.schoolId &&
@@ -4855,11 +4869,23 @@ export async function saveMarks(
     try {
       for (const r of records) {
         const subjectId = r.subjectId;
-        const entry = db.marks.find((m: any) => m.examId === examId && m.studentId === r.studentId && (subjectId ? m.subjectId === subjectId : !m.subjectId));
+        const entry = db.marks.find(
+          (m: any) =>
+            m.examId === examId &&
+            m.studentId === r.studentId &&
+            (subjectId ? m.subjectId === subjectId : !m.subjectId)
+        );
         if (entry) {
-          await prisma.examMark.upsert({
-            where: { id: entry.id },
-            create: {
+          await prisma.examMark.deleteMany({
+            where: {
+              examId: entry.examId,
+              studentId: entry.studentId,
+              subjectId: entry.subjectId || null,
+            },
+          }).catch(() => {});
+
+          await prisma.examMark.create({
+            data: {
               id: entry.id,
               examId: entry.examId,
               studentId: entry.studentId,
@@ -4868,16 +4894,11 @@ export async function saveMarks(
               maxMarks: entry.maxMarks || 100,
               grade: entry.grade || null,
               remarks: entry.remarks || null,
+              splits: entry.splits ? (entry.splits as any) : undefined,
               enteredById: entry.enteredById || null,
               enteredAt: new Date(entry.enteredAt || Date.now()),
             },
-            update: {
-              marks: entry.marks ?? 0,
-              maxMarks: entry.maxMarks || 100,
-              grade: entry.grade || null,
-              remarks: entry.remarks || null,
-            },
-          }).catch(() => {});
+          });
         }
       }
     } catch (err: any) {
