@@ -13,8 +13,15 @@ export const metadata: Metadata = {
     "Complete multi-tenant school management platform with beautiful UI for Admin, Principal, Teachers, Students & Parents.",
   applicationName: "My School",
   icons: {
-    icon: [{ url: "/favicon.ico" }, { url: "/icon.png", type: "image/png" }],
-    apple: "/icon.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/icon.png" },
+    ],
   },
 };
 
