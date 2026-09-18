@@ -157,6 +157,15 @@ export default function Sidebar({ user }: SidebarProps) {
   useEffect(() => {
     setPendingHref(null);
     setMobileMenuOpen(false);
+    if (pathname.includes("/notifications")) {
+      setBadges((prev) => ({ ...prev, notifications: 0 }));
+    }
+    if (pathname.includes("/announcements")) {
+      setBadges((prev) => ({ ...prev, announcements: 0 }));
+    }
+    if (pathname.includes("/homework")) {
+      setBadges((prev) => ({ ...prev, homework: 0 }));
+    }
   }, [pathname]);
 
   useEffect(() => {
@@ -170,16 +179,19 @@ export default function Sidebar({ user }: SidebarProps) {
           fetch("/api/notifications"),
         ]);
         const b = bRes.ok ? await bRes.json() : {};
-        let notif = 0;
+        let notif = b.notifications || 0;
         if (nRes && nRes.ok) {
           const n = await nRes.json();
-          notif = n.unread || 0;
+          if (n.unread != null) notif = n.unread;
         }
         if (active) {
+          const isNotifPage = pathname.includes("/notifications");
+          const isAnnPage = pathname.includes("/announcements");
+          const isHwPage = pathname.includes("/homework");
           setBadges({
-            announcements: b.announcements || 0,
-            homework: b.homework || 0,
-            notifications: notif,
+            announcements: isAnnPage ? 0 : (b.announcements || 0),
+            homework: isHwPage ? 0 : (b.homework || 0),
+            notifications: isNotifPage ? 0 : notif,
           });
         }
       } catch {}
@@ -196,18 +208,19 @@ export default function Sidebar({ user }: SidebarProps) {
       if (!active) return;
       unsubSocketBadges = subscribeBadges((data) => {
         if (active && data) {
+          const isNotifPage = pathname.includes("/notifications");
+          const isAnnPage = pathname.includes("/announcements");
+          const isHwPage = pathname.includes("/homework");
           setBadges((prev) => ({
-            announcements: data.announcements !== undefined ? data.announcements : prev.announcements,
-            homework: data.homework !== undefined ? data.homework : prev.homework,
-            notifications: data.notifications !== undefined ? data.notifications : prev.notifications,
+            announcements: isAnnPage ? 0 : (data.announcements !== undefined ? data.announcements : prev.announcements),
+            homework: isHwPage ? 0 : (data.homework !== undefined ? data.homework : prev.homework),
+            notifications: isNotifPage ? 0 : (data.notifications !== undefined ? data.notifications : prev.notifications),
           }));
         }
       });
 
       unsubSocketNotifs = subscribeNewNotification(() => {
-        // Socket server emits both notification:new and badges:update,
-        // but if received, we ensure badge count is at least +1 if not already updated
-        if (active) {
+        if (active && !pathname.includes("/notifications")) {
           setBadges((prev) => ({
             ...prev,
             notifications: prev.notifications + 1,

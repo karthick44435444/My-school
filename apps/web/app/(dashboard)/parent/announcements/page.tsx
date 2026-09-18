@@ -39,11 +39,12 @@ export default function ParentAnnouncementsPage() {
         setTotal(d.total ?? items.length);
         setTotalPages(d.totalPages || 1);
         setPage(d.page || targetPage);
-        for (const a of items) {
+        const annIds = items.map((a: any) => a.id).filter(Boolean);
+        if (annIds.length > 0) {
           fetch("/api/read", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "ANNOUNCEMENT", itemId: a.id }),
+            body: JSON.stringify({ type: "ANNOUNCEMENT", itemIds: annIds }),
           }).catch(() => {});
         }
       }

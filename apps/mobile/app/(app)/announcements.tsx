@@ -136,10 +136,15 @@ export default function AnnouncementsScreen() {
         setTotalPages(data.totalPages || 1);
         setTotal(data.total || next.length);
 
-        const unseenIds = next.map((x) => x.id).filter((id) => id && !seenIdsRef.current.has(id));
-        if (unseenIds.length) {
-          unseenIds.forEach((id) => seenIdsRef.current.add(id));
-          badgesRef.current?.markAnnouncementsSeen(unseenIds);
+        const annIds = next.map((x) => x.id).filter(Boolean);
+        if (annIds.length && (targetPage === 1 || !append)) {
+          badgesRef.current?.markAnnouncementsSeen(annIds);
+        } else {
+          const unseenIds = annIds.filter((id) => !seenIdsRef.current.has(id));
+          if (unseenIds.length) {
+            unseenIds.forEach((id) => seenIdsRef.current.add(id));
+            badgesRef.current?.markAnnouncementsSeen(unseenIds);
+          }
         }
       } catch {
         if (!append) setList([]);

@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const unread = getUnreadNotificationCount(auth.userId);
+    const unread = getUnreadNotificationCount(auth.userId, auth.schoolId);
     const total = list.length;
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
     const paginated = limit > 0 ? list.slice((page - 1) * limit, page * limit) : list;
@@ -61,15 +61,15 @@ export async function POST(req: NextRequest) {
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await req.json();
     if (body.action === "readAll") {
-      markAllNotificationsRead(auth.userId);
+      await markAllNotificationsRead(auth.userId, auth.schoolId);
       const { emitBadgeUpdate } = await import("@/lib/realtime");
-      emitBadgeUpdate(auth.userId);
+      await emitBadgeUpdate(auth.userId);
       return NextResponse.json({ success: true });
     }
     if (body.id) {
-      markNotificationRead(body.id, auth.userId);
+      await markNotificationRead(body.id, auth.userId);
       const { emitNotificationRead } = await import("@/lib/realtime");
-      emitNotificationRead(auth.userId, body.id);
+      await emitNotificationRead(auth.userId, body.id);
       return NextResponse.json({ success: true });
     }
     return NextResponse.json({ error: "Invalid" }, { status: 400 });

@@ -62,7 +62,14 @@ export default function StudentNotificationsPage() {
   };
 
   useEffect(() => {
-    if (user) load(1, false);
+    if (user) {
+      load(1, false);
+      fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "readAll" }),
+      }).catch(() => {});
+    }
   }, [user]);
 
   // Real-time socket listener for incoming notifications & read status

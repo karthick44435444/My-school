@@ -5196,7 +5196,7 @@ export function getNotifications(userId: string, schoolId: string) {
     .sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 }
 
-export function markNotificationRead(id: string, userId: string) {
+export async function markNotificationRead(id: string, userId: string) {
   const db = readDB() as any;
   const n = (db.notifications || []).find((x: any) => x.id === id && x.userId === userId);
   if (n) {
@@ -5205,37 +5205,51 @@ export function markNotificationRead(id: string, userId: string) {
   }
 
   if (prisma && process.env.DATABASE_URL) {
-    prisma.notification.updateMany({
-      where: { id, userId },
-      data: { read: true, isRead: true },
-    }).catch((err: any) => console.error("[markNotificationRead Postgres Error]:", err?.message));
+    try {
+      await prisma.notification.updateMany({
+        where: { id, userId },
+        data: { read: true, isRead: true },
+      });
+    } catch (err: any) {
+      console.error("[markNotificationRead Postgres Error]:", err?.message);
+    }
   }
 
   return n;
 }
 
-export function markAllNotificationsRead(userId: string) {
+export async function markAllNotificationsRead(userId: string, schoolId?: string) {
   const db = readDB() as any;
   (db.notifications || []).forEach((n: any) => {
-    if (n.userId === userId) n.read = true;
+    if (n.userId === userId && (!schoolId || !n.schoolId || n.schoolId === schoolId)) {
+      n.read = true;
+    }
   });
   writeDB(db);
 
   if (prisma && process.env.DATABASE_URL) {
-    prisma.notification.updateMany({
-      where: { userId },
-      data: { read: true, isRead: true },
-    }).catch((err: any) => console.error("[markAllNotificationsRead Postgres Error]:", err?.message));
+    try {
+      await prisma.notification.updateMany({
+        where: {
+          userId,
+          ...(schoolId ? { OR: [{ schoolId }, { schoolId: null }] } : {}),
+        },
+        data: { read: true, isRead: true },
+      });
+    } catch (err: any) {
+      console.error("[markAllNotificationsRead Postgres Error]:", err?.message);
+    }
   }
 
   return { success: true };
 }
 
-export function getUnreadNotificationCount(userId: string) {
+export function getUnreadNotificationCount(userId: string, schoolId?: string) {
   const db = readDB() as any;
   const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
   return (db.notifications || []).filter((n: any) => {
     if (n.userId !== userId || n.read) return false;
+    if (schoolId && n.schoolId && n.schoolId !== schoolId) return false;
     if (n.createdAt) {
       const t = new Date(n.createdAt).getTime();
       if (!Number.isNaN(t) && t < cutoff) return false;
@@ -5247,20 +5261,21 @@ export function getUnreadNotificationCount(userId: string) {
 export function markAsRead(userId: string, type: "ANNOUNCEMENT" | "HOMEWORK" | "MARKS" | string, itemId: string) {
   const db = readDB() as any;
   if (!db.readReceipts) db.readReceipts = [];
+  const strId = String(itemId);
   const exists = db.readReceipts.find(
     (r: any) =>
       r.userId === userId &&
       (r.type === type || r.targetType === type) &&
-      (r.itemId === itemId || r.targetId === itemId)
+      (r.itemId === strId || r.targetId === strId)
   );
   if (exists) return exists;
   const rec = {
     id: `rr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     userId,
     type,
-    itemId,
+    itemId: strId,
     targetType: type,
-    targetId: itemId,
+    targetId: strId,
     readAt: new Date().toISOString(),
   };
   db.readReceipts.push(rec);
@@ -5272,15 +5287,78 @@ export function markAsRead(userId: string, type: "ANNOUNCEMENT" | "HOMEWORK" | "
         id: rec.id,
         userId,
         type,
-        itemId,
+        itemId: strId,
         entityType: type,
-        entityId: itemId,
+        entityId: strId,
         readAt: new Date(),
       },
     }).catch((err: any) => console.error("[markAsRead Postgres Error]:", err?.message));
   }
 
   return rec;
+}
+
+export async function markItemsAsRead(
+  userId: string,
+  type: "ANNOUNCEMENT" | "HOMEWORK" | "MARKS" | string,
+  itemIds: string[]
+) {
+  if (!itemIds || !itemIds.length) return [];
+  const db = readDB() as any;
+  if (!db.readReceipts) db.readReceipts = [];
+
+  const newRecords: any[] = [];
+  const nowStr = new Date().toISOString();
+  const now = new Date();
+
+  for (const rawId of itemIds) {
+    const itemId = String(rawId);
+    if (!itemId) continue;
+    const exists = db.readReceipts.some(
+      (r: any) =>
+        r.userId === userId &&
+        (r.type === type || r.targetType === type) &&
+        (r.itemId === itemId || r.targetId === itemId)
+    );
+    if (!exists) {
+      const rec = {
+        id: `rr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        userId,
+        type,
+        itemId,
+        targetType: type,
+        targetId: itemId,
+        readAt: nowStr,
+      };
+      db.readReceipts.push(rec);
+      newRecords.push(rec);
+    }
+  }
+
+  if (newRecords.length > 0) {
+    writeDB(db);
+
+    if (prisma && process.env.DATABASE_URL) {
+      try {
+        await prisma.readReceipt.createMany({
+          data: newRecords.map((r) => ({
+            id: r.id,
+            userId: r.userId,
+            type: r.type,
+            itemId: r.itemId,
+            entityType: r.targetType,
+            entityId: r.targetId,
+            readAt: now,
+          })),
+          skipDuplicates: true,
+        });
+      } catch (err: any) {
+        console.error("[markItemsAsRead Postgres Error]:", err?.message);
+      }
+    }
+  }
+
+  return newRecords;
 }
 
 export function getReadReceipts(userId: string) {
@@ -5307,10 +5385,11 @@ export function getUnreadCounts(userId: string, schoolId: string, role: string, 
       .map((r: any) => r.itemId || r.targetId)
   );
 
-  // Notifications (filtered for last 30 days)
+  // Notifications (filtered for last 30 days and matching current school)
   const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const notificationsCount = (db.notifications || []).filter((n: any) => {
     if (n.userId !== userId || n.read) return false;
+    if (schoolId && n.schoolId && n.schoolId !== schoolId) return false;
     if (n.createdAt) {
       const t = new Date(n.createdAt).getTime();
       if (!Number.isNaN(t) && t < cutoff) return false;

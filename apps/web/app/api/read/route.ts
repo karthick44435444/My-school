@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
-import { getReadReceipts, markAsRead } from "@/lib/store";
+import { getReadReceipts, markAsRead, markItemsAsRead } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +23,10 @@ export async function POST(req: NextRequest) {
 
     // 1. Bulk by itemIds: { type: "HOMEWORK", itemIds: ["id1", "id2"] }
     if (body.type && Array.isArray(body.itemIds)) {
-      for (const id of body.itemIds) {
-        if (id) markAsRead(auth.userId, body.type, String(id));
-      }
+      await markItemsAsRead(auth.userId, body.type, body.itemIds.map(String));
       try {
         const { emitBadgeUpdate } = await import("@/lib/realtime");
-        emitBadgeUpdate(auth.userId);
+        await emitBadgeUpdate(auth.userId);
       } catch {}
       return NextResponse.json({ success: true });
     }
@@ -42,7 +40,7 @@ export async function POST(req: NextRequest) {
       }
       try {
         const { emitBadgeUpdate } = await import("@/lib/realtime");
-        emitBadgeUpdate(auth.userId);
+        await emitBadgeUpdate(auth.userId);
       } catch {}
       return NextResponse.json({ success: true });
     }
@@ -52,7 +50,7 @@ export async function POST(req: NextRequest) {
       markAsRead(auth.userId, body.type, String(body.itemId || body.id));
       try {
         const { emitBadgeUpdate } = await import("@/lib/realtime");
-        emitBadgeUpdate(auth.userId);
+        await emitBadgeUpdate(auth.userId);
       } catch {}
       return NextResponse.json({ success: true });
     }
