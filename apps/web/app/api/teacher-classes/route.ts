@@ -56,10 +56,14 @@ export async function GET(req: NextRequest) {
     const total = students.length;
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
     const paginated = limit > 0 ? students.slice((page - 1) * limit, page * limit) : students;
+    const sanitizedStudents = paginated.map((s: any) => ({
+      ...s,
+      photoUrl: s.photoUrl || s.avatar || s.photo || s.image || null,
+    }));
 
     return NextResponse.json({
       success: true,
-      students: paginated,
+      students: sanitizedStudents,
       total,
       count: total,
       page,

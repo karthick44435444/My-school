@@ -76,11 +76,15 @@ export async function GET(req: NextRequest) {
     const total = teachersList.length;
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
     const paginated = limit > 0 ? teachersList.slice((page - 1) * limit, page * limit) : teachersList;
+    const sanitizedTeachers = paginated.map((t: any) => ({
+      ...t,
+      photoUrl: t.photoUrl || t.avatar || t.photo || t.image || null,
+    }));
 
     return NextResponse.json({
       success: true,
       ...report,
-      teachers: paginated,
+      teachers: sanitizedTeachers,
       total,
       count: total,
       page,

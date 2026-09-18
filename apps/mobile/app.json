@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "My School",
-    "slug": "myschool",
+    "slug": "karthicj",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.myschool.app"
+      "bundleIdentifier": "com.myschool.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -48,8 +51,9 @@
       },
       "apiUrl": "https://myschool-web-had7.onrender.com",
       "eas": {
-        "projectId": "1c8713c2-a03d-4e59-b9e7-4f5073ba544a"
+        "projectId": "1f2602b9-fc02-42a1-9323-5c8f22be9885"
       }
-    }
+    },
+    "owner": "schoolvajo"
   }
 }

@@ -131,6 +131,13 @@ export async function POST(req: NextRequest) {
     fs.writeFileSync(path.join(uploadDir, filename), buffer);
     fs.writeFileSync(path.join(dataDir, filename), buffer);
 
+    try {
+      const { saveUploadedFile } = await import("@/lib/store");
+      saveUploadedFile(filename, buffer, file.type || undefined, file.size || buffer.length);
+    } catch {
+      /* ignore */
+    }
+
     const url = `/uploads/${filename}`;
     return NextResponse.json({ success: true, url, name: file.name || filename });
   } catch (error: any) {

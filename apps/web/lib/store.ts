@@ -231,6 +231,14 @@ export interface StoredOtp {
   createdAt: string;
 }
 
+export interface StoredUploadedFile {
+  filename: string;
+  data: string; // base64
+  mimeType?: string;
+  size?: number;
+  createdAt?: string;
+}
+
 export interface DB {
   schools: StoredSchool[];
   users: StoredUser[];
@@ -246,6 +254,7 @@ export interface DB {
   pushTokens?: StoredPushToken[];
   readReceipts?: StoredReadReceipt[];
   otps?: StoredOtp[];
+  uploadedFiles?: StoredUploadedFile[];
 }
 
 function ensureDataDir() {
@@ -5875,4 +5884,45 @@ export async function checkAndDispatchExpiryNotifications() {
 
   return { success: true, processed: results };
 }
+
+// ====================== UPLOADED FILES STORE ======================
+
+export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: string, size?: number) {
+  const db = readDB();
+  if (!Array.isArray(db.uploadedFiles)) db.uploadedFiles = [];
+  const base64 = buffer.toString("base64");
+  const cleanName = path.basename(filename);
+  const existingIdx = db.uploadedFiles.findIndex((f) => f.filename === cleanName);
+  const entry: StoredUploadedFile = {
+    filename: cleanName,
+    data: base64,
+    mimeType: mimeType || "application/octet-stream",
+    size: size || buffer.length,
+    createdAt: new Date().toISOString(),
+  };
+
+  if (existingIdx >= 0) {
+    db.uploadedFiles[existingIdx] = entry;
+  } else {
+    db.uploadedFiles.push(entry);
+    // Keep max 500 uploaded files in database storage
+    if (db.uploadedFiles.length > 500) {
+      db.uploadedFiles = db.uploadedFiles.slice(-500);
+    }
+  }
+
+  writeDB(db);
+}
+
+export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: string } | null {
+  const db = readDB();
+  const cleanName = path.basename(filename);
+  const file = (db.uploadedFiles || []).find((f) => f.filename === cleanName);
+  if (!file || !file.data) return null;
+  return {
+    buffer: Buffer.from(file.data, "base64"),
+    mimeType: file.mimeType || "application/octet-stream",
+  };
+}
+
 

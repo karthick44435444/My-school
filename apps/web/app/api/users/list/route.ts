@@ -104,10 +104,14 @@ export async function GET(req: NextRequest) {
     const total = filtered.length;
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
     const paginated = limit > 0 ? filtered.slice((page - 1) * limit, page * limit) : filtered;
+    const sanitizedUsers = paginated.map((u: any) => ({
+      ...u,
+      photoUrl: u.photoUrl || u.avatar || u.photo || u.image || null,
+    }));
 
     return NextResponse.json({
       success: true,
-      users: paginated,
+      users: sanitizedUsers,
       total,
       count: total,
       page,
