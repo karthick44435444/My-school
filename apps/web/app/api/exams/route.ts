@@ -199,12 +199,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (body.action === "marks") {
-      saveMarks(body.examId, body.records || [], auth.userId, { notify: false });
+      await saveMarks(body.examId, body.records || [], auth.userId, { notify: false });
       return NextResponse.json({ success: true });
     }
 
     if (body.action === "publish") {
-      const result = publishExam(body.examId, auth.schoolId, auth.userId);
+      const result = await publishExam(body.examId, auth.schoolId, auth.userId);
       // Push notify students and parents
       try {
         const studentIdsToNotify = result.changedStudentIds?.length
@@ -269,7 +269,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "name and className required" }, { status: 400 });
     }
 
-    const exam = createExam({
+    const exam = await createExam({
       schoolId: auth.schoolId,
       name: body.name,
       className: body.className,
@@ -404,7 +404,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    const exam = updateExam(
+    const exam = await updateExam(
       body.id,
       auth.schoolId,
       {

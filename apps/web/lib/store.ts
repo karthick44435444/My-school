@@ -168,6 +168,8 @@ export interface StoredExam {
   examType?: string;
   subjects?: any[];
   published?: boolean;
+  publishedAt?: string;
+  publishedSnapshot?: any;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -450,27 +452,37 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
         id: e.id,
         schoolId: e.schoolId,
         name: e.name,
+        type: e.type || "EXAM",
         examType: e.type || "EXAM",
         className: e.className || undefined,
         section: e.section || undefined,
-        subject: (e.subjects as any)?.[0]?.subject || "",
+        subject: e.type === "TEST" ? ((e.subjects as any)?.[0]?.subject || (e.subjects as any)?.[0]?.subjectName || "") : undefined,
         subjectId: (e.subjects as any)?.[0]?.subjectId || undefined,
+        subjects: Array.isArray(e.subjects) ? e.subjects : undefined,
         maxMarks: e.maxMarks || 100,
         passMarks: e.passMarks || 35,
         date: typeof e.date === "string" ? e.date : (e.startDate || ""),
+        dateFrom: e.dateFrom || (typeof e.date === "string" ? e.date : (e.startDate || "")),
+        dateTo: e.dateTo || (typeof e.date === "string" ? e.date : (e.startDate || "")),
+        published: !!e.published,
+        publishedAt: e.publishedAt ? e.publishedAt.toISOString() : undefined,
+        publishedSnapshot: e.publishedSnapshot || undefined,
         description: e.description || undefined,
         createdById: e.createdById,
-        createdAt: e.createdAt.toISOString(),
+        createdAt: e.createdAt ? e.createdAt.toISOString() : new Date().toISOString(),
       })),
       marks: marks.map((m: any) => ({
         id: m.id,
         examId: m.examId,
         studentId: m.studentId,
+        marks: m.marks ?? 0,
         marksObtained: m.marks ?? 0,
+        maxMarks: m.maxMarks || 100,
+        subjectId: m.subjectId || undefined,
         grade: m.grade || undefined,
         remarks: m.remarks || undefined,
-        gradedById: m.enteredById || undefined,
-        gradedAt: m.enteredAt ? m.enteredAt.toISOString() : new Date().toISOString(),
+        enteredById: m.enteredById || undefined,
+        enteredAt: m.enteredAt ? m.enteredAt.toISOString() : new Date().toISOString(),
       })),
       notifications: notifications.map((n: any) => ({
         id: n.id,
@@ -760,25 +772,37 @@ export async function syncToPostgres(db: DB) {
             id: e.id,
             schoolId: e.schoolId,
             name: e.name,
-            type: e.examType || "EXAM",
+            type: e.type || e.examType || "EXAM",
             className: e.className || null,
             section: e.section || null,
             maxMarks: e.maxMarks || 100,
             passMarks: e.passMarks || 35,
             date: e.date || null,
+            dateFrom: e.dateFrom || e.date || null,
+            dateTo: e.dateTo || e.date || null,
+            subjects: e.subjects ? (e.subjects as any) : (e.subject ? [{ subject: e.subject, maxMarks: e.maxMarks, passMarks: e.passMarks }] as any : undefined),
             description: e.description || null,
+            published: !!e.published,
+            publishedAt: e.publishedAt ? new Date(e.publishedAt) : null,
+            publishedSnapshot: e.publishedSnapshot ? (e.publishedSnapshot as any) : undefined,
             createdById: e.createdById,
             createdAt: e.createdAt ? new Date(e.createdAt) : new Date(),
           },
           update: {
             name: e.name,
-            type: e.examType || "EXAM",
+            type: e.type || e.examType || "EXAM",
             className: e.className || null,
             section: e.section || null,
             maxMarks: e.maxMarks || 100,
             passMarks: e.passMarks || 35,
             date: e.date || null,
+            dateFrom: e.dateFrom || e.date || null,
+            dateTo: e.dateTo || e.date || null,
+            subjects: e.subjects ? (e.subjects as any) : (e.subject ? [{ subject: e.subject, maxMarks: e.maxMarks, passMarks: e.passMarks }] as any : undefined),
             description: e.description || null,
+            published: !!e.published,
+            publishedAt: e.publishedAt ? new Date(e.publishedAt) : null,
+            publishedSnapshot: e.publishedSnapshot ? (e.publishedSnapshot as any) : undefined,
           },
         }).catch(() => {});
       }
@@ -4295,7 +4319,7 @@ export function getTeacherMappings(teacherId: string) {
 
 // ====================== EXAMS & MARKS ======================
 
-export function createExam(data: {
+export async function createExam(data: {
   schoolId: string;
   name: string;
   className?: string;
@@ -4356,6 +4380,47 @@ export function createExam(data: {
   };
   db.exams.push(exam);
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    try {
+      await prisma.exam.upsert({
+        where: { id: exam.id },
+        create: {
+          id: exam.id,
+          schoolId: exam.schoolId,
+          name: exam.name,
+          type: exam.type,
+          className: exam.className || null,
+          section: exam.section || null,
+          maxMarks: exam.maxMarks || 100,
+          passMarks: exam.passMarks || 35,
+          date: exam.date || null,
+          dateFrom: exam.dateFrom || null,
+          dateTo: exam.dateTo || null,
+          subjects: exam.subjects ? (exam.subjects as any) : (exam.subject ? [{ subject: exam.subject, maxMarks: exam.maxMarks, passMarks: exam.passMarks }] as any : undefined),
+          description: null,
+          published: !!exam.published,
+          createdById: exam.createdById,
+          createdAt: new Date(exam.createdAt),
+        },
+        update: {
+          name: exam.name,
+          type: exam.type,
+          className: exam.className || null,
+          section: exam.section || null,
+          maxMarks: exam.maxMarks || 100,
+          passMarks: exam.passMarks || 35,
+          date: exam.date || null,
+          dateFrom: exam.dateFrom || null,
+          dateTo: exam.dateTo || null,
+          subjects: exam.subjects ? (exam.subjects as any) : (exam.subject ? [{ subject: exam.subject, maxMarks: exam.maxMarks, passMarks: exam.passMarks }] as any : undefined),
+          published: !!exam.published,
+        },
+      });
+    } catch (err: any) {
+      console.error("[createExam Postgres Error]:", err?.message);
+    }
+  }
 
   // Timetable-style notification for EXAM create (students + parents in class)
   if (type === "EXAM" && subjects.length) {
@@ -4505,9 +4570,17 @@ export async function deleteExam(examId: string, schoolId: string, userId?: stri
   if (!db.exams) db.exams = [];
   const exam = db.exams.find((e: any) => e.id === examId && e.schoolId === schoolId);
   if (!exam) throw new Error("Exam not found");
-  // Teachers can only delete their own
-  if (role === "TEACHER" && exam.createdById !== userId) {
-    throw new Error("You can only delete exams you created");
+  // Teachers can only delete their own or if class teacher
+  if (role === "TEACHER" && exam.createdById && exam.createdById !== userId) {
+    const teacherClasses = getTeacherClasses(userId!);
+    const isClassTeacher = teacherClasses.some(
+      (tc: any) =>
+        isSameClassAndSection(tc.className, tc.section, exam.className, exam.section) &&
+        tc.role === "CLASS_TEACHER"
+    );
+    if (!isClassTeacher) {
+      throw new Error("You can only delete exams you created or manage as class teacher");
+    }
   }
   db.exams = db.exams.filter((e: any) => e.id !== examId);
   if (db.marks) db.marks = db.marks.filter((m: any) => m.examId !== examId);
@@ -4534,7 +4607,7 @@ export async function deleteExam(examId: string, schoolId: string, userId?: stri
   return { success: true };
 }
 
-export function updateExam(
+export async function updateExam(
   examId: string,
   schoolId: string,
   data: Partial<{
@@ -4605,10 +4678,52 @@ export function updateExam(
   }
 
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    try {
+      await prisma.exam.upsert({
+        where: { id: exam.id },
+        create: {
+          id: exam.id,
+          schoolId: exam.schoolId,
+          name: exam.name,
+          type: exam.type,
+          className: exam.className || null,
+          section: exam.section || null,
+          maxMarks: exam.maxMarks || 100,
+          passMarks: exam.passMarks || 35,
+          date: exam.date || null,
+          dateFrom: exam.dateFrom || null,
+          dateTo: exam.dateTo || null,
+          subjects: exam.subjects ? (exam.subjects as any) : (exam.subject ? [{ subject: exam.subject, maxMarks: exam.maxMarks, passMarks: exam.passMarks }] as any : undefined),
+          description: null,
+          published: !!exam.published,
+          createdById: exam.createdById,
+          createdAt: new Date(exam.createdAt || Date.now()),
+        },
+        update: {
+          name: exam.name,
+          type: exam.type,
+          className: exam.className || null,
+          section: exam.section || null,
+          maxMarks: exam.maxMarks || 100,
+          passMarks: exam.passMarks || 35,
+          date: exam.date || null,
+          dateFrom: exam.dateFrom || null,
+          dateTo: exam.dateTo || null,
+          subjects: exam.subjects ? (exam.subjects as any) : (exam.subject ? [{ subject: exam.subject, maxMarks: exam.maxMarks, passMarks: exam.passMarks }] as any : undefined),
+          published: !!exam.published,
+        },
+      });
+    } catch (err: any) {
+      console.error("[updateExam Postgres Error]:", err?.message);
+    }
+  }
+
   return exam;
 }
 
-export function saveMarks(
+export async function saveMarks(
   examId: string,
   records: {
     studentId: string;
@@ -4712,11 +4827,46 @@ export function saveMarks(
     }
   }
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    try {
+      for (const r of records) {
+        const subjectId = r.subjectId;
+        const entry = db.marks.find((m: any) => m.examId === examId && m.studentId === r.studentId && (subjectId ? m.subjectId === subjectId : !m.subjectId));
+        if (entry) {
+          await prisma.examMark.upsert({
+            where: { id: entry.id },
+            create: {
+              id: entry.id,
+              examId: entry.examId,
+              studentId: entry.studentId,
+              subjectId: entry.subjectId || null,
+              marks: entry.marks ?? 0,
+              maxMarks: entry.maxMarks || 100,
+              grade: entry.grade || null,
+              remarks: entry.remarks || null,
+              enteredById: entry.enteredById || null,
+              enteredAt: new Date(entry.enteredAt || Date.now()),
+            },
+            update: {
+              marks: entry.marks ?? 0,
+              maxMarks: entry.maxMarks || 100,
+              grade: entry.grade || null,
+              remarks: entry.remarks || null,
+            },
+          }).catch(() => {});
+        }
+      }
+    } catch (err: any) {
+      console.error("[saveMarks Postgres Error]:", err?.message);
+    }
+  }
+
   return { success: true, count: records.length };
 }
 
 /** Class teacher publishes exam marks → notify students & parents */
-export function publishExam(examId: string, schoolId: string, userId: string) {
+export async function publishExam(examId: string, schoolId: string, userId: string) {
   const db = readDB() as any;
   const exam = (db.exams || []).find((e: any) => e.id === examId && e.schoolId === schoolId);
   if (!exam) throw new Error("Exam not found");
@@ -4749,6 +4899,21 @@ export function publishExam(examId: string, schoolId: string, userId: string) {
   exam.publishedSnapshot = prevSnap;
   exam.publishedAt = new Date().toISOString();
   writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL) {
+    try {
+      await prisma.exam.update({
+        where: { id: examId },
+        data: {
+          published: true,
+          publishedAt: new Date(exam.publishedAt),
+          publishedSnapshot: exam.publishedSnapshot ? (exam.publishedSnapshot as any) : undefined,
+        },
+      }).catch(() => {});
+    } catch (err: any) {
+      console.error("[publishExam Postgres Error]:", err?.message);
+    }
+  }
 
   if (!db.notifications) db.notifications = [];
   const targetStudentIds = changedIds.length > 0 ? changedIds : Array.from(byStudent.keys());
