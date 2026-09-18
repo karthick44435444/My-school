@@ -24,7 +24,7 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { api, getApiBase, resolveMediaUrlSync } from "@/lib/api";
+import { api, getApiBase, getApiBaseSync, resolveMediaUrlSync } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge, Button, Empty, Input, Label, Loading } from "@/components/ui";
 import { SafeAvatar } from "@/components/ChildAvatar";
@@ -95,7 +95,7 @@ export default function StudentsScreen() {
   const [errors, setErrors] = useState<FieldErr>({});
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [showDob, setShowDob] = useState(false);
   const [confirmDel, setConfirmDel] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);

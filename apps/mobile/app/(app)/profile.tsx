@@ -127,7 +127,7 @@ export default function ProfileScreen() {
   const [logoutConfirm, setLogoutConfirm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [fieldErr, setFieldErr] = useState<{ firstName?: string; email?: string; phone?: string }>({});
   const fade = useRef(new Animated.Value(0)).current;
 

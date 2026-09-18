@@ -76,7 +76,7 @@ export default function HomeScreen() {
   const [stats, setStats] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkLoading, setCheckLoading] = useState(false);
   const [teacherClasses, setTeacherClasses] = useState<any[]>([]);
@@ -1441,6 +1441,16 @@ export default function HomeScreen() {
                       <Text style={styles.studentHwDesc} numberOfLines={2}>
                         {h.description}
                       </Text>
+                    ) : null}
+                    {(h.attachments?.length > 0 || h.attachmentUrl) ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}>
+                        <Ionicons name="attach" size={13} color={color} />
+                        <Text style={{ fontSize: 11, fontWeight: "700", color }}>
+                          {Array.isArray(h.attachments) && h.attachments.length > 1
+                            ? `${h.attachments.length} Attachments`
+                            : "Attachment included"}
+                        </Text>
+                      </View>
                     ) : null}
                     <View style={styles.cardBottomNavRow}>
                       <Text style={[styles.cardNavText, { color }]}>View task details</Text>

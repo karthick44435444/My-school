@@ -95,22 +95,24 @@ export type MobileUser = {
 /** Turn relative /uploads/... into absolute URL for <Image> */
 export async function resolveMediaUrl(url?: string | null): Promise<string | undefined> {
   if (!url) return undefined;
-  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
-    return url;
+  let u = String(url).trim().replace(/\\/g, "/");
+  if (!u) return undefined;
+  if (/^https?:\/\//i.test(u) || u.startsWith("data:") || u.startsWith("file:") || u.startsWith("blob:")) {
+    return u;
   }
-  const base = await getApiBase();
-  return `${base}${url.startsWith("/") ? url : `/${url}`}`;
+  const base = ((await getApiBase()) || DEFAULT_API).replace(/\/$/, "");
+  if (u.startsWith("/")) return `${base}${u}`;
+  return `${base}/${u}`;
 }
 
 export function resolveMediaUrlSync(url: string | null | undefined, apiBase?: string): string | undefined {
   if (!url) return undefined;
   let u = String(url).trim().replace(/\\/g, "/");
   if (!u) return undefined;
-  if (/^https?:\/\//i.test(u)) return u;
-  if (u.startsWith("data:") || u.startsWith("file:") || u.startsWith("blob:")) return u;
-  const base = (apiBase || getApiBaseSync() || "").replace(/\/$/, "");
-  if (!base) return u.startsWith("/") ? u : `/${u}`;
-  // /uploads/... or uploads/...
+  if (/^https?:\/\//i.test(u) || u.startsWith("data:") || u.startsWith("file:") || u.startsWith("blob:")) {
+    return u;
+  }
+  const base = (apiBase || getApiBaseSync() || DEFAULT_API).replace(/\/$/, "");
   if (u.startsWith("/")) return `${base}${u}`;
   return `${base}/${u}`;
 }

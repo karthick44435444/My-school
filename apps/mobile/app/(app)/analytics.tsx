@@ -14,7 +14,7 @@ import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
-import { api, getApiBase, getToken } from "@/lib/api";
+import { api, getApiBase, getApiBaseSync, getToken } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { SafeAvatar } from "@/components/ChildAvatar";
 import { InfoModal } from "@/components/InfoModal";
@@ -55,7 +55,7 @@ export default function AnalyticsScreen() {
   const [updating, setUpdating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [exportingFormat, setExportingFormat] = useState<"excel" | "pdf" | null>(null);
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [classes, setClasses] = useState<any[]>([]);
   const [preset, setPreset] = useState<"today" | "yesterday" | "last5" | "last30" | "custom">("today");
   const [from, setFrom] = useState(() => fmtDate(new Date()));

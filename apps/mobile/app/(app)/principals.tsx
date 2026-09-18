@@ -16,7 +16,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { api, getApiBase, getToken, resolveMediaUrlSync } from "@/lib/api";
+import { api, getApiBase, getApiBaseSync, getToken, resolveMediaUrlSync } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { Button, Empty, Input, Label, Loading } from "@/components/ui";
@@ -57,7 +57,7 @@ export default function PrincipalsScreen() {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [confirmDel, setConfirmDel] = useState<any>(null);
   const [detail, setDetail] = useState<any>(null);
   const [credentials, setCredentials] = useState<Credentials | null>(null);

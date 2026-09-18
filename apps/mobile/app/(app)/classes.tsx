@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { api, getApiBase } from "@/lib/api";
+import { api, getApiBase, getApiBaseSync } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { Button, Empty, Input, Label, Loading } from "@/components/ui";
@@ -42,7 +42,7 @@ export default function ClassesScreen() {
   const [q, setQ] = useState("");
   const qRef = useRef("");
   qRef.current = q;
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
 
   // Sub-forms state (class creation, editing, mapping)
   const [formModal, setFormModal] = useState<

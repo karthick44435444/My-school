@@ -22,7 +22,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as MediaLibrary from "expo-media-library";
-import { api, getApiBase, getToken, resolveMediaUrlSync } from "@/lib/api";
+import { api, getApiBase, getApiBaseSync, getToken, resolveMediaUrlSync } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useBadges } from "@/hooks/useBadges";
 import { useToast } from "@/hooks/useToast";
@@ -50,7 +50,7 @@ type HW = {
 
 function isImageUrl(url?: string): boolean {
   if (!url) return false;
-  const clean = url.split("?")[0].toLowerCase();
+  const clean = String(url).split("?")[0].replace(/\\/g, "/").toLowerCase();
   return (
     clean.endsWith(".jpg") ||
     clean.endsWith(".jpeg") ||
@@ -58,14 +58,19 @@ function isImageUrl(url?: string): boolean {
     clean.endsWith(".gif") ||
     clean.endsWith(".webp") ||
     clean.endsWith(".svg") ||
-    clean.startsWith("data:image/")
+    clean.endsWith(".bmp") ||
+    clean.endsWith(".heic") ||
+    clean.startsWith("data:image/") ||
+    clean.includes("/image/upload/") ||
+    clean.includes("/uploads/image") ||
+    clean.includes("image_")
   );
 }
 
 function getFileName(url?: string): string {
   if (!url) return "Attachment";
   try {
-    const clean = url.split("?")[0];
+    const clean = String(url).split("?")[0].replace(/\\/g, "/");
     let name = clean.split("/").pop() || "Attachment";
     name = decodeURIComponent(name);
     const rawMatch = name.match(/^(\d{10,15})_([a-z0-9]+)\.([a-z0-9]+)$/i);
@@ -108,7 +113,7 @@ export default function HomeworkScreen() {
   const [childIdx, setChildIdx] = useState(0);
   const childIdxRef = useRef(0);
   childIdxRef.current = childIdx;
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
@@ -625,38 +630,96 @@ export default function HomeworkScreen() {
                     {allAttachments.map((url, i) => {
                       const isImg = isImageUrl(url);
                       const fileName = getFileName(url);
-                      const resolved = resolveMediaUrlSync(url, apiBase);
+                      const resolved = resolveMediaUrlSync(url, apiBase) || url;
+                      const isPdf = /\.pdf(\?.*)?$/i.test(url) || fileName.toLowerCase().endsWith(".pdf");
+                      const isSheet = /\.(xls|xlsx|csv)(\?.*)?$/i.test(url);
+
+                      if (isImg) {
+                        return (
+                          <View key={i} style={styles.imageAttCard}>
+                            <Pressable
+                              onPress={() => setPreviewImage(resolved)}
+                              style={styles.imageAttThumbBox}
+                            >
+                              <ExpoImage
+                                source={{ uri: resolved }}
+                                style={styles.imageAttThumb}
+                                contentFit="cover"
+                                transition={150}
+                                cachePolicy="memory-disk"
+                              />
+                              <View style={styles.imageAttZoomIcon}>
+                                <Ionicons name="expand" size={10} color="#fff" />
+                              </View>
+                            </Pressable>
+                            <View style={styles.imageAttMeta}>
+                              <Text style={styles.imageAttTitle} numberOfLines={1}>
+                                {fileName}
+                              </Text>
+                              <Text style={styles.imageAttSub}>Image attachment</Text>
+                              <View style={styles.imageAttActionsRow}>
+                                <Pressable
+                                  onPress={() => setPreviewImage(resolved)}
+                                  style={[styles.attActionBtn, { backgroundColor: color + "15" }]}
+                                >
+                                  <Ionicons name="eye-outline" size={13} color={color} />
+                                  <Text style={[styles.attActionText, { color }]}>View</Text>
+                                </Pressable>
+                                <Pressable
+                                  onPress={() => handleDownload(url)}
+                                  style={[styles.attActionBtn, { backgroundColor: "#F1F5F9" }]}
+                                >
+                                  <Ionicons name="download-outline" size={13} color="#475569" />
+                                  <Text style={[styles.attActionText, { color: "#475569" }]}>Download</Text>
+                                </Pressable>
+                              </View>
+                            </View>
+                          </View>
+                        );
+                      }
+
                       return (
-                        <View key={i} style={styles.attRow}>
-                          <Ionicons
-                            name={isImg ? "image-outline" : "document-text-outline"}
-                            size={18}
-                            color={color}
-                          />
-                          <Text style={styles.attName} numberOfLines={1}>
-                            {fileName}
-                          </Text>
-                          <Pressable
-                            onPress={() => {
-                              const targetUrl = resolved || url;
-                              if (isImg) {
-                                setPreviewImage(targetUrl || null);
-                              } else if (targetUrl) {
-                                Linking.openURL(targetUrl).catch(() => toast.error("Could not open file"));
-                              }
-                            }}
-                            style={[styles.attActionBtn, { backgroundColor: color + "15" }]}
+                        <View key={i} style={styles.docAttCard}>
+                          <View
+                            style={[
+                              styles.docAttIconBox,
+                              { backgroundColor: isPdf ? "#FEE2E2" : isSheet ? "#DCFCE7" : color + "15" },
+                            ]}
                           >
-                            <Ionicons name="eye-outline" size={13} color={color} />
-                            <Text style={[styles.attActionText, { color }]}>View</Text>
-                          </Pressable>
-                          <Pressable
-                            onPress={() => handleDownload(url)}
-                            style={[styles.attActionBtn, { backgroundColor: "#F1F5F9" }]}
-                          >
-                            <Ionicons name="download-outline" size={13} color="#475569" />
-                            <Text style={[styles.attActionText, { color: "#475569" }]}>Download</Text>
-                          </Pressable>
+                            <Ionicons
+                              name={isPdf ? "document-text" : isSheet ? "grid" : "document-attach"}
+                              size={22}
+                              color={isPdf ? "#DC2626" : isSheet ? "#16A34A" : color}
+                            />
+                          </View>
+                          <View style={styles.docAttMeta}>
+                            <Text style={styles.docAttTitle} numberOfLines={1}>
+                              {fileName}
+                            </Text>
+                            <Text style={styles.docAttSub}>
+                              {isPdf ? "PDF Document" : isSheet ? "Spreadsheet" : "Document file"}
+                            </Text>
+                            <View style={styles.imageAttActionsRow}>
+                              <Pressable
+                                onPress={() => {
+                                  if (resolved) {
+                                    Linking.openURL(resolved).catch(() => toast.error("Could not open file"));
+                                  }
+                                }}
+                                style={[styles.attActionBtn, { backgroundColor: color + "15" }]}
+                              >
+                                <Ionicons name="open-outline" size={13} color={color} />
+                                <Text style={[styles.attActionText, { color }]}>Open</Text>
+                              </Pressable>
+                              <Pressable
+                                onPress={() => handleDownload(url)}
+                                style={[styles.attActionBtn, { backgroundColor: "#F1F5F9" }]}
+                              >
+                                <Ionicons name="download-outline" size={13} color="#475569" />
+                                <Text style={[styles.attActionText, { color: "#475569" }]}>Download</Text>
+                              </Pressable>
+                            </View>
+                          </View>
                         </View>
                       );
                     })}
@@ -803,28 +866,61 @@ export default function HomeworkScreen() {
                   {uploadingAtt ? "Uploading..." : "+ Add attachment"}
                 </Text>
               </Pressable>
-              {attachments.map((a, i) => (
-                <View
-                  key={i}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                    backgroundColor: "#F8FAFC",
-                    padding: 10,
-                    borderRadius: 10,
-                    marginBottom: 6,
-                  }}
-                >
-                  <Ionicons name="document" size={18} color={color} />
-                  <Text style={{ flex: 1, fontSize: 13, fontWeight: "600" }} numberOfLines={1}>
-                    {a.name}
-                  </Text>
-                  <Pressable onPress={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}>
-                    <Ionicons name="close-circle" size={20} color={Colors.danger} />
-                  </Pressable>
-                </View>
-              ))}
+              {attachments.map((a, i) => {
+                const isImg = isImageUrl(a.uri || a.url || a.name);
+                const resolved = a.url ? resolveMediaUrlSync(a.url, apiBase) : a.uri;
+                return (
+                  <View
+                    key={i}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 10,
+                      backgroundColor: "#F8FAFC",
+                      padding: 8,
+                      borderRadius: 12,
+                      marginBottom: 8,
+                      borderWidth: 1,
+                      borderColor: "#E2E8F0",
+                    }}
+                  >
+                    {isImg ? (
+                      <ExpoImage
+                        source={{ uri: resolved || a.uri }}
+                        style={{ width: 44, height: 44, borderRadius: 8, backgroundColor: "#E2E8F0" }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 8,
+                          backgroundColor: color + "15",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Ionicons name="document-text" size={20} color={color} />
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontWeight: "700", color: "#1E293B" }} numberOfLines={1}>
+                        {a.name}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>
+                        {isImg ? "Image attachment ready" : "Document attached"}
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                      style={{ padding: 4 }}
+                    >
+                      <Ionicons name="close-circle" size={22} color={Colors.danger} />
+                    </Pressable>
+                  </View>
+                );
+              })}
               <Button title="Create Homework" color={color} loading={saving || uploadingAtt} onPress={saveHw} />
             </ScrollView>
           </View>
@@ -943,7 +1039,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: "#F1F5F9",
-    gap: 6,
+    gap: 8,
   },
   attSectionTitle: {
     fontSize: 11,
@@ -951,6 +1047,94 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textTransform: "uppercase",
     marginBottom: 2,
+  },
+  imageAttCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    gap: 10,
+  },
+  imageAttThumbBox: {
+    width: 58,
+    height: 58,
+    borderRadius: 10,
+    backgroundColor: "#E2E8F0",
+    overflow: "hidden",
+    position: "relative",
+  },
+  imageAttThumb: {
+    width: "100%",
+    height: "100%",
+  },
+  imageAttZoomIcon: {
+    position: "absolute",
+    bottom: 3,
+    right: 3,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imageAttMeta: {
+    flex: 1,
+    minWidth: 0,
+  },
+  imageAttTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1E293B",
+  },
+  imageAttSub: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 1,
+    marginBottom: 4,
+    fontWeight: "500",
+  },
+  imageAttActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 2,
+  },
+  docAttCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    gap: 10,
+  },
+  docAttIconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  docAttMeta: {
+    flex: 1,
+    minWidth: 0,
+  },
+  docAttTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1E293B",
+  },
+  docAttSub: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 1,
+    marginBottom: 4,
+    fontWeight: "500",
   },
   attRow: {
     flexDirection: "row",

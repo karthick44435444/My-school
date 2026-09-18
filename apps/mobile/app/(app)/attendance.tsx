@@ -23,7 +23,7 @@ import { Colors, spacing, radius } from "@/constants/theme";
 import { str, formatDateDDMMYYYY, formatDateTimeDDMMYYYY, toTitleCase, getDayName } from "@/lib/format";
 import { SearchBar, matchesSearch } from "@/components/SearchBar";
 import { resolveChildren, ChildInfo } from "@/hooks/useChildren";
-import { resolveMediaUrlSync } from "@/lib/api";
+import { getApiBaseSync, resolveMediaUrlSync } from "@/lib/api";
 import { TAB_BAR_CLEARANCE } from "@/constants/layout";
 import { InfoModal } from "@/components/InfoModal";
 import { SafeAvatar } from "@/components/ChildAvatar";
@@ -100,7 +100,7 @@ function TeacherAttendance({ color }: { color: string }) {
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [infoModal, setInfoModal] = useState<{
     title: string;
     message?: string;
@@ -1616,7 +1616,7 @@ function ParentAttendance({ color }: { color: string }) {
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [apiBase, setApiBase] = useState("");
+  const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [stats, setStats] = useState({
