@@ -259,6 +259,8 @@ function ensureDataDir() {
 
 let _postgresHydrated = false;
 let _isHydrating = false;
+let _cachedDB: DB | null = null;
+let _hydrationPromise: Promise<DB | null> | null = null;
 
 function readDBFromFile(): DB {
   ensureDataDir();
@@ -282,258 +284,278 @@ function readDBFromFile(): DB {
 }
 
 export async function hydrateFromPostgres(): Promise<DB | null> {
-  if (!prisma || !process.env.DATABASE_URL || _isHydrating) return null;
-  _isHydrating = true;
-  try {
-    const schoolCount = await prisma.school.count();
-    if (schoolCount === 0) {
-      // Postgres is currently empty, seed it from local DB
-      const local = readDBFromFile();
-      if (local.schools.length > 0) {
-        await syncToPostgres(local);
-      }
-      _postgresHydrated = true;
-      return null;
-    }
-
-    // Load all records from PostgreSQL
-    const [
-      schools,
-      users,
-      classes,
-      subjects,
-      teacherClasses,
-      homeworks,
-      announcements,
-      attendances,
-      exams,
-      marks,
-      notifications,
-      pushTokens,
-      readReceipts,
-    ] = await Promise.all([
-      prisma.school.findMany({ include: { subscription: true } }),
-      prisma.user.findMany(),
-      prisma.class.findMany(),
-      prisma.subject.findMany(),
-      prisma.teacherClass.findMany(),
-      prisma.homework.findMany(),
-      prisma.announcement.findMany(),
-      prisma.attendance.findMany(),
-      prisma.exam.findMany(),
-      prisma.examMark.findMany(),
-      prisma.notification.findMany({ orderBy: { createdAt: "desc" }, take: 2000 }),
-      prisma.pushToken.findMany(),
-      prisma.readReceipt.findMany(),
-    ]);
-
-    const hydrated: DB = {
-      schools: schools.map((s: any) => {
-        const sub = s.subscription;
-        const expiresAt = sub?.endDate ? sub.endDate.toISOString() : undefined;
-        return {
-          id: s.id,
-          schoolCode: s.schoolCode,
-          name: s.name,
-          displayName: s.displayName || undefined,
-          location: s.location,
-          email: s.email,
-          phone: s.phone || undefined,
-          themeColor: s.themeColor,
-          logoUrl: s.logoUrl || undefined,
-          plan: s.plan,
-          billingCycle: s.billingCycle,
-          planExpiresAt: expiresAt,
-          planStatus: sub?.isActive === false ? "EXPIRED" : (expiresAt && new Date(expiresAt).getTime() <= Date.now() ? "EXPIRED" : "ACTIVE"),
-          createdAt: s.createdAt.toISOString(),
-        };
-      }),
-      users: users.map((u) => ({
-        id: u.id,
-        schoolId: u.schoolId,
-        schoolCode: u.schoolCode || "",
-        role: u.role as any,
-        username: u.username,
-        email: u.email,
-        passwordHash: u.passwordHash,
-        firstName: u.firstName,
-        lastName: u.lastName || undefined,
-        phone: u.phone || undefined,
-        photoUrl: u.photoUrl || undefined,
-        gender: u.gender || undefined,
-        education: u.education || undefined,
-        qualification: u.qualification || undefined,
-        teacherType: u.teacherType || undefined,
-        className: u.className || undefined,
-        section: u.section || undefined,
-        rollNumber: u.rollNumber || undefined,
-        rollNo: u.rollNo || undefined,
-        dateOfBirth: u.dateOfBirth || undefined,
-        parentEmail: u.parentEmail || undefined,
-        parentName: u.parentName || undefined,
-        childrenIds: Array.isArray(u.childrenIds) ? (u.childrenIds as string[]) : [],
-        isActive: u.isActive,
-        createdAt: u.createdAt.toISOString(),
-        createdById: u.createdById || undefined,
-      })),
-      classes: classes.map((c) => ({
-        id: c.id,
-        schoolId: c.schoolId,
-        name: c.name,
-        section: c.section,
-        classTeacherId: c.classTeacherId || undefined,
-        order: c.order,
-        isActive: c.isActive,
-        createdAt: c.createdAt.toISOString(),
-      })),
-      subjects: subjects.map((sub: any) => ({
-        id: sub.id,
-        schoolId: sub.schoolId,
-        name: sub.name,
-        code: sub.code || undefined,
-        createdAt: new Date().toISOString(),
-      })),
-      teacherClasses: teacherClasses.map((tc: any) => ({
-        id: tc.id,
-        schoolId: tc.schoolId,
-        teacherId: tc.teacherId,
-        className: tc.className,
-        section: tc.section,
-        subject: tc.subject || undefined,
-        subjectId: undefined,
-        createdAt: tc.createdAt.toISOString(),
-      })),
-      homeworks: homeworks.map((h: any) => ({
-        id: h.id,
-        schoolId: h.schoolId,
-        className: h.className,
-        section: h.section || undefined,
-        subject: h.subject || undefined,
-        title: h.title,
-        description: h.description,
-        attachmentUrl: h.attachmentUrl || undefined,
-        attachments: Array.isArray(h.attachments)
-          ? (h.attachments as string[])
-          : h.attachmentUrl
-          ? [h.attachmentUrl]
-          : [],
-        createdById: h.createdById,
-        createdByName: h.createdByName || undefined,
-        createdAt: h.createdAt.toISOString(),
-        expiresAt: h.expiresAt ? h.expiresAt.toISOString() : new Date(Date.now() + 7 * 86400000).toISOString(),
-      })),
-      announcements: announcements.map((a: any) => ({
-        id: a.id,
-        schoolId: a.schoolId,
-        title: a.title,
-        content: a.content,
-        target: a.target,
-        className: a.className || undefined,
-        section: a.section || undefined,
-        classes: a.classes || undefined,
-        createdById: a.createdById,
-        createdByName: a.createdByName || undefined,
-        createdByRole: a.createdByRole || undefined,
-        createdAt: a.createdAt.toISOString(),
-      })),
-      attendances: attendances.map((att: any) => ({
-        id: att.id,
-        schoolId: att.schoolId,
-        studentId: att.studentId || undefined,
-        teacherId: att.teacherId || undefined,
-        date: typeof att.date === "string" ? att.date : new Date(att.date).toISOString().split("T")[0],
-        status: att.status as any,
-        markedById: att.markedById || undefined,
-        remarks: att.remarks || undefined,
-        markedAt: att.markedAt.toISOString(),
-        notificationSent: att.notificationSent,
-      })),
-      exams: exams.map((e: any) => ({
-        id: e.id,
-        schoolId: e.schoolId,
-        name: e.name,
-        type: e.type || "EXAM",
-        examType: e.type || "EXAM",
-        className: e.className || undefined,
-        section: e.section || undefined,
-        subject: e.type === "TEST" ? ((e.subjects as any)?.[0]?.subject || (e.subjects as any)?.[0]?.subjectName || "") : undefined,
-        subjectId: (e.subjects as any)?.[0]?.subjectId || undefined,
-        subjects: Array.isArray(e.subjects) ? e.subjects : undefined,
-        maxMarks: e.maxMarks || 100,
-        passMarks: e.passMarks || 35,
-        date: typeof e.date === "string" ? e.date : (e.startDate || ""),
-        dateFrom: e.dateFrom || (typeof e.date === "string" ? e.date : (e.startDate || "")),
-        dateTo: e.dateTo || (typeof e.date === "string" ? e.date : (e.startDate || "")),
-        published: !!e.published,
-        publishedAt: e.publishedAt ? e.publishedAt.toISOString() : undefined,
-        publishedSnapshot: e.publishedSnapshot || undefined,
-        description: e.description || undefined,
-        createdById: e.createdById,
-        createdAt: e.createdAt ? e.createdAt.toISOString() : new Date().toISOString(),
-      })),
-      marks: marks.map((m: any) => ({
-        id: m.id,
-        examId: m.examId,
-        studentId: m.studentId,
-        marks: m.marks ?? 0,
-        marksObtained: m.marks ?? 0,
-        maxMarks: m.maxMarks || 100,
-        subjectId: m.subjectId || undefined,
-        grade: m.grade || undefined,
-        remarks: m.remarks || undefined,
-        enteredById: m.enteredById || undefined,
-        enteredAt: m.enteredAt ? m.enteredAt.toISOString() : new Date().toISOString(),
-      })),
-      notifications: notifications.map((n: any) => ({
-        id: n.id,
-        schoolId: n.schoolId || "",
-        userId: n.userId,
-        title: n.title,
-        body: n.body,
-        type: n.type as any,
-        read: n.read ?? n.isRead ?? false,
-        meta: n.meta as any,
-        createdAt: n.createdAt.toISOString(),
-      })),
-      pushTokens: pushTokens.map((pt: any) => ({
-        userId: pt.userId,
-        token: pt.token,
-        platform: pt.platform || "web",
-        updatedAt: pt.updatedAt.toISOString(),
-      })),
-      readReceipts: readReceipts.map((rr: any) => ({
-        id: rr.id,
-        userId: rr.userId,
-        type: rr.type || rr.entityType || "ANNOUNCEMENT",
-        itemId: rr.itemId || rr.entityId || "",
-        targetType: rr.entityType || rr.type || "ANNOUNCEMENT",
-        targetId: rr.entityId || rr.itemId || "",
-        readAt: rr.readAt ? (typeof rr.readAt === "string" ? rr.readAt : rr.readAt.toISOString()) : new Date().toISOString(),
-      })),
-      otps: [],
-    };
-
-    ensureDataDir();
-    fs.writeFileSync(DB_FILE, JSON.stringify(hydrated, null, 2));
-    _postgresHydrated = true;
-    return hydrated;
-  } catch (err: any) {
-    console.error("[PostgreSQL Hydration Notice]:", err?.message || err);
-    return null;
-  } finally {
-    _isHydrating = false;
+  if (!prisma || !process.env.DATABASE_URL) return null;
+  if (_isHydrating && _hydrationPromise) {
+    return _hydrationPromise;
   }
+  _isHydrating = true;
+  _hydrationPromise = (async () => {
+    try {
+      const schoolCount = await prisma.school.count();
+      if (schoolCount === 0) {
+        // Postgres is currently empty, seed it from local DB only if local DB has schools
+        const local = readDBFromFile();
+        if (local.schools.length > 0) {
+          _postgresHydrated = true;
+          await syncToPostgres(local);
+        }
+        _cachedDB = local;
+        _postgresHydrated = true;
+        return local;
+      }
+
+      // Load all records from PostgreSQL
+      const [
+        schools,
+        users,
+        classes,
+        subjects,
+        teacherClasses,
+        homeworks,
+        announcements,
+        attendances,
+        exams,
+        marks,
+        notifications,
+        pushTokens,
+        readReceipts,
+      ] = await Promise.all([
+        prisma.school.findMany({ include: { subscription: true } }),
+        prisma.user.findMany(),
+        prisma.class.findMany(),
+        prisma.subject.findMany(),
+        prisma.teacherClass.findMany(),
+        prisma.homework.findMany(),
+        prisma.announcement.findMany(),
+        prisma.attendance.findMany(),
+        prisma.exam.findMany(),
+        prisma.examMark.findMany(),
+        prisma.notification.findMany({ orderBy: { createdAt: "desc" }, take: 2000 }),
+        prisma.pushToken.findMany(),
+        prisma.readReceipt.findMany(),
+      ]);
+
+      const hydrated: DB = {
+        schools: schools.map((s: any) => {
+          const sub = s.subscription;
+          const expiresAt = sub?.endDate ? sub.endDate.toISOString() : undefined;
+          return {
+            id: s.id,
+            schoolCode: s.schoolCode,
+            name: s.name,
+            displayName: s.displayName || undefined,
+            location: s.location,
+            email: s.email,
+            phone: s.phone || undefined,
+            themeColor: s.themeColor,
+            logoUrl: s.logoUrl || undefined,
+            plan: s.plan,
+            billingCycle: s.billingCycle,
+            planExpiresAt: expiresAt,
+            planStatus: sub?.isActive === false ? "EXPIRED" : (expiresAt && new Date(expiresAt).getTime() <= Date.now() ? "EXPIRED" : "ACTIVE"),
+            createdAt: s.createdAt.toISOString(),
+          };
+        }),
+        users: users.map((u) => ({
+          id: u.id,
+          schoolId: u.schoolId,
+          schoolCode: u.schoolCode || "",
+          role: u.role as any,
+          username: u.username,
+          email: u.email,
+          passwordHash: u.passwordHash,
+          firstName: u.firstName,
+          lastName: u.lastName || undefined,
+          phone: u.phone || undefined,
+          photoUrl: u.photoUrl || undefined,
+          gender: u.gender || undefined,
+          education: u.education || undefined,
+          qualification: u.qualification || undefined,
+          teacherType: u.teacherType || undefined,
+          className: u.className || undefined,
+          section: u.section || undefined,
+          rollNumber: u.rollNumber || undefined,
+          rollNo: u.rollNo || undefined,
+          dateOfBirth: u.dateOfBirth || undefined,
+          parentEmail: u.parentEmail || undefined,
+          parentName: u.parentName || undefined,
+          childrenIds: Array.isArray(u.childrenIds) ? (u.childrenIds as string[]) : [],
+          isActive: u.isActive,
+          createdAt: u.createdAt.toISOString(),
+          createdById: u.createdById || undefined,
+        })),
+        classes: classes.map((c) => ({
+          id: c.id,
+          schoolId: c.schoolId,
+          name: c.name,
+          section: c.section,
+          classTeacherId: c.classTeacherId || undefined,
+          order: c.order,
+          isActive: c.isActive,
+          createdAt: c.createdAt.toISOString(),
+        })),
+        subjects: subjects.map((sub: any) => ({
+          id: sub.id,
+          schoolId: sub.schoolId,
+          name: sub.name,
+          code: sub.code || undefined,
+          createdAt: new Date().toISOString(),
+        })),
+        teacherClasses: teacherClasses.map((tc: any) => ({
+          id: tc.id,
+          schoolId: tc.schoolId,
+          teacherId: tc.teacherId,
+          className: tc.className,
+          section: tc.section,
+          subject: tc.subject || undefined,
+          subjectId: undefined,
+          createdAt: tc.createdAt.toISOString(),
+        })),
+        homeworks: homeworks.map((h: any) => ({
+          id: h.id,
+          schoolId: h.schoolId,
+          className: h.className,
+          section: h.section || undefined,
+          subject: h.subject || undefined,
+          title: h.title,
+          description: h.description,
+          attachmentUrl: h.attachmentUrl || undefined,
+          attachments: Array.isArray(h.attachments)
+            ? (h.attachments as string[])
+            : h.attachmentUrl
+            ? [h.attachmentUrl]
+            : [],
+          createdById: h.createdById,
+          createdByName: h.createdByName || undefined,
+          createdAt: h.createdAt.toISOString(),
+          expiresAt: h.expiresAt ? h.expiresAt.toISOString() : new Date(Date.now() + 7 * 86400000).toISOString(),
+        })),
+        announcements: announcements.map((a: any) => ({
+          id: a.id,
+          schoolId: a.schoolId,
+          title: a.title,
+          content: a.content,
+          target: a.target,
+          className: a.className || undefined,
+          section: a.section || undefined,
+          classes: a.classes || undefined,
+          createdById: a.createdById,
+          createdByName: a.createdByName || undefined,
+          createdByRole: a.createdByRole || undefined,
+          createdAt: a.createdAt.toISOString(),
+        })),
+        attendances: attendances.map((att: any) => ({
+          id: att.id,
+          schoolId: att.schoolId,
+          studentId: att.studentId || undefined,
+          teacherId: att.teacherId || undefined,
+          date: typeof att.date === "string" ? att.date : new Date(att.date).toISOString().split("T")[0],
+          status: att.status as any,
+          markedById: att.markedById || undefined,
+          remarks: att.remarks || undefined,
+          markedAt: att.markedAt.toISOString(),
+          notificationSent: att.notificationSent,
+        })),
+        exams: exams.map((e: any) => {
+          const isTest = e.type === "TEST";
+          return {
+            id: e.id,
+            schoolId: e.schoolId,
+            name: e.name,
+            type: e.type || "EXAM",
+            examType: e.type || "EXAM",
+            className: e.className || undefined,
+            section: e.section || undefined,
+            subject: isTest ? ((e.subjects as any)?.[0]?.subject || (e.subjects as any)?.[0]?.subjectName || (typeof e.subjects === "string" ? e.subjects : "") || undefined) : undefined,
+            subjectId: (e.subjects as any)?.[0]?.subjectId || undefined,
+            subjects: !isTest && Array.isArray(e.subjects) ? e.subjects : undefined,
+            maxMarks: e.maxMarks != null ? Number(e.maxMarks) : 100,
+            passMarks: e.passMarks != null ? Number(e.passMarks) : 35,
+            date: typeof e.date === "string" ? e.date : (e.startDate || ""),
+            dateFrom: e.dateFrom || (typeof e.date === "string" ? e.date : (e.startDate || "")),
+            dateTo: e.dateTo || (typeof e.date === "string" ? e.date : (e.startDate || "")),
+            published: !!e.published,
+            publishedAt: e.publishedAt ? e.publishedAt.toISOString() : undefined,
+            publishedSnapshot: e.publishedSnapshot || undefined,
+            description: e.description || undefined,
+            createdById: e.createdById,
+            createdAt: e.createdAt ? e.createdAt.toISOString() : new Date().toISOString(),
+          };
+        }),
+        marks: marks.map((m: any) => ({
+          id: m.id,
+          examId: m.examId,
+          studentId: m.studentId,
+          marks: m.marks ?? 0,
+          marksObtained: m.marks ?? 0,
+          maxMarks: m.maxMarks || 100,
+          subjectId: m.subjectId || undefined,
+          grade: m.grade || undefined,
+          remarks: m.remarks || undefined,
+          enteredById: m.enteredById || undefined,
+          enteredAt: m.enteredAt ? m.enteredAt.toISOString() : new Date().toISOString(),
+        })),
+        notifications: notifications.map((n: any) => ({
+          id: n.id,
+          schoolId: n.schoolId || "",
+          userId: n.userId,
+          title: n.title,
+          body: n.body,
+          type: n.type as any,
+          read: n.read ?? n.isRead ?? false,
+          meta: n.meta as any,
+          createdAt: n.createdAt.toISOString(),
+        })),
+        pushTokens: pushTokens.map((pt: any) => ({
+          userId: pt.userId,
+          token: pt.token,
+          platform: pt.platform || "web",
+          updatedAt: pt.updatedAt.toISOString(),
+        })),
+        readReceipts: readReceipts.map((rr: any) => ({
+          id: rr.id,
+          userId: rr.userId,
+          type: rr.type || rr.entityType || "ANNOUNCEMENT",
+          itemId: rr.itemId || rr.entityId || "",
+          targetType: rr.entityType || rr.type || "ANNOUNCEMENT",
+          targetId: rr.entityId || rr.itemId || "",
+          readAt: rr.readAt ? (typeof rr.readAt === "string" ? rr.readAt : rr.readAt.toISOString()) : new Date().toISOString(),
+        })),
+        otps: [],
+      };
+
+      ensureDataDir();
+      fs.writeFileSync(DB_FILE, JSON.stringify(hydrated, null, 2));
+      _cachedDB = hydrated;
+      _postgresHydrated = true;
+      return hydrated;
+    } catch (err: any) {
+      console.error("[PostgreSQL Hydration Notice]:", err?.message || err);
+      return null;
+    } finally {
+      _isHydrating = false;
+      _hydrationPromise = null;
+    }
+  })();
+  return _hydrationPromise;
 }
 
 export function readDB(): DB {
   if (!_postgresHydrated && process.env.DATABASE_URL && !_isHydrating) {
     hydrateFromPostgres().catch(() => {});
   }
-  return readDBFromFile();
+  if (_cachedDB) {
+    return _cachedDB;
+  }
+  const fileDB = readDBFromFile();
+  if (!_cachedDB && !_postgresHydrated) {
+    _cachedDB = fileDB;
+  }
+  return _cachedDB || fileDB;
 }
 
 export async function syncToPostgres(db: DB) {
-  if (!prisma || !process.env.DATABASE_URL) return;
+  if (!prisma || !process.env.DATABASE_URL || !_postgresHydrated) return;
   try {
     // 1. Sync Schools
     if (Array.isArray(db.schools) && db.schools.length > 0) {
@@ -947,9 +969,10 @@ export async function syncToPostgres(db: DB) {
 }
 
 export function writeDB(db: DB) {
+  _cachedDB = db;
   ensureDataDir();
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
-  if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL && _postgresHydrated) {
     syncToPostgres(db).catch(() => {});
   }
 }
