@@ -71,7 +71,7 @@ function TopRankerPhoto({
 }
 
 export default function HomeScreen() {
-  const { user, themeColor } = useAuth();
+  const { user, themeColor, refresh } = useAuth();
   const badges = useBadges();
   const [stats, setStats] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
@@ -445,8 +445,9 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      refresh().catch(() => {});
       load();
-    }, [load])
+    }, [load, refresh])
   );
 
   useEffect(() => {
@@ -514,6 +515,7 @@ export default function HomeScreen() {
           refreshing={refreshing}
           onRefresh={() => {
             setRefreshing(true);
+            refresh().catch(() => {});
             load();
           }}
           tintColor={color}

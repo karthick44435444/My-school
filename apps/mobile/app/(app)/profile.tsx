@@ -82,6 +82,7 @@ export default function ProfileScreen() {
   // Reset editing mode and active tab whenever navigating to/from other tabs or screens
   useFocusEffect(
     useCallback(() => {
+      refresh().catch(() => {});
       if (searchParams.tab === "school" && isAdmin) {
         setActiveTab("school");
       } else {
@@ -90,7 +91,7 @@ export default function ProfileScreen() {
       setEditing(false);
       setEditingSchool(false);
       setFieldErr({});
-    }, [searchParams.tab, isAdmin])
+    }, [searchParams.tab, isAdmin, refresh])
   );
 
   // User profile state
@@ -168,7 +169,7 @@ export default function ProfileScreen() {
     setLastName(user?.lastName || "");
     setPhone(user?.phone || "");
     setEmail(user?.email || "");
-    setPhotoUrl(user?.photoUrl || "");
+    setPhotoUrl(user?.photoUrl || (user as any)?.avatar || (user as any)?.photo || (user as any)?.image || "");
   }, [user]);
 
   const isStudent = user?.role === "STUDENT";
