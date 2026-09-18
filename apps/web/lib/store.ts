@@ -8,7 +8,9 @@ import { prisma } from "@myschool/database";
 export { prisma, SUBSCRIPTION_PLANS };
 export type { SubscriptionPlanInfo };
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = fs.existsSync(path.join(process.cwd(), "apps", "web", ".data"))
+  ? path.join(process.cwd(), "apps", "web", ".data")
+  : path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 
 export interface StoredSchool {
@@ -289,6 +291,7 @@ function readDBFromFile(): DB {
   if (!data.readReceipts) data.readReceipts = [];
   if (!data.otps) data.otps = [];
   if (!data.pushTokens) data.pushTokens = [];
+  if (!data.uploadedFiles) data.uploadedFiles = [];
   return data as DB;
 }
 
@@ -535,6 +538,7 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
           readAt: rr.readAt ? (typeof rr.readAt === "string" ? rr.readAt : rr.readAt.toISOString()) : new Date().toISOString(),
         })),
         otps: [],
+        uploadedFiles: _cachedDB?.uploadedFiles || readDBFromFile().uploadedFiles || [],
       };
 
       ensureDataDir();
@@ -553,16 +557,26 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
   return _hydrationPromise;
 }
 
+let _legacyUploadsMigrated = false;
+
 export function readDB(): DB {
   if (!_postgresHydrated && process.env.DATABASE_URL && !_isHydrating) {
     hydrateFromPostgres().catch(() => {});
   }
   if (_cachedDB) {
+    if (!_legacyUploadsMigrated) {
+      _legacyUploadsMigrated = true;
+      try { migrateLegacyUploadsToDB(); } catch {}
+    }
     return _cachedDB;
   }
   const fileDB = readDBFromFile();
   if (!_cachedDB && !_postgresHydrated) {
     _cachedDB = fileDB;
+  }
+  if (!_legacyUploadsMigrated) {
+    _legacyUploadsMigrated = true;
+    try { migrateLegacyUploadsToDB(); } catch {}
   }
   return _cachedDB || fileDB;
 }
@@ -5887,12 +5901,12 @@ export async function checkAndDispatchExpiryNotifications() {
 
 // ====================== UPLOADED FILES STORE ======================
 
-export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: string, size?: number) {
+export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: string, size?: number): StoredUploadedFile {
   const db = readDB();
   if (!Array.isArray(db.uploadedFiles)) db.uploadedFiles = [];
   const base64 = buffer.toString("base64");
   const cleanName = path.basename(filename);
-  const existingIdx = db.uploadedFiles.findIndex((f) => f.filename === cleanName);
+  const existingIdx = db.uploadedFiles.findIndex((f) => f.filename.toLowerCase() === cleanName.toLowerCase());
   const entry: StoredUploadedFile = {
     filename: cleanName,
     data: base64,
@@ -5905,24 +5919,117 @@ export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: st
     db.uploadedFiles[existingIdx] = entry;
   } else {
     db.uploadedFiles.push(entry);
-    // Keep max 500 uploaded files in database storage
-    if (db.uploadedFiles.length > 500) {
-      db.uploadedFiles = db.uploadedFiles.slice(-500);
+    // Keep max 1000 uploaded files in database storage
+    if (db.uploadedFiles.length > 1000) {
+      db.uploadedFiles = db.uploadedFiles.slice(-1000);
     }
   }
 
   writeDB(db);
+  return entry;
 }
 
 export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: string } | null {
   const db = readDB();
-  const cleanName = path.basename(filename);
-  const file = (db.uploadedFiles || []).find((f) => f.filename === cleanName);
-  if (!file || !file.data) return null;
-  return {
-    buffer: Buffer.from(file.data, "base64"),
-    mimeType: file.mimeType || "application/octet-stream",
-  };
+  const cleanName = path.basename(filename).toLowerCase();
+  
+  // 1. Find in db.uploadedFiles
+  const file = (db.uploadedFiles || []).find((f) => f.filename.toLowerCase() === cleanName);
+  if (file && file.data) {
+    return {
+      buffer: Buffer.from(file.data, "base64"),
+      mimeType: file.mimeType || "application/octet-stream",
+    };
+  }
+
+  // 2. Check if a user/student has a base64 photoUrl in db.users
+  const userMatch = (db.users || []).find((u) => {
+    if (!u.photoUrl) return false;
+    const urlClean = path.basename(u.photoUrl).toLowerCase();
+    if (urlClean === cleanName) return true;
+    if (u.id.toLowerCase() === cleanName || (u.username && u.username.toLowerCase() === cleanName)) return true;
+    return false;
+  });
+
+  if (userMatch?.photoUrl && userMatch.photoUrl.startsWith("data:")) {
+    const match = userMatch.photoUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (match) {
+      return {
+        buffer: Buffer.from(match[2], "base64"),
+        mimeType: match[1],
+      };
+    }
+  }
+
+  return null;
+}
+
+export function migrateLegacyUploadsToDB(): number {
+  try {
+    const candidateDirs = [
+      path.join(process.cwd(), "public", "uploads"),
+      path.join(process.cwd(), "apps", "web", "public", "uploads"),
+      path.join(process.cwd(), ".data", "uploads"),
+      path.join(process.cwd(), "apps", "web", ".data", "uploads"),
+    ];
+    const uploadDir = candidateDirs.find((d) => fs.existsSync(d) && fs.readdirSync(d).length > 0);
+    if (!uploadDir) return 0;
+
+    const files = fs.readdirSync(uploadDir);
+    if (!files || files.length === 0) return 0;
+
+    const db = readDB();
+    if (!Array.isArray(db.uploadedFiles)) db.uploadedFiles = [];
+
+    const MIME_MAP: Record<string, string> = {
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+      ".svg": "image/svg+xml",
+      ".ico": "image/x-icon",
+      ".pdf": "application/pdf",
+      ".doc": "application/msword",
+      ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".xls": "application/vnd.ms-excel",
+      ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ".csv": "text/csv",
+      ".txt": "text/plain",
+    };
+
+    let count = 0;
+    for (const filename of files) {
+      const fullPath = path.join(uploadDir, filename);
+      try {
+        if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) continue;
+        const cleanName = path.basename(filename);
+        const alreadyStored = db.uploadedFiles.some((f) => f.filename.toLowerCase() === cleanName.toLowerCase());
+        if (!alreadyStored) {
+          const buf = fs.readFileSync(fullPath);
+          const ext = path.extname(cleanName).toLowerCase();
+          const mime = MIME_MAP[ext] || "application/octet-stream";
+          db.uploadedFiles.push({
+            filename: cleanName,
+            data: buf.toString("base64"),
+            mimeType: mime,
+            size: buf.length,
+            createdAt: new Date().toISOString(),
+          });
+          count++;
+        }
+      } catch {
+        /* ignore individual file error */
+      }
+    }
+
+    if (count > 0) {
+      writeDB(db);
+    }
+    return count;
+  } catch {
+    return 0;
+  }
 }
 
 

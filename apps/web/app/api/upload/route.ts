@@ -93,17 +93,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Local disk upload fallback
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const dataDir = path.join(process.cwd(), ".data", "uploads");
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-
+    // 2. Direct database-backed storage (No local disk / public/uploads files)
     const originalFullName = file.name || "attachment";
     const lastDot = originalFullName.lastIndexOf(".");
     const rawBaseName = lastDot > 0 ? originalFullName.substring(0, lastDot) : originalFullName;
@@ -123,22 +113,14 @@ export async function POST(req: NextRequest) {
       safeExt = "png";
     }
 
-    let filename = `${cleanBaseName}.${safeExt}`;
-    if (fs.existsSync(path.join(uploadDir, filename)) || fs.existsSync(path.join(dataDir, filename))) {
-      filename = `${cleanBaseName}_${Math.random().toString(36).slice(2, 6)}.${safeExt}`;
-    }
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const filename = `${cleanBaseName}_${uniqueId}.${safeExt}`;
 
-    fs.writeFileSync(path.join(uploadDir, filename), buffer);
-    fs.writeFileSync(path.join(dataDir, filename), buffer);
+    // Store directly in database
+    const { saveUploadedFile } = await import("@/lib/store");
+    saveUploadedFile(filename, buffer, file.type || undefined, file.size || buffer.length);
 
-    try {
-      const { saveUploadedFile } = await import("@/lib/store");
-      saveUploadedFile(filename, buffer, file.type || undefined, file.size || buffer.length);
-    } catch {
-      /* ignore */
-    }
-
-    const url = `/uploads/${filename}`;
+    const url = `/api/uploads/${filename}`;
     return NextResponse.json({ success: true, url, name: file.name || filename });
   } catch (error: any) {
     console.error("Upload error:", error);
