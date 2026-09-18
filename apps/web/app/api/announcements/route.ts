@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       section: selectedClasses.length === 1 ? selectedClasses[0].section : undefined,
       classes: selectedClasses.length > 0 ? selectedClasses : undefined,
       createdById: auth.userId,
-      createdByName: auth.firstName,
+      createdByName: auth.firstName || (auth.role === "ADMIN" ? "Admin" : auth.role === "PRINCIPAL" ? "Principal" : "Teacher"),
       createdByRole: auth.role,
     });
 

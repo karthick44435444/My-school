@@ -22,6 +22,18 @@ export default function PrincipalStudentsPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       setHighlightId(params.get("highlight"));
+      const c = params.get("className");
+      const s = params.get("section") || "";
+      if (c) {
+        if (c.includes("||")) {
+          setActiveTab(c);
+        } else if (c.includes("-") && !s) {
+          const parts = c.split("-");
+          setActiveTab(`${parts[0]}||${parts.slice(1).join("-")}`);
+        } else {
+          setActiveTab(`${c}||${s}`);
+        }
+      }
     }
   }, []);
   const [list, setList] = useState<any[]>([]);
@@ -54,7 +66,29 @@ export default function PrincipalStudentsPage() {
       ]);
       if (cRes.ok) {
         const cData = await cRes.json();
-        setClasses(cData.classes || []);
+        const clsList = cData.classes || [];
+        setClasses(clsList);
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          const urlClass = params.get("className");
+          const urlSec = params.get("section") || "";
+          if (urlClass) {
+            const matched = clsList.find((c: any) => {
+              const cName = String(c.name || "").trim().toLowerCase().replace(/^class\s+/i, "");
+              const cSec = String(c.section || "").trim().toLowerCase();
+              const targetName = urlClass.trim().toLowerCase().replace(/^class\s+/i, "");
+              const targetSec = urlSec.trim().toLowerCase();
+              if (urlClass.includes("-") && !urlSec) {
+                const parts = targetName.split("-");
+                return cName === parts[0] && cSec === parts.slice(1).join("-");
+              }
+              return cName === targetName && (!targetSec || cSec === targetSec);
+            });
+            if (matched) {
+              setActiveTab(`${matched.name}||${matched.section || ""}`);
+            }
+          }
+        }
       }
       if (allRes.ok) {
         const aData = await allRes.json();
@@ -337,23 +371,26 @@ export default function PrincipalStudentsPage() {
           >
             All [{classCounts["ALL"] || total}]
           </button>
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => {
-                setActiveTab(t.key);
-                setPage(1);
-                setSelectedIds([]);
-                setIsSelectionMode(false);
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border shrink-0 ${
-                activeTab === t.key ? "text-white border-transparent" : "bg-white text-slate-700"
-              }`}
-              style={activeTab === t.key ? { backgroundColor: theme } : undefined}
-            >
-              {t.label}
-            </button>
-          ))}
+          {tabs.map((t) => {
+            const isSelected = activeTab === t.key || (activeTab !== "ALL" && t.key.toLowerCase() === activeTab.toLowerCase());
+            return (
+              <button
+                key={t.key}
+                onClick={() => {
+                  setActiveTab(t.key);
+                  setPage(1);
+                  setSelectedIds([]);
+                  setIsSelectionMode(false);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border shrink-0 ${
+                  isSelected ? "text-white border-transparent" : "bg-white text-slate-700"
+                }`}
+                style={isSelected ? { backgroundColor: theme } : undefined}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Table View */}

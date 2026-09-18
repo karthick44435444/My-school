@@ -5,7 +5,7 @@ import { Loader2, Megaphone, Search, X } from "lucide-react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDateTime } from "@/lib/validation";
-import { getDayWiseLabel } from "@/lib/utils";
+import { getDayWiseLabel, formatNoticeAuthor, formatNoticeClass } from "@/lib/utils";
 import Pagination from "@/components/shared/Pagination";
 
 export default function ParentAnnouncementsPage() {
@@ -143,8 +143,10 @@ export default function ParentAnnouncementsPage() {
                       <div>
                         <div className="font-bold text-slate-900 text-base">{a.title}</div>
                         <div className="text-xs text-slate-500 mt-1">
-                          {a.createdByName} ({a.createdByRole})
-                          {a.className ? ` · Class ${a.className}${a.section ? `-${a.section}` : ""}` : ""}
+                          {formatNoticeAuthor(a.createdByName, a.createdByRole)}
+                          {formatNoticeClass(a.className, a.section, a.classes)
+                            ? ` · ${formatNoticeClass(a.className, a.section, a.classes)}`
+                            : ""}
                         </div>
                         <p className="text-sm text-slate-700 mt-3 whitespace-pre-wrap leading-relaxed">{a.content}</p>
                       </div>

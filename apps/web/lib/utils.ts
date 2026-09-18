@@ -74,3 +74,53 @@ export function getDayWiseLabel(dateInput?: string | Date | null): string {
   }
 }
 
+/** Format notice / announcement author cleanly without empty parentheses () or duplicate roles */
+export function formatNoticeAuthor(name?: string | null, role?: string | null): string {
+  const cleanName = (name || "").trim();
+  const cleanRole = (role || "").trim();
+
+  if (!cleanName && !cleanRole) return "Admin";
+  if (!cleanName) {
+    return cleanRole.charAt(0).toUpperCase() + cleanRole.slice(1).toLowerCase();
+  }
+  if (!cleanRole) return cleanName;
+
+  if (cleanName.toLowerCase() === cleanRole.toLowerCase()) {
+    return cleanName;
+  }
+
+  const formattedRole = cleanRole.charAt(0).toUpperCase() + cleanRole.slice(1).toLowerCase();
+  return `${cleanName} (${formattedRole})`;
+}
+
+/** Format notice / announcement class label preventing duplicate sections like 10-C-C */
+export function formatNoticeClass(
+  className?: string | null,
+  section?: string | null,
+  classes?: Array<{ className: string; section?: string }>
+): string {
+  if (Array.isArray(classes) && classes.length > 0) {
+    const list = classes
+      .map((c) => {
+        let cn = (c.className || "").trim().replace(/^class\s+/i, "");
+        const sec = (c.section || "").trim();
+        if (sec && !cn.toLowerCase().endsWith(`-${sec.toLowerCase()}`)) {
+          cn = `${cn}-${sec}`;
+        }
+        return cn;
+      })
+      .filter(Boolean);
+    if (list.length > 0) {
+      return list.length === 1 ? `Class ${list[0]}` : `Classes ${list.join(", ")}`;
+    }
+  }
+
+  if (!className) return "";
+  let cn = className.trim().replace(/^class\s+/i, "");
+  const sec = (section || "").trim();
+  if (sec && !cn.toLowerCase().endsWith(`-${sec.toLowerCase()}`)) {
+    cn = `${cn}-${sec}`;
+  }
+  return `Class ${cn}`;
+}
+

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import Sidebar from "@/components/dashboard/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDateTime } from "@/lib/validation";
-import { getDayWiseLabel } from "@/lib/utils";
+import { getDayWiseLabel, formatNoticeAuthor, formatNoticeClass } from "@/lib/utils";
 import ConfirmDeleteModal from "@/components/shared/ConfirmDeleteModal";
 import Pagination from "@/components/shared/Pagination";
 
@@ -251,8 +251,10 @@ export default function TeacherAnnouncementsPage() {
                             )}
                           </div>
                           <div className="text-xs text-slate-500 mt-1">
-                            {a.createdByName || "School"}
-                            {a.className ? ` · Class ${a.className}${a.section ? `-${a.section}` : ""}` : ""}
+                            {formatNoticeAuthor(a.createdByName, a.createdByRole)}
+                            {formatNoticeClass(a.className, a.section, a.classes)
+                              ? ` · ${formatNoticeClass(a.className, a.section, a.classes)}`
+                              : ""}
                           </div>
                         </div>
                         {isMine && (
