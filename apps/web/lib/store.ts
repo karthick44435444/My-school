@@ -1669,8 +1669,18 @@ export function getDashboardStats(schoolId: string) {
   const unmarkedCount = Math.max(0, totalStudents - todayAtt.length);
   const rate = totalStudents > 0 ? Math.round(((presentCount + lateCount * 0.8 + halfDayCount * 0.5) / totalStudents) * 100) : 0;
 
+  const teachers = users.filter((u) => u.role === "TEACHER");
+  const totalTeachers = teachers.length;
+  const teacherIds = new Set(teachers.map((t) => t.id));
+  const todayTeacherAtt = (db.attendances || []).filter(
+    (a) => a.schoolId === schoolId && a.teacherId && teacherIds.has(a.teacherId) && a.date === today && (a.status === "PRESENT" || a.status === "LATE" || a.status === "HALF_DAY" || !a.status)
+  );
+  const presentTeachers = new Set(todayTeacherAtt.map((a) => a.teacherId)).size;
+
   return {
-    totalTeachers: users.filter((u) => u.role === "TEACHER").length,
+    totalTeachers,
+    presentTeachers,
+    checkedInTeachers: presentTeachers,
     totalStudents,
     totalParents: users.filter((u) => u.role === "PARENT").length,
     totalPrincipals: users.filter((u) => u.role === "PRINCIPAL").length,

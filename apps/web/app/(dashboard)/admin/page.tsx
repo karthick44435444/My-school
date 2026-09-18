@@ -88,7 +88,7 @@ export default function AdminDashboard() {
     },
     {
       label: "Teachers",
-      value: `${stats?.presentTeachers ?? stats?.checkedInTeachers ?? 0}/${stats?.totalTeachers || 0}`,
+      value: `${stats?.presentTeachers ?? stats?.checkedInTeachers ?? 0}/${stats?.totalTeachers ?? (typeof stats?.teachers === "number" ? stats?.teachers : 0)}`,
       subText: "Today check-in / Total",
       icon: GraduationCap,
       href: "/admin/teachers",

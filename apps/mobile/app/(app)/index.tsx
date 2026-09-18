@@ -703,7 +703,7 @@ export default function HomeScreen() {
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {`${stats.presentTeachers ?? stats.checkedInTeachers ?? 0}/${stats.totalTeachers ?? stats.teachers ?? 0}`}
+                  {`${stats.presentTeachers ?? stats.checkedInTeachers ?? 0}/${stats.totalTeachers ?? (typeof stats.teachers === "number" ? stats.teachers : 0)}`}
                 </Text>
                 <View style={styles.statLabelRow}>
                   <Text style={styles.adminStatLabel}>Teachers</Text>

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Users, ClipboardList, Plus, Loader2, Check, X, Clock, Download,
-  School, Sparkles, UserCheck, Heart, Copy, User
+  School, Sparkles, UserCheck, Heart, Copy, User, Search, Calendar,
+  CheckCircle2, XCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import Sidebar from "@/components/dashboard/Sidebar";
+import Avatar from "@/components/shared/Avatar";
 import { useAuth } from "@/hooks/useAuth";
 import ExportAttendanceModal from "@/components/attendance/ExportAttendanceModal";
 import PhoneInput from "@/components/forms/PhoneInput";
@@ -42,6 +44,7 @@ export default function TeacherDashboard() {
   const [myClasses, setMyClasses] = useState<any[]>([]);
   const [savingAtt, setSavingAtt] = useState(false);
   const [attendanceMode, setAttendanceMode] = useState(false);
+  const [attSearch, setAttSearch] = useState("");
   const [attendance, setAttendance] = useState<Record<string, "PRESENT" | "ABSENT" | "LATE">>({});
   const [tempAttendance, setTempAttendance] = useState<Record<string, "PRESENT" | "ABSENT" | "LATE">>({});
   const [checkedIn, setCheckedIn] = useState(false);
@@ -190,7 +193,13 @@ export default function TeacherDashboard() {
   };
 
   const openTakeAttendance = () => {
-    setTempAttendance({ ...attendance });
+    const list = filteredCtStudents.length ? filteredCtStudents : classTeacherStudents.length ? classTeacherStudents : students;
+    const initial: Record<string, "PRESENT" | "ABSENT" | "LATE"> = {};
+    list.forEach((s) => {
+      initial[s.id] = attendance[s.id] || "PRESENT";
+    });
+    setTempAttendance(initial);
+    setAttSearch("");
     setAttendanceMode(true);
   };
 
@@ -202,7 +211,7 @@ export default function TeacherDashboard() {
   };
 
   const markAllTemp = (status: "PRESENT" | "ABSENT" | "LATE") => {
-    const list = filteredCtStudents.length ? filteredCtStudents : classTeacherStudents;
+    const list = filteredCtStudents.length ? filteredCtStudents : classTeacherStudents.length ? classTeacherStudents : students;
     const map: Record<string, "PRESENT" | "ABSENT" | "LATE"> = {};
     list.forEach((s) => {
       map[s.id] = status;
@@ -228,10 +237,10 @@ export default function TeacherDashboard() {
   });
 
   const saveAttendance = async () => {
-    const list = filteredCtStudents.length ? filteredCtStudents : classTeacherStudents;
+    const list = filteredCtStudents.length ? filteredCtStudents : classTeacherStudents.length ? classTeacherStudents : students;
     const records = list.map((s) => ({
       studentId: s.id,
-      status: (tempAttendance[s.id] || "ABSENT") as "PRESENT" | "ABSENT" | "LATE",
+      status: (tempAttendance[s.id] || "PRESENT") as "PRESENT" | "ABSENT" | "LATE",
     }));
     if (records.length === 0) {
       toast.error("No students to mark");
@@ -257,7 +266,7 @@ export default function TeacherDashboard() {
         return next;
       });
 
-      toast.success(data.message || "Attendance saved!");
+      toast.success(data.message || "Attendance saved successfully!");
       setAttendanceMode(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to save attendance");
@@ -599,6 +608,301 @@ export default function TeacherDashboard() {
       </main>
 
       {/* Take Attendance Modal */}
+      {attendanceMode && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 flex flex-col max-h-[92vh] overflow-hidden"
+          >
+            {/* Header */}
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-xs shrink-0"
+                  style={{ backgroundColor: theme }}
+                >
+                  <ClipboardList className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-bold text-base sm:text-lg text-slate-900">Take Attendance</h2>
+                    <span
+                      className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white shadow-2xs"
+                      style={{ backgroundColor: theme }}
+                    >
+                      {selectedCt.className
+                        ? `Class ${selectedCt.className}${selectedCt.section ? `-${selectedCt.section}` : ""}`
+                        : ctClasses.length > 0
+                        ? `All Classes (${ctClasses.map((c) => `${c.className}-${c.section || ""}`).join(", ")})`
+                        : "My Class"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Today · {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAttendanceMode(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Actions & Filters Bar */}
+            <div className="px-5 sm:px-6 py-3 bg-slate-50/50 border-b border-slate-100 space-y-3 shrink-0">
+              {/* Class Tabs if multiple classes */}
+              {ctClasses.length > 1 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Class:</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCt({ className: "", section: "" })}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                      !selectedCt.className
+                        ? "text-white border-transparent shadow-xs"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                    style={!selectedCt.className ? { backgroundColor: theme } : undefined}
+                  >
+                    All Classes ({classTeacherStudents.length})
+                  </button>
+                  {ctClasses.map((c) => {
+                    const active =
+                      selectedCt.className.toLowerCase() === c.className.toLowerCase() &&
+                      (selectedCt.section || "").toLowerCase() === (c.section || "").toLowerCase();
+                    const label = `${c.className}${c.section ? `-${c.section}` : ""}`;
+                    const count = classTeacherStudents.filter(
+                      (s: any) =>
+                        (s.className || "").toLowerCase() === c.className.toLowerCase() &&
+                        (!c.section || (s.section || "").toLowerCase() === c.section.toLowerCase())
+                    ).length;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => setSelectedCt({ className: c.className, section: c.section || "" })}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                          active
+                            ? "text-white border-transparent shadow-xs"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                        }`}
+                        style={active ? { backgroundColor: theme } : undefined}
+                      >
+                        {label} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Bulk actions & Search */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => markAllTemp("PRESENT")}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Mark All Present
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => markAllTemp("ABSENT")}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  >
+                    <XCircle className="w-3.5 h-3.5" /> Mark All Absent
+                  </button>
+                </div>
+
+                {/* Search */}
+                <div className="relative flex-1 sm:max-w-xs">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={attSearch}
+                    onChange={(e) => setAttSearch(e.target.value)}
+                    placeholder="Search by name or roll..."
+                    className="w-full pl-8.5 pr-3 py-1.5 rounded-xl text-xs bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                  />
+                  {attSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setAttSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Live Count Badges */}
+              {(() => {
+                const currentList = filteredCtStudents.length ? filteredCtStudents : classTeacherStudents.length ? classTeacherStudents : students;
+                const pCount = currentList.filter((s) => (tempAttendance[s.id] || "PRESENT") === "PRESENT").length;
+                const aCount = currentList.filter((s) => tempAttendance[s.id] === "ABSENT").length;
+                const lCount = currentList.filter((s) => tempAttendance[s.id] === "LATE").length;
+                return (
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                    <span className="text-slate-500">Summary:</span>
+                    <span className="px-2 py-0.5 rounded-md bg-slate-200 text-slate-800 font-bold">Total: {currentList.length}</span>
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">Present: {pCount}</span>
+                    <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold">Absent: {aCount}</span>
+                    {lCount > 0 && <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold">Late: {lCount}</span>}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Scrollable Students List */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 divide-y divide-slate-100">
+              {(() => {
+                const baseList = filteredCtStudents.length ? filteredCtStudents : classTeacherStudents.length ? classTeacherStudents : students;
+                const filtered = baseList.filter((s) => {
+                  if (!attSearch.trim()) return true;
+                  const q = attSearch.toLowerCase();
+                  const name = `${s.firstName || ""} ${s.lastName || ""}`.toLowerCase();
+                  const roll = String(s.rollNumber || s.rollNo || "").toLowerCase();
+                  return name.includes(q) || roll.includes(q);
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="py-12 text-center text-slate-500">
+                      <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm font-semibold">No students found</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {attSearch ? "Try adjusting your search filter" : "No enrolled students in this class"}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-2">
+                    {filtered.map((s, idx) => {
+                      const st = tempAttendance[s.id] || "PRESENT";
+                      return (
+                        <div
+                          key={s.id || idx}
+                          className="flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Avatar
+                              name={`${s.firstName} ${s.lastName || ""}`}
+                              photoUrl={s.photoUrl}
+                              size={38}
+                              className="shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                {s.firstName} {s.lastName || ""}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                                {s.rollNumber || s.rollNo ? (
+                                  <span>Roll: <strong className="text-slate-700">{s.rollNumber || s.rollNo}</strong></span>
+                                ) : null}
+                                <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">
+                                  Class {s.className}{s.section ? `-${s.section}` : ""}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 3 Status Buttons: Present / Absent / Late */}
+                          <div className="flex items-center gap-1.5 shrink-0 bg-slate-100 p-1 rounded-xl border border-slate-200/70">
+                            <button
+                              type="button"
+                              onClick={() => setStudentTempStatus(s.id, "PRESENT")}
+                              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                                st === "PRESENT"
+                                  ? "bg-emerald-600 text-white shadow-xs"
+                                  : "text-slate-600 hover:text-emerald-700 hover:bg-white/80"
+                              }`}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Present</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStudentTempStatus(s.id, "ABSENT")}
+                              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                                st === "ABSENT"
+                                  ? "bg-rose-600 text-white shadow-xs"
+                                  : "text-slate-600 hover:text-rose-700 hover:bg-white/80"
+                              }`}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Absent</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStudentTempStatus(s.id, "LATE")}
+                              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                                st === "LATE"
+                                  ? "bg-amber-500 text-white shadow-xs"
+                                  : "text-slate-600 hover:text-amber-700 hover:bg-white/80"
+                              }`}
+                            >
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>Late</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 sm:px-6 py-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-3 shrink-0">
+              <Link
+                href="/teacher/attendance"
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1"
+                onClick={() => setAttendanceMode(false)}
+              >
+                Go to Full Attendance Page &rarr;
+              </Link>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAttendanceMode(false)}
+                  className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-200/70 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveAttendance}
+                  disabled={savingAtt}
+                  className="px-5 py-2 rounded-xl text-white text-xs sm:text-sm font-bold shadow-xs transition hover:opacity-95 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  style={{ backgroundColor: theme }}
+                >
+                  {savingAtt ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Save Attendance</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Add Student Dialog (Same UI & Validation as My Classes) */}
       {showCreate && (
