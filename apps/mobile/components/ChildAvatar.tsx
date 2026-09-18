@@ -29,34 +29,13 @@ export function SafeAvatar({
 }) {
   const [failed, setFailed] = useState(false);
   const base = apiBase || getApiBaseSync();
-  const uri = isParent
-    ? null
-    : !failed
-    ? resolveMediaUrlSync(photoUrl || undefined, base)
-    : null;
-  const letter = (name || "?").trim()[0]?.toUpperCase() || "?";
+  const uri = !failed ? resolveMediaUrlSync(photoUrl || undefined, base) : null;
+  const letter = ((name || "?").trim()[0] || "?").toUpperCase();
   const radius = borderRadius !== undefined ? borderRadius : round ? Math.round(size / 2) : Math.round(size * 0.32);
 
   useEffect(() => {
     setFailed(false);
   }, [photoUrl, apiBase, isParent]);
-
-  if (isParent) {
-    return (
-      <ExpoImage
-        source={require("@/assets/parent-avatar.png")}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: radius,
-          backgroundColor: "#E2E8F0",
-        }}
-        contentFit="cover"
-        transition={150}
-        cachePolicy="memory-disk"
-      />
-    );
-  }
 
   if (uri && !failed) {
     return (
@@ -76,7 +55,25 @@ export function SafeAvatar({
     );
   }
 
+  if (isParent && !photoUrl) {
+    return (
+      <ExpoImage
+        source={require("@/assets/parent-avatar.png")}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: radius,
+          backgroundColor: "#E2E8F0",
+        }}
+        contentFit="cover"
+        transition={150}
+        cachePolicy="memory-disk"
+      />
+    );
+  }
+
   const fontSize = Math.round(size * 0.46);
+  const isWhite = color === "#ffffff" || color === "#fff";
 
   return (
     <View
@@ -84,7 +81,7 @@ export function SafeAvatar({
         width: size,
         height: size,
         borderRadius: radius,
-        backgroundColor: color === "#ffffff" ? "rgba(255,255,255,0.25)" : color + "22",
+        backgroundColor: isWhite ? "rgba(255,255,255,0.25)" : color,
         alignItems: "center",
         justifyContent: "center",
       }}
@@ -92,7 +89,7 @@ export function SafeAvatar({
       <Text
         style={{
           fontWeight: "800",
-          color: color === "#ffffff" ? "#ffffff" : color,
+          color: "#ffffff",
           fontSize,
           lineHeight: fontSize * 1.15,
           textAlign: "center",

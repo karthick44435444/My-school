@@ -160,8 +160,8 @@ export default function TopBar() {
             hitSlop={8}
           >
             <SafeAvatar
-              photoUrl={user?.photoUrl}
-              name={user?.firstName || "U"}
+              photoUrl={user?.photoUrl || (user as any)?.avatar || (user as any)?.photo || (user as any)?.image}
+              name={user?.firstName || (user as any)?.name || user?.username || "U"}
               apiBase={currentBase}
               size={36}
               color="#ffffff"

@@ -579,8 +579,8 @@ export default function HomeScreen() {
           ) : (
             <View style={styles.heroRow}>
               <SafeAvatar
-                photoUrl={user?.photoUrl}
-                name={user?.firstName}
+                photoUrl={user?.photoUrl || (user as any)?.avatar || (user as any)?.photo || (user as any)?.image}
+                name={user?.firstName || (user as any)?.name || user?.username || "U"}
                 apiBase={apiBase || getApiBaseSync()}
                 size={54}
                 color="#ffffff"

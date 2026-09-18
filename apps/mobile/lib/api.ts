@@ -104,10 +104,10 @@ export async function resolveMediaUrl(url?: string | null): Promise<string | und
 
 export function resolveMediaUrlSync(url: string | null | undefined, apiBase?: string): string | undefined {
   if (!url) return undefined;
-  const u = String(url).trim();
+  let u = String(url).trim().replace(/\\/g, "/");
   if (!u) return undefined;
   if (/^https?:\/\//i.test(u)) return u;
-  if (u.startsWith("data:")) return u;
+  if (u.startsWith("data:") || u.startsWith("file:") || u.startsWith("blob:")) return u;
   const base = (apiBase || getApiBaseSync() || "").replace(/\/$/, "");
   if (!base) return u.startsWith("/") ? u : `/${u}`;
   // /uploads/... or uploads/...

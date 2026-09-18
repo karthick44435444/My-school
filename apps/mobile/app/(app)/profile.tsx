@@ -488,11 +488,11 @@ export default function ProfileScreen() {
                 <View style={styles.avatarContainer}>
                   <View style={styles.avatarRing}>
                     <SafeAvatar
-                      photoUrl={photoUrl || user?.photoUrl}
-                      name={user?.firstName}
+                      photoUrl={photoUrl || user?.photoUrl || (user as any)?.avatar || (user as any)?.photo || (user as any)?.image}
+                      name={user?.firstName || (user as any)?.name || user?.username || "U"}
                       apiBase={apiBase || getApiBaseSync()}
                       size={100}
-                      color="#ffffff"
+                      color={color}
                       round={true}
                       isParent={isParent}
                     />

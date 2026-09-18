@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         phone: user.phone,
         className: user.className,
         section: user.section,
-        photoUrl: user.photoUrl,
+        photoUrl: user.photoUrl || (user as any).avatar || (user as any).photo || (user as any).image || undefined,
         schoolCode: user.schoolCode,
         schoolName: (school?.displayName && school.displayName.trim()) ? school.displayName.trim() : (school?.name || ""),
         schoolFullName: school?.name || "",

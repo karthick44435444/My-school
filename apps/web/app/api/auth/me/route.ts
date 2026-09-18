@@ -56,7 +56,7 @@ export async function GET() {
         email: user.email,
         username: user.username,
         phone: user.phone,
-        photoUrl: user.photoUrl,
+        photoUrl: user.photoUrl || (user as any).avatar || (user as any).photo || (user as any).image || undefined,
         gender: user.gender,
         education: user.education,
         schoolCode: user.schoolCode,
