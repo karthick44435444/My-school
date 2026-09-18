@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +31,44 @@ type DashCard = {
   value?: string | number;
   badge?: number;
 };
+
+function TopRankerPhoto({
+  photoUrl,
+  name,
+  apiBase,
+}: {
+  photoUrl?: string | null;
+  name?: string;
+  apiBase?: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const base = apiBase || getApiBaseSync();
+  const uri = !hasError && photoUrl ? resolveMediaUrlSync(photoUrl, base) : undefined;
+  const initialLetter = ((name || "S").trim()[0] || "S").toUpperCase();
+
+  useEffect(() => {
+    setHasError(false);
+  }, [photoUrl, base]);
+
+  if (uri && !hasError) {
+    return (
+      <ExpoImage
+        source={{ uri }}
+        style={styles.topStudentPhoto}
+        contentFit="cover"
+        transition={150}
+        cachePolicy="memory-disk"
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <View style={styles.topStudentPhotoInitial}>
+      <Text style={styles.topStudentInitialText}>{initialLetter}</Text>
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const { user, themeColor } = useAuth();
@@ -1089,9 +1128,7 @@ export default function HomeScreen() {
             ) : (
               <View style={styles.topStudentsGrid}>
                 {top1stRankers.slice(0, 12).map((s: any, idx: number) => {
-                  const rawPhoto = s.photoUrl || null;
-                  const photoUri = rawPhoto ? resolveMediaUrlSync(rawPhoto, apiBase || getApiBaseSync()) : undefined;
-                  const initialLetter = (s.firstName?.[0] || "S").toUpperCase();
+                  const studentPhoto = s.photoUrl || s.avatar || s.photo || s.image || null;
 
                   return (
                     <Pressable
@@ -1126,19 +1163,11 @@ export default function HomeScreen() {
                       {/* 90% Width 1:1 Aspect Ratio Student Profile */}
                       <View style={styles.topStudentPhotoContainer}>
                         <View style={styles.topStudentPhotoFrame}>
-                          {photoUri ? (
-                            <Image
-                              source={{ uri: photoUri }}
-                              style={styles.topStudentPhoto}
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            <View style={styles.topStudentPhotoInitial}>
-                              <Text style={styles.topStudentInitialText}>
-                                {initialLetter}
-                              </Text>
-                            </View>
-                          )}
+                          <TopRankerPhoto
+                            photoUrl={studentPhoto}
+                            name={s.firstName}
+                            apiBase={apiBase || getApiBaseSync()}
+                          />
                         </View>
                       </View>
 
@@ -2403,6 +2432,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 2,
+    overflow: "hidden",
   },
   topStudentPhoto: {
     width: "100%",

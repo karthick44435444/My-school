@@ -5071,7 +5071,7 @@ export function getTopStudentsByClass(schoolId: string, limitPerClass = 5) {
       lastName: s.lastName,
       rollNumber: s.rollNumber || s.rollNo || "",
       rollNo: s.rollNumber || s.rollNo || "",
-      photoUrl: s.photoUrl,
+      photoUrl: s.photoUrl || s.avatar || s.photo || s.image || undefined,
       className: s.className,
       section: s.section,
       totalMarks: a.total,

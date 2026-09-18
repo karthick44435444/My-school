@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getApiBase, getApiBaseSync, resolveMediaUrlSync } from "@/lib/api";
@@ -17,6 +18,46 @@ import { useAuth } from "@/hooks/useAuth";
 import { SearchBar, matchesSearch } from "@/components/SearchBar";
 import { Colors } from "@/constants/theme";
 import { TAB_BAR_CLEARANCE } from "@/constants/layout";
+
+function TopRankerPhoto({
+  photoUrl,
+  name,
+  apiBase,
+  accentColor = "#F59E0B",
+}: {
+  photoUrl?: string | null;
+  name?: string;
+  apiBase?: string;
+  accentColor?: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const base = apiBase || getApiBaseSync();
+  const uri = !hasError && photoUrl ? resolveMediaUrlSync(photoUrl, base) : undefined;
+  const initialLetter = ((name || "S").trim()[0] || "S").toUpperCase();
+
+  useEffect(() => {
+    setHasError(false);
+  }, [photoUrl, base]);
+
+  if (uri && !hasError) {
+    return (
+      <ExpoImage
+        source={{ uri }}
+        style={styles.photoImage}
+        contentFit="cover"
+        transition={150}
+        cachePolicy="memory-disk"
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <View style={[styles.photoInitialBox, { backgroundColor: accentColor }]}>
+      <Text style={styles.initialText}>{initialLetter}</Text>
+    </View>
+  );
+}
 
 export default function TopStudentsScreen() {
   const { user, themeColor } = useAuth();
@@ -108,9 +149,7 @@ export default function TopStudentsScreen() {
   }, [selectedClassTab, top1stRankers, topClasses, q]);
 
   const renderStudentCard = ({ item: s, index }: { item: any; index: number }) => {
-    const rawPhoto = s.photoUrl || null;
-    const photoUri = rawPhoto ? resolveMediaUrlSync(rawPhoto, apiBase || getApiBaseSync()) : undefined;
-    const initialLetter = (s.firstName?.[0] || "S").toUpperCase();
+    const studentPhoto = s.photoUrl || s.avatar || s.photo || s.image || null;
     const isRank1 = s.rank === 1 || !s.rank;
 
     return (
@@ -165,22 +204,12 @@ export default function TopStudentsScreen() {
               isRank1 ? { backgroundColor: "#F59E0B" } : { backgroundColor: color },
             ]}
           >
-            {photoUri ? (
-              <Image
-                source={{ uri: photoUri }}
-                style={styles.photoImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View
-                style={[
-                  styles.photoInitialBox,
-                  isRank1 ? { backgroundColor: "#F59E0B" } : { backgroundColor: color },
-                ]}
-              >
-                <Text style={styles.initialText}>{initialLetter}</Text>
-              </View>
-            )}
+            <TopRankerPhoto
+              photoUrl={studentPhoto}
+              name={s.firstName}
+              apiBase={apiBase || getApiBaseSync()}
+              accentColor={isRank1 ? "#F59E0B" : color}
+            />
           </View>
         </View>
 
@@ -494,6 +523,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    overflow: "hidden",
   },
   photoImage: {
     width: "100%",
