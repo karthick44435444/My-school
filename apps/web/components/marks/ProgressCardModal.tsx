@@ -169,11 +169,34 @@ export default function ProgressCardModal({
     try {
       const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2.5,
+        scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
         logging: false,
-        windowWidth: 1200,
+        onclone: (clonedDoc, clonedElement) => {
+          const card = (clonedDoc.querySelector("[data-progress-card='true']") || clonedElement) as HTMLElement;
+          if (card) {
+            card.style.width = "auto";
+            card.style.maxWidth = "none";
+            card.style.minWidth = "680px";
+            card.style.overflow = "visible";
+            card.style.boxShadow = "none";
+          }
+          const scrollables = clonedDoc.querySelectorAll(".overflow-x-auto, .overflow-y-auto, .overflow-hidden");
+          scrollables.forEach((el) => {
+            const h = el as HTMLElement;
+            h.style.overflow = "visible";
+            h.style.width = "auto";
+            h.style.maxWidth = "none";
+          });
+          const tables = clonedDoc.querySelectorAll("table");
+          tables.forEach((t) => {
+            const ht = t as HTMLElement;
+            ht.style.width = "100%";
+            ht.style.minWidth = "100%";
+            ht.style.tableLayout = "auto";
+          });
+        },
       });
       const a = document.createElement("a");
       a.href = canvas.toDataURL("image/png");
@@ -198,28 +221,52 @@ export default function ProgressCardModal({
       const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2.5,
+        scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
         logging: false,
-        windowWidth: 1200,
+        onclone: (clonedDoc, clonedElement) => {
+          const card = (clonedDoc.querySelector("[data-progress-card='true']") || clonedElement) as HTMLElement;
+          if (card) {
+            card.style.width = "auto";
+            card.style.maxWidth = "none";
+            card.style.minWidth = "680px";
+            card.style.overflow = "visible";
+            card.style.boxShadow = "none";
+          }
+          const scrollables = clonedDoc.querySelectorAll(".overflow-x-auto, .overflow-y-auto, .overflow-hidden");
+          scrollables.forEach((el) => {
+            const h = el as HTMLElement;
+            h.style.overflow = "visible";
+            h.style.width = "auto";
+            h.style.maxWidth = "none";
+          });
+          const tables = clonedDoc.querySelectorAll("table");
+          tables.forEach((t) => {
+            const ht = t as HTMLElement;
+            ht.style.width = "100%";
+            ht.style.minWidth = "100%";
+            ht.style.tableLayout = "auto";
+          });
+        },
       });
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
+      const isLandscape = canvas.width > canvas.height * 1.15;
+      const pdf = new jsPDF(isLandscape ? "l" : "p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const imgWidth = pdfWidth - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const margin = 8;
+      const printableWidth = pdfWidth - margin * 2;
+      const printableHeight = pdfHeight - margin * 2;
 
-      if (imgHeight > pdfHeight - margin * 2) {
-        const scale = (pdfHeight - margin * 2) / imgHeight;
-        const scaledWidth = imgWidth * scale;
-        const xOffset = margin + (imgWidth - scaledWidth) / 2;
-        pdf.addImage(imgData, "PNG", xOffset, margin, scaledWidth, pdfHeight - margin * 2);
-      } else {
-        pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
-      }
+      const scale = Math.min(printableWidth / canvas.width, printableHeight / canvas.height);
+      const imgWidth = canvas.width * scale;
+      const imgHeight = canvas.height * scale;
+
+      const xOffset = margin + (printableWidth - imgWidth) / 2;
+      const yOffset = margin + (printableHeight - imgHeight) / 2;
+
+      pdf.addImage(imgData, "PNG", xOffset, yOffset, imgWidth, imgHeight, undefined, "FAST");
 
       const cleanName = `${student.firstName}_${examGroup.examName}_Progress_Card`.replace(/\s+/g, "_");
       pdf.save(`${cleanName}.pdf`);
@@ -246,7 +293,7 @@ export default function ProgressCardModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
-          className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]"
+          className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[94vh]"
         >
           {/* Top Control Bar */}
           <div className="px-5 py-3.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between gap-3 shrink-0 flex-wrap">
@@ -314,11 +361,12 @@ export default function ProgressCardModal({
           </div>
 
           {/* Scrollable Printable Card Area */}
-          <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 bg-slate-100/50">
+          <div className="p-3 sm:p-6 overflow-y-auto overflow-x-auto flex-1 min-h-0 bg-slate-100/50">
             <div
               ref={cardRef}
-              className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200/90 max-w-2xl mx-auto relative overflow-hidden"
-              style={{ minWidth: "560px" }}
+              data-progress-card="true"
+              className="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-slate-200/90 w-full max-w-3xl mx-auto relative"
+              style={{ minWidth: "580px" }}
             >
               {/* 1. Header Banner */}
               <div className="border-b border-slate-200/80 pb-5 mb-5">
@@ -468,21 +516,21 @@ export default function ProgressCardModal({
               </div>
 
               {/* 4. Subject Scores Table (With Date & Subject columns) */}
-              <div className="rounded-xl border border-slate-200 overflow-hidden mb-6">
-                <table className="w-full text-xs text-left">
+              <div className="rounded-xl border border-slate-200 overflow-x-auto mb-6 bg-white shadow-2xs">
+                <table className="w-full text-xs text-left min-w-[580px]">
                   <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
                     <tr>
-                      <th className="px-3.5 py-2.5">Date</th>
-                      <th className="px-3.5 py-2.5">Subject</th>
+                      <th className="px-3.5 py-2.5 whitespace-nowrap">Date</th>
+                      <th className="px-3.5 py-2.5 whitespace-nowrap">Subject</th>
                       {splitColumns.map((col) => (
-                        <th key={col} className="px-2.5 py-2.5 text-center">
+                        <th key={col} className="px-2.5 py-2.5 text-center whitespace-nowrap">
                           {col}
                         </th>
                       ))}
-                      <th className="px-3 py-2.5 text-center font-bold text-slate-900">Max</th>
-                      <th className="px-3 py-2.5 text-center font-bold text-slate-900">Pass</th>
-                      <th className="px-3.5 py-2.5 text-center font-bold text-slate-900">Obtained</th>
-                      <th className="px-3.5 py-2.5 text-center">Status</th>
+                      <th className="px-3 py-2.5 text-center font-bold text-slate-900 whitespace-nowrap">Max</th>
+                      <th className="px-3 py-2.5 text-center font-bold text-slate-900 whitespace-nowrap">Pass</th>
+                      <th className="px-3.5 py-2.5 text-center font-bold text-slate-900 whitespace-nowrap">Obtained</th>
+                      <th className="px-3.5 py-2.5 text-center whitespace-nowrap">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -502,29 +550,29 @@ export default function ProgressCardModal({
                           <td className="px-3.5 py-2.5 font-mono text-slate-600 font-medium whitespace-nowrap align-middle">
                             {rowDate ? formatDDMMYYYY(rowDate) : "—"}
                           </td>
-                          <td className="px-3.5 py-2.5 font-bold text-slate-900 align-middle">
+                          <td className="px-3.5 py-2.5 font-bold text-slate-900 align-middle min-w-[120px]">
                             {subjectTitle}
                           </td>
 
                           {splitColumns.map((col) => (
-                            <td key={col} className="px-2.5 py-2.5 text-center font-mono font-semibold text-slate-700 align-middle">
+                            <td key={col} className="px-2.5 py-2.5 text-center font-mono font-semibold text-slate-700 whitespace-nowrap align-middle">
                               {r.splits?.[col] != null && r.splits?.[col] !== "" ? r.splits[col] : "—"}
                             </td>
                           ))}
 
-                          <td className="px-3 py-2.5 text-center font-mono font-semibold text-slate-500 align-middle">
+                          <td className="px-3 py-2.5 text-center font-mono font-semibold text-slate-500 whitespace-nowrap align-middle">
                             {mx}
                           </td>
 
-                          <td className="px-3 py-2.5 text-center font-mono text-slate-400 align-middle">
+                          <td className="px-3 py-2.5 text-center font-mono text-slate-400 whitespace-nowrap align-middle">
                             {pass}
                           </td>
 
-                          <td className="px-3.5 py-2.5 text-center font-mono font-bold text-slate-900 text-sm align-middle">
+                          <td className="px-3.5 py-2.5 text-center font-mono font-bold text-slate-900 text-sm whitespace-nowrap align-middle">
                             {obt != null ? obt : "—"}
                           </td>
 
-                          <td className="px-3.5 py-2.5 text-center align-middle" style={{ verticalAlign: "middle", textAlign: "center" }}>
+                          <td className="px-3.5 py-2.5 text-center whitespace-nowrap align-middle" style={{ verticalAlign: "middle", textAlign: "center" }}>
                             {obt != null ? (
                               <span className={`text-xs font-bold text-center ${isSubPass ? "text-emerald-600" : "text-rose-600"}`}>
                                 {isSubPass ? "Pass" : "Fail"}
@@ -540,22 +588,22 @@ export default function ProgressCardModal({
                   {/* Table Total Summary Row */}
                   <tfoot className="bg-slate-100/80 font-bold border-t border-slate-200 text-slate-900">
                     <tr>
-                      <td colSpan={2} className="px-3.5 py-2.5 align-middle">Total Assessment</td>
+                      <td colSpan={2} className="px-3.5 py-2.5 align-middle whitespace-nowrap">Total Assessment</td>
                       {splitColumns.map((col) => (
-                        <td key={col} className="px-2.5 py-2.5 text-center text-slate-400 align-middle">
+                        <td key={col} className="px-2.5 py-2.5 text-center text-slate-400 whitespace-nowrap align-middle">
                           —
                         </td>
                       ))}
-                      <td className="px-3 py-2.5 text-center font-mono text-slate-700 align-middle">
+                      <td className="px-3 py-2.5 text-center font-mono text-slate-700 whitespace-nowrap align-middle">
                         {stats.totalMax}
                       </td>
-                      <td className="px-3 py-2.5 text-center font-mono text-slate-400 align-middle">
+                      <td className="px-3 py-2.5 text-center font-mono text-slate-400 whitespace-nowrap align-middle">
                         —
                       </td>
-                      <td className="px-3.5 py-2.5 text-center font-mono text-sm text-indigo-700 font-black align-middle">
+                      <td className="px-3.5 py-2.5 text-center font-mono text-sm text-indigo-700 font-black whitespace-nowrap align-middle">
                         {stats.hasAnyMarks ? stats.totalObtained : "—"}
                       </td>
-                      <td className="px-3.5 py-2.5 text-center font-semibold text-indigo-600 align-middle">
+                      <td className="px-3.5 py-2.5 text-center font-semibold text-indigo-600 whitespace-nowrap align-middle">
                         {stats.hasAnyMarks ? `${stats.percentage.toFixed(1)}%` : "—"}
                       </td>
                     </tr>

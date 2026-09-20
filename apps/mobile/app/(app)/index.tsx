@@ -1628,20 +1628,7 @@ function buildCards(
     ];
   }
 
-  if (role === "TEACHER") {
-    return [
-      {
-        key: "students",
-        label: "Students",
-        icon: "people",
-        href: "/(app)/students",
-        color: "#6366F1",
-        value: teacherStudentCount != null ? teacherStudentCount : (s("totalStudents") ?? s("students")),
-      },
-    ];
-  }
-
-  if (role === "STUDENT" || role === "PARENT") {
+  if (role === "TEACHER" || role === "STUDENT" || role === "PARENT") {
     return [];
   }
 
