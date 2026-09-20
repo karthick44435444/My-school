@@ -82,7 +82,11 @@ export type MobileUser = {
   teacherType?: string;
   className?: string;
   section?: string;
+  rollNumber?: string;
+  rollNo?: string;
   parentName?: string;
+  parentEmail?: string;
+  dateOfBirth?: string;
   phone?: string;
   plan?: string;
   planStatus?: string;

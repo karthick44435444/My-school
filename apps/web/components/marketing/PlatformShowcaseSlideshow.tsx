@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,18 +10,13 @@ import {
   Smartphone,
   CheckCircle2,
   ArrowRight,
-  ExternalLink,
   Sparkles,
-  Maximize2,
-  X,
-  Layers,
 } from "lucide-react";
-import { TOUR_ITEMS, TourItem } from "@/lib/tourData";
+import { TOUR_ITEMS } from "@/lib/tourData";
 
 export default function PlatformShowcaseSlideshow() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [lightboxImg, setLightboxImg] = useState<{ src: string; title: string; type: "Web" | "Mobile" } | null>(null);
 
   const currentItem = TOUR_ITEMS[currentIndex];
 
@@ -39,26 +34,22 @@ export default function PlatformShowcaseSlideshow() {
 
   // Auto-advance timer (5.5 seconds)
   useEffect(() => {
-    if (isPaused || lightboxImg !== null) return;
+    if (isPaused) return;
     const timer = setInterval(() => {
       nextSlide();
     }, 5500);
     return () => clearInterval(timer);
-  }, [nextSlide, isPaused, lightboxImg]);
+  }, [nextSlide, isPaused]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (lightboxImg) {
-        if (e.key === "Escape") setLightboxImg(null);
-        return;
-      }
       if (e.key === "ArrowRight") nextSlide();
       if (e.key === "ArrowLeft") prevSlide();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [nextSlide, prevSlide, lightboxImg]);
+  }, [nextSlide, prevSlide]);
 
   return (
     <div
@@ -175,7 +166,7 @@ export default function PlatformShowcaseSlideshow() {
               {/* Parallel Showcase: Web Desktop + Mobile Phone Side-by-Side */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-center">
                 {/* 1. Web Portal Window Frame (8 Cols) */}
-                <div className="lg:col-span-8 group relative rounded-2xl border border-slate-200 bg-slate-900/5 p-1.5 shadow-md hover:shadow-lg transition-all">
+                <div className="lg:col-span-8 relative rounded-2xl border border-slate-200 bg-slate-900/5 p-1.5 shadow-md transition-all">
                   <div className="rounded-xl overflow-hidden bg-white border border-slate-200/90 shadow-xs">
                     {/* Web Browser Bar */}
                     <div className="h-7 bg-slate-100/90 border-b border-slate-200 px-3 flex items-center justify-between text-xs">
@@ -193,23 +184,14 @@ export default function PlatformShowcaseSlideshow() {
                       </span>
                     </div>
 
-                    {/* Web Screenshot Image */}
-                    <div
-                      className="relative overflow-hidden cursor-pointer aspect-16/10 bg-slate-50 flex items-center justify-center group/img"
-                      onClick={() => setLightboxImg({ src: currentItem.webImage, title: currentItem.title, type: "Web" })}
-                    >
+                    {/* Web Screenshot Image (Clean Static Display) */}
+                    <div className="relative overflow-hidden aspect-16/10 bg-slate-50 flex items-center justify-center">
                       <img
                         src={currentItem.webImage}
                         alt={`${currentItem.title} Web View`}
-                        className="w-full h-full object-contain object-top group-hover/img:scale-[1.01] transition-transform duration-300"
+                        className="w-full h-full object-contain object-top"
                         loading="eager"
                       />
-                      <div className="absolute inset-0 bg-slate-900/0 group-hover/img:bg-slate-900/20 transition-all flex items-center justify-center opacity-0 group-hover/img:opacity-100">
-                        <span className="px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-md text-slate-900 text-xs font-bold shadow-lg flex items-center gap-1.5">
-                          <Maximize2 className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>View Fullscreen</span>
-                        </span>
-                      </div>
                     </div>
                   </div>
                   <div className="mt-1 px-1 flex items-center justify-between text-[10px] text-slate-500 font-medium">
@@ -217,32 +199,22 @@ export default function PlatformShowcaseSlideshow() {
                       <Monitor className="w-3 h-3 text-indigo-600" />
                       <span>Desktop Web App</span>
                     </span>
-                    <span className="text-slate-400">Click to expand</span>
                   </div>
                 </div>
 
                 {/* 2. Mobile App Phone Frame (4 Cols) - Clean Bezel Without Notch */}
-                <div className="lg:col-span-4 group relative flex flex-col items-center">
-                  <div className="w-full max-w-[210px] sm:max-w-[225px] rounded-[30px] border-[4px] border-slate-800 bg-slate-900 p-1 shadow-lg hover:shadow-xl transition-all">
+                <div className="lg:col-span-4 relative flex flex-col items-center">
+                  <div className="w-full max-w-[210px] sm:max-w-[225px] rounded-[30px] border-[4px] border-slate-800 bg-slate-900 p-1 shadow-lg transition-all">
                     {/* Clean Phone Screen Container (No Notch) */}
                     <div className="rounded-[24px] overflow-hidden bg-slate-950 border border-slate-800 relative">
-                      {/* Mobile Screenshot Image */}
-                      <div
-                        className="relative overflow-hidden cursor-pointer aspect-9/18.5 bg-slate-900 flex items-center justify-center group/mimg"
-                        onClick={() => setLightboxImg({ src: currentItem.mobileImage, title: currentItem.title, type: "Mobile" })}
-                      >
+                      {/* Mobile Screenshot Image (Clean Static Display) */}
+                      <div className="relative overflow-hidden aspect-9/18.5 bg-slate-900 flex items-center justify-center">
                         <img
                           src={currentItem.mobileImage}
                           alt={`${currentItem.title} Mobile View`}
-                          className="w-full h-full object-contain group-hover/mimg:scale-[1.02] transition-transform duration-300"
+                          className="w-full h-full object-contain"
                           loading="eager"
                         />
-                        <div className="absolute inset-0 bg-slate-900/0 group-hover/mimg:bg-slate-900/30 transition-all flex items-center justify-center opacity-0 group-hover/mimg:opacity-100">
-                          <span className="px-2.5 py-1 rounded-lg bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md flex items-center gap-1">
-                            <Maximize2 className="w-3 h-3 text-indigo-600" />
-                            <span>Expand</span>
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -289,58 +261,6 @@ export default function PlatformShowcaseSlideshow() {
           </div>
         </div>
       </div>
-
-      {/* Lightbox Zoom Modal with Clear Back Button */}
-      <AnimatePresence>
-        {lightboxImg && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              className="relative max-w-5xl w-full max-h-[92vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-slate-700"
-            >
-              {/* Lightbox Header with Back Button */}
-              <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setLightboxImg(null)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition cursor-pointer border border-slate-700"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    <span>Back</span>
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-600 text-white">
-                      {lightboxImg.type} View
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-slate-200 truncate">
-                      {lightboxImg.title}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setLightboxImg(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer flex items-center gap-1"
-                  title="Close (Esc)"
-                >
-                  <span className="text-xs font-medium text-slate-400 hidden sm:inline">Close</span>
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-4 overflow-auto flex-1 flex items-center justify-center bg-slate-100 max-h-[calc(92vh-60px)]">
-                <img
-                  src={lightboxImg.src}
-                  alt={lightboxImg.title}
-                  className="max-h-[82vh] w-auto object-contain rounded-lg shadow-sm"
-                />
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -21,6 +21,8 @@ export interface AuthUser {
   teacherType?: string;
   className?: string;
   section?: string;
+  rollNumber?: string;
+  rollNo?: string;
   parentName?: string;
   parentEmail?: string;
   dateOfBirth?: string;

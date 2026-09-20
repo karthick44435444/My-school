@@ -75,6 +75,8 @@ export async function GET() {
         teacherType: user.teacherType,
         className: user.className,
         section: user.section,
+        rollNumber: user.rollNumber || (user as any).rollNo || undefined,
+        rollNo: user.rollNumber || (user as any).rollNo || undefined,
         parentName: user.parentName,
         parentEmail: user.parentEmail,
         dateOfBirth: user.dateOfBirth,
