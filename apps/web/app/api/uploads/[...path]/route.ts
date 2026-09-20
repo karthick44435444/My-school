@@ -1,1 +1,1 @@
-export { GET, OPTIONS } from "@/app/uploads/[...path]/route";
+export { GET, HEAD, OPTIONS } from "@/app/uploads/[...path]/route";

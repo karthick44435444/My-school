@@ -96,43 +96,53 @@ export type MobileUser = {
 };
 
 
-/** Turn relative /uploads/... into absolute URL for <Image> */
-export async function resolveMediaUrl(url?: string | null): Promise<string | undefined> {
+/** Turn relative /uploads/..., data:..., or localhost URLs into a valid absolute URL for ExpoImage / Image */
+export function resolveMediaUrlSync(url: string | null | undefined, apiBase?: string): string | undefined {
   if (!url) return undefined;
-  let u = String(url).trim().replace(/\\/g, "/").replace(/^['"]+|['"]+$/g, "");
+  let u = String(url).trim().replace(/^['"]+|['"]+$/g, "");
   if (!u || u === "null" || u === "undefined") return undefined;
-  if (u.startsWith("//")) return `https:${u}`;
-  if (/^https?:\/\//i.test(u) || u.startsWith("data:") || u.startsWith("file:") || u.startsWith("blob:")) {
+
+  // Data URIs: strip any spaces or newlines that break React Native Image parsing
+  if (u.startsWith("data:")) {
+    return u.replace(/\s+/g, "");
+  }
+
+  if (u.startsWith("file:") || u.startsWith("blob:")) {
     return u;
   }
-  const base = ((await getApiBase()) || DEFAULT_API).replace(/\/+$/, "");
-  let cleanPath = u.replace(/^\/+/, "");
+
+  const base = (apiBase || getApiBaseSync() || DEFAULT_API).replace(/\/+$/, "");
+
+  // If URL has http://localhost or http://127.0.0.1 (from local web testing), rewrite host to mobile active api base
+  if (/^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?/i.test(u)) {
+    u = u.replace(/^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?/, "");
+  }
+
+  if (u.startsWith("//")) {
+    return `https:${u}`;
+  }
+
+  if (/^https?:\/\//i.test(u)) {
+    return u;
+  }
+
+  let cleanPath = u.replace(/\\/g, "/").replace(/^\/+/, "");
   if (cleanPath.startsWith("public/uploads/")) {
     cleanPath = cleanPath.replace(/^public\//, "");
   }
+
   if (!cleanPath.startsWith("uploads/") && !cleanPath.startsWith("api/uploads/")) {
-    cleanPath = `uploads/${cleanPath}`;
+    cleanPath = `api/uploads/${cleanPath}`;
+  } else if (cleanPath.startsWith("uploads/")) {
+    cleanPath = `api/${cleanPath}`;
   }
+
   return `${base}/${cleanPath}`;
 }
 
-export function resolveMediaUrlSync(url: string | null | undefined, apiBase?: string): string | undefined {
-  if (!url) return undefined;
-  let u = String(url).trim().replace(/\\/g, "/").replace(/^['"]+|['"]+$/g, "");
-  if (!u || u === "null" || u === "undefined") return undefined;
-  if (u.startsWith("//")) return `https:${u}`;
-  if (/^https?:\/\//i.test(u) || u.startsWith("data:") || u.startsWith("file:") || u.startsWith("blob:")) {
-    return u;
-  }
-  const base = (apiBase || getApiBaseSync() || DEFAULT_API).replace(/\/+$/, "");
-  let cleanPath = u.replace(/^\/+/, "");
-  if (cleanPath.startsWith("public/uploads/")) {
-    cleanPath = cleanPath.replace(/^public\//, "");
-  }
-  if (!cleanPath.startsWith("uploads/") && !cleanPath.startsWith("api/uploads/")) {
-    cleanPath = `uploads/${cleanPath}`;
-  }
-  return `${base}/${cleanPath}`;
+export async function resolveMediaUrl(url?: string | null): Promise<string | undefined> {
+  const base = await getApiBase();
+  return resolveMediaUrlSync(url, base);
 }
 
 export async function getToken(): Promise<string | null> {

@@ -120,8 +120,20 @@ export async function POST(req: NextRequest) {
     const { saveUploadedFile } = await import("@/lib/store");
     saveUploadedFile(filename, buffer, file.type || undefined, file.size || buffer.length);
 
-    const url = `/api/uploads/${filename}`;
-    return NextResponse.json({ success: true, url, name: file.name || filename });
+    // If file is an image or document <= 3.5MB, return direct data URI so it is saved directly into the user/school/homework DB records
+    let url = `/api/uploads/${filename}`;
+    const mimeType = file.type || (safeExt === "pdf" ? "application/pdf" : "image/jpeg");
+    if (buffer.length <= 3.5 * 1024 * 1024) {
+      const base64Data = buffer.toString("base64");
+      url = `data:${mimeType};base64,${base64Data}`;
+    }
+
+    return NextResponse.json({
+      success: true,
+      url,
+      fallbackUrl: `/api/uploads/${filename}`,
+      name: file.name || filename,
+    });
   } catch (error: any) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: error.message || "Upload failed" }, { status: 500 });

@@ -5970,7 +5970,7 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     };
   }
 
-  // 3. Check if a user/student has a base64 photoUrl in db.users
+  // 3. Check if a user/student has a base64 or matching photoUrl in db.users
   const userMatch = (db.users || []).find((u) => {
     if (!u.photoUrl) return false;
     const urlClean = path.basename(u.photoUrl).toLowerCase();
@@ -5989,12 +5989,52 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     }
   }
 
-  // 4. Default avatar fallback for avatar/student/profile requests
-  if (cleanName.includes("student") || cleanName.includes("admin") || cleanName.includes("profile") || cleanName.includes("photo")) {
+  // 4. Check if a school has a matching or base64 logoUrl in db.schools
+  const schoolMatch = (db.schools || []).find((s) => {
+    if (!s.logoUrl) return false;
+    const urlClean = path.basename(s.logoUrl).toLowerCase();
+    if (urlClean === cleanName) return true;
+    if (s.id.toLowerCase() === cleanName || s.schoolCode.toLowerCase() === cleanName) return true;
+    return false;
+  });
+
+  if (schoolMatch?.logoUrl && schoolMatch.logoUrl.startsWith("data:")) {
+    const match = schoolMatch.logoUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (match) {
+      return {
+        buffer: Buffer.from(match[2], "base64"),
+        mimeType: match[1],
+      };
+    }
+  }
+
+  // 5. Check in db.homeworks attachments
+  for (const hw of db.homeworks || []) {
+    const atts: any[] = Array.isArray(hw.attachments) ? [...hw.attachments] : [];
+    if (hw.attachmentUrl) atts.push(hw.attachmentUrl);
+    for (const a of atts) {
+      const aStr = typeof a === "string" ? a : a?.url || a?.uri || "";
+      if (aStr && path.basename(aStr).toLowerCase() === cleanName) {
+        if (aStr.startsWith("data:")) {
+          const match = aStr.match(/^data:([^;]+);base64,(.+)$/);
+          if (match) {
+            return {
+              buffer: Buffer.from(match[2], "base64"),
+              mimeType: match[1],
+            };
+          }
+        }
+      }
+    }
+  }
+
+  // 6. Default avatar fallback for avatar/student/profile/logo requests
+  if (cleanName.includes("student") || cleanName.includes("admin") || cleanName.includes("profile") || cleanName.includes("photo") || cleanName.includes("logo")) {
     const fallback = (db.uploadedFiles || []).find((f) => 
       f.filename.toLowerCase().includes("student") ||
       f.filename.toLowerCase().includes("profile") ||
-      f.filename.toLowerCase().includes("photo")
+      f.filename.toLowerCase().includes("photo") ||
+      f.filename.toLowerCase().includes("logo")
     );
     if (fallback && fallback.data) {
       return {

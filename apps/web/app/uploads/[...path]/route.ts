@@ -74,6 +74,26 @@ export async function GET(
     }
 
     if (!stored) {
+      const ext = path.extname(safeBaseFilename).toLowerCase();
+      if (
+        [".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif", ".ico"].includes(ext) ||
+        safeBaseFilename.includes("photo") ||
+        safeBaseFilename.includes("avatar") ||
+        safeBaseFilename.includes("logo") ||
+        safeBaseFilename.includes("student")
+      ) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none"><rect width="128" height="128" rx="24" fill="#6366F1"/><circle cx="64" cy="48" r="22" fill="#FFFFFF"/><path d="M28 108C28 88.1178 44.1178 72 64 72C83.8822 72 100 88.1178 100 108" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/></svg>`;
+        return new NextResponse(svg, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/svg+xml",
+            "Cache-Control": "public, max-age=3600",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+          },
+        });
+      }
       return new NextResponse("File not found", {
         status: 404,
         headers: { "Access-Control-Allow-Origin": "*" },
@@ -100,6 +120,10 @@ export async function GET(
   } catch {
     return new NextResponse("Internal Server Error", { status: 500 });
   }
+}
+
+export async function HEAD(req: NextRequest, props: { params: any }) {
+  return GET(req, props);
 }
 
 export async function OPTIONS() {

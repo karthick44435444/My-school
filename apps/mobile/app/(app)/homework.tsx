@@ -52,6 +52,7 @@ function isImageUrl(url?: string): boolean {
   if (!url) return false;
   const clean = String(url).split("?")[0].replace(/\\/g, "/").toLowerCase();
   return (
+    clean.startsWith("data:image/") ||
     clean.endsWith(".jpg") ||
     clean.endsWith(".jpeg") ||
     clean.endsWith(".png") ||
@@ -60,7 +61,10 @@ function isImageUrl(url?: string): boolean {
     clean.endsWith(".svg") ||
     clean.endsWith(".bmp") ||
     clean.endsWith(".heic") ||
-    clean.startsWith("data:image/") ||
+    clean.includes(".jpg") ||
+    clean.includes(".jpeg") ||
+    clean.includes(".png") ||
+    clean.includes(".webp") ||
     clean.includes("/image/upload/") ||
     clean.includes("/uploads/image") ||
     clean.includes("image_")
@@ -69,6 +73,8 @@ function isImageUrl(url?: string): boolean {
 
 function getFileName(url?: string): string {
   if (!url) return "Attachment";
+  if (url.startsWith("data:image/")) return "Image.jpg";
+  if (url.startsWith("data:application/pdf")) return "Document.pdf";
   try {
     const clean = String(url).split("?")[0].replace(/\\/g, "/");
     let name = clean.split("/").pop() || "Attachment";
