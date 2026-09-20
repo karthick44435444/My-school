@@ -96,8 +96,19 @@ export default function TeacherHomeworkPage() {
   });
   const [attachments, setAttachments] = useState<{ name: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+
+  const handleDownload = async (url: string, fileName?: string) => {
+    if (downloadingUrl) return;
+    setDownloadingUrl(url);
+    try {
+      await downloadAttachment(url, fileName);
+    } finally {
+      setDownloadingUrl(null);
+    }
+  };
 
   const load = useCallback(async (targetPage = page, q = searchQuery) => {
     setBusy(true);
@@ -418,10 +429,16 @@ export default function TeacherHomeworkPage() {
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => downloadAttachment(url, fileName)}
-                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                                      disabled={downloadingUrl === url}
+                                      onClick={() => handleDownload(url, fileName)}
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer disabled:opacity-60"
                                     >
-                                      <Download className="w-3 h-3" /> Download
+                                      {downloadingUrl === url ? (
+                                        <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                                      ) : (
+                                        <Download className="w-3 h-3" />
+                                      )}
+                                      {downloadingUrl === url ? "Downloading..." : "Download"}
                                     </button>
                                   </div>
                                 </div>
@@ -461,10 +478,16 @@ export default function TeacherHomeworkPage() {
                                   </a>
                                   <button
                                     type="button"
-                                    onClick={() => downloadAttachment(url, fileName)}
-                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                                    disabled={downloadingUrl === url}
+                                    onClick={() => handleDownload(url, fileName)}
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer disabled:opacity-60"
                                   >
-                                    <Download className="w-3 h-3" /> Download
+                                    {downloadingUrl === url ? (
+                                      <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                                    ) : (
+                                      <Download className="w-3 h-3" />
+                                    )}
+                                    {downloadingUrl === url ? "Downloading..." : "Download"}
                                   </button>
                                 </div>
                               </div>
@@ -516,10 +539,16 @@ export default function TeacherHomeworkPage() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => previewImage && downloadAttachment(previewImage, getFileName(previewImage))}
-                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                  disabled={downloadingUrl === previewImage}
+                  onClick={() => previewImage && handleDownload(previewImage, getFileName(previewImage))}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-60"
                 >
-                  <Download className="w-3.5 h-3.5" /> Download
+                  {downloadingUrl === previewImage ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  {downloadingUrl === previewImage ? "Saving..." : "Download"}
                 </button>
                 <button
                   type="button"
@@ -639,8 +668,12 @@ export default function TeacherHomeworkPage() {
                     Attachments (max 2 files or images)
                   </div>
                   <label className="flex items-center justify-center gap-2 border border-dashed border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50 rounded-2xl py-3 cursor-pointer text-xs font-bold text-indigo-600 transition shadow-2xs">
-                    <Paperclip className="w-4 h-4" />
-                    {uploading ? "Uploading..." : "Add file or photo"}
+                    {uploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                    ) : (
+                      <Paperclip className="w-4 h-4" />
+                    )}
+                    {uploading ? "Uploading attachment..." : "Add file or photo"}
                     <input
                       type="file"
                       accept="image/*,.pdf,.xls,.xlsx,.csv,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

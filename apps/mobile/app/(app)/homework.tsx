@@ -133,6 +133,7 @@ export default function HomeworkScreen() {
   });
   const [attachments, setAttachments] = useState<{ uri: string; name: string; url?: string }[]>([]);
   const [uploadingAtt, setUploadingAtt] = useState(false);
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
   const [formErr, setFormErr] = useState<Record<string, string>>({});
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
@@ -399,6 +400,8 @@ export default function HomeworkScreen() {
   };
 
   const handleDownload = async (rawUrl: string) => {
+    if (downloadingUrl) return;
+    setDownloadingUrl(rawUrl);
     try {
       const resolved = resolveMediaUrlSync(rawUrl, apiBase);
       if (!resolved) {
@@ -439,6 +442,8 @@ export default function HomeworkScreen() {
       toast.success(`"${fileName}" downloaded!`);
     } catch (err: any) {
       toast.error(err?.message || "Could not download attachment");
+    } finally {
+      setDownloadingUrl(null);
     }
   };
 
@@ -673,10 +678,17 @@ export default function HomeworkScreen() {
                                 </Pressable>
                                 <Pressable
                                   onPress={() => handleDownload(url)}
+                                  disabled={downloadingUrl === url}
                                   style={[styles.attActionBtn, { backgroundColor: "#F1F5F9" }]}
                                 >
-                                  <Ionicons name="download-outline" size={13} color="#475569" />
-                                  <Text style={[styles.attActionText, { color: "#475569" }]}>Download</Text>
+                                  {downloadingUrl === url ? (
+                                    <ActivityIndicator size="small" color="#475569" style={{ transform: [{ scale: 0.7 }] }} />
+                                  ) : (
+                                    <Ionicons name="download-outline" size={13} color="#475569" />
+                                  )}
+                                  <Text style={[styles.attActionText, { color: "#475569" }]}>
+                                    {downloadingUrl === url ? "Saving..." : "Download"}
+                                  </Text>
                                 </Pressable>
                               </View>
                             </View>
@@ -719,10 +731,17 @@ export default function HomeworkScreen() {
                               </Pressable>
                               <Pressable
                                 onPress={() => handleDownload(url)}
+                                disabled={downloadingUrl === url}
                                 style={[styles.attActionBtn, { backgroundColor: "#F1F5F9" }]}
                               >
-                                <Ionicons name="download-outline" size={13} color="#475569" />
-                                <Text style={[styles.attActionText, { color: "#475569" }]}>Download</Text>
+                                {downloadingUrl === url ? (
+                                  <ActivityIndicator size="small" color="#475569" style={{ transform: [{ scale: 0.7 }] }} />
+                                ) : (
+                                  <Ionicons name="download-outline" size={13} color="#475569" />
+                                )}
+                                <Text style={[styles.attActionText, { color: "#475569" }]}>
+                                  {downloadingUrl === url ? "Saving..." : "Download"}
+                                </Text>
                               </Pressable>
                             </View>
                           </View>
@@ -759,10 +778,17 @@ export default function HomeworkScreen() {
           <View style={styles.lightboxHeader}>
             <Pressable
               onPress={() => previewImage && handleDownload(previewImage)}
+              disabled={!!downloadingUrl}
               style={styles.lightboxDownloadBtn}
             >
-              <Ionicons name="download-outline" size={18} color="#fff" />
-              <Text style={styles.lightboxDownloadText}>Download</Text>
+              {downloadingUrl === previewImage ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="download-outline" size={18} color="#fff" />
+              )}
+              <Text style={styles.lightboxDownloadText}>
+                {downloadingUrl === previewImage ? "Saving..." : "Download"}
+              </Text>
             </Pressable>
             <Pressable onPress={() => setPreviewImage(null)} style={styles.lightboxCloseBtn}>
               <Ionicons name="close" size={22} color="#fff" />
@@ -859,18 +885,30 @@ export default function HomeworkScreen() {
                 disabled={uploadingAtt || attachments.length >= 2}
                 style={{
                   borderWidth: 1.5,
-                  borderColor: Colors.border,
+                  borderColor: uploadingAtt ? color : Colors.border,
                   borderStyle: "dashed",
                   borderRadius: 12,
                   padding: 12,
+                  flexDirection: "row",
                   alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
                   marginBottom: 8,
+                  backgroundColor: uploadingAtt ? color + "08" : "transparent",
                   opacity: attachments.length >= 2 ? 0.5 : 1,
                 }}
               >
-                <Text style={{ fontWeight: "700", color }}>
-                  {uploadingAtt ? "Uploading..." : "+ Add attachment"}
-                </Text>
+                {uploadingAtt ? (
+                  <>
+                    <ActivityIndicator size="small" color={color} />
+                    <Text style={{ fontWeight: "700", color }}>Uploading attachment...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="attach-outline" size={18} color={color} />
+                    <Text style={{ fontWeight: "700", color }}>+ Add attachment</Text>
+                  </>
+                )}
               </Pressable>
               {attachments.map((a, i) => {
                 const isImg = isImageUrl(a.uri || a.url || a.name);

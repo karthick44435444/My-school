@@ -82,7 +82,18 @@ export default function ParentHomeworkPage() {
   const [subjectFilter, setSubjectFilter] = useState("ALL");
   const [subjects, setSubjects] = useState<string[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+
+  const handleDownload = async (url: string, fileName?: string) => {
+    if (downloadingUrl) return;
+    setDownloadingUrl(url);
+    try {
+      await downloadAttachment(url, fileName);
+    } finally {
+      setDownloadingUrl(null);
+    }
+  };
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -477,10 +488,16 @@ export default function ParentHomeworkPage() {
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => downloadAttachment(url, fileName)}
-                                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                                          disabled={downloadingUrl === url}
+                                          onClick={() => handleDownload(url, fileName)}
+                                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer disabled:opacity-60"
                                         >
-                                          <Download className="w-3 h-3" /> Download
+                                          {downloadingUrl === url ? (
+                                            <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                                          ) : (
+                                            <Download className="w-3 h-3" />
+                                          )}
+                                          {downloadingUrl === url ? "Downloading..." : "Download"}
                                         </button>
                                       </div>
                                     </div>
@@ -520,10 +537,16 @@ export default function ParentHomeworkPage() {
                                       </a>
                                       <button
                                         type="button"
-                                        onClick={() => downloadAttachment(url, fileName)}
-                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                                        disabled={downloadingUrl === url}
+                                        onClick={() => handleDownload(url, fileName)}
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer disabled:opacity-60"
                                       >
-                                        <Download className="w-3 h-3" /> Download
+                                        {downloadingUrl === url ? (
+                                          <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                                        ) : (
+                                          <Download className="w-3 h-3" />
+                                        )}
+                                        {downloadingUrl === url ? "Downloading..." : "Download"}
                                       </button>
                                     </div>
                                   </div>
