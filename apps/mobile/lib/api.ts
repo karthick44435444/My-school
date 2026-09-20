@@ -233,6 +233,11 @@ export async function login(
 
 export async function logout() {
   try {
+    await unregisterPushToken();
+  } catch {
+    /* ignore */
+  }
+  try {
     await api("/api/auth/logout", { method: "POST" });
   } catch {
     /* ignore */
@@ -250,6 +255,13 @@ export async function registerPushToken(token: string, platform: string) {
   return api("/api/push", {
     method: "POST",
     body: { action: "register", token, platform },
+  });
+}
+
+export async function unregisterPushToken(token?: string) {
+  return api("/api/push", {
+    method: "POST",
+    body: { action: "unregister", token },
   });
 }
 

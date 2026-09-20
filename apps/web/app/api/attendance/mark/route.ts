@@ -75,11 +75,15 @@ export async function POST(req: NextRequest) {
           const parent = parents.find(
             (u: any) => u.email?.toLowerCase() === student.parentEmail?.toLowerCase()
           );
+          const parentBodyText = `Your child ${student.firstName} ${student.lastName || ""} (${student.className || ""}${
+            student.section ? `-${student.section}` : ""
+          }) is marked absent on ${day}.`.replace(/\s+/g, " ").trim();
+
           if (parent?.id && !seen.has(parent.id)) {
             seen.add(parent.id);
             await notifyUser(parent.id, {
               title,
-              body: `Your child ${student.firstName} is marked absent on ${day}.`,
+              body: parentBodyText,
               email: parent.email,
               type: "LEAVE",
               data: { type: "LEAVE", studentId: student.id, date: day },
@@ -93,9 +97,9 @@ export async function POST(req: NextRequest) {
               subject: title,
               html: notificationEmailHtml(
                 title,
-                `Your child ${student.firstName} is marked absent on ${day}.`
+                parentBodyText
               ),
-              text: `Your child ${student.firstName} is marked absent on ${day}.`,
+              text: parentBodyText,
             });
           }
         }

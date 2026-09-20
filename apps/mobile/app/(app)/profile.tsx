@@ -537,6 +537,14 @@ export default function ProfileScreen() {
                     <Ionicons name={roleIcon} size={13} color={color} style={{ marginRight: 4 }} />
                     <Text style={[styles.roleBadgeText, { color }]}>{roleLabel}</Text>
                   </View>
+                  {isStudent && ((user as any)?.rollNumber || (user as any)?.rollNo) ? (
+                    <View style={[styles.roleBadge, { backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" }]}>
+                      <Ionicons name="id-card-outline" size={13} color="#475569" style={{ marginRight: 4 }} />
+                      <Text style={[styles.roleBadgeText, { color: "#334155" }]}>
+                        Roll #{(user as any).rollNumber || (user as any).rollNo}
+                      </Text>
+                    </View>
+                  ) : null}
                   <View style={styles.schoolBadge}>
                     <Ionicons name="business-outline" size={13} color="#475569" style={{ marginRight: 4 }} />
                     <Text style={styles.schoolBadgeText} numberOfLines={1}>
@@ -586,7 +594,9 @@ export default function ProfileScreen() {
               {!editing ? (
                 <View style={styles.infoList}>
                   <InfoRow icon="person-outline" label="Full Name" value={`${user?.firstName || ""} ${user?.lastName || ""}`} />
-                  {((user as any)?.rollNumber || (user as any)?.rollNo) ? (
+                  {isStudent ? (
+                    <InfoRow icon="id-card-outline" label="Roll Number" value={(user as any)?.rollNumber || (user as any)?.rollNo || "—"} />
+                  ) : ((user as any)?.rollNumber || (user as any)?.rollNo) ? (
                     <InfoRow icon="id-card-outline" label="Roll Number" value={(user as any)?.rollNumber || (user as any)?.rollNo} />
                   ) : null}
                   <InfoRow icon="mail-outline" label="Email Address" value={user?.email} />

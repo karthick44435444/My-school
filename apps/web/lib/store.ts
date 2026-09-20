@@ -1762,46 +1762,9 @@ export function markStudentAttendance(data: {
       notificationSent: wasNotified,
     };
 
-    // Leave notification to student + parent when marked ABSENT (once)
+    // Mark notificationSent = true if absent so route can dispatch single formatted notification
     if (rec.status === "ABSENT" && !wasNotified) {
-      const student = db.users.find((u: any) => u.id === rec.studentId);
-      if (student) {
-        const title = "Leave / Absent";
-        const body = `${student.firstName} marked absent on ${date}`;
-        db.notifications.unshift({
-          id: `notif_${Date.now()}_abs_s_${rec.studentId}`,
-          schoolId: data.schoolId,
-          userId: student.id,
-          title,
-          body,
-          type: "LEAVE",
-          meta: { date, studentId: student.id },
-          read: false,
-          createdAt: new Date().toISOString(),
-        });
-        if (student.parentEmail) {
-          const parent = db.users.find(
-            (u: any) =>
-              u.role === "PARENT" &&
-              u.schoolId === data.schoolId &&
-              u.email?.toLowerCase() === student.parentEmail.toLowerCase()
-          );
-          if (parent) {
-            db.notifications.unshift({
-              id: `notif_${Date.now()}_abs_p_${parent.id}`,
-              schoolId: data.schoolId,
-              userId: parent.id,
-              title: `Leave: ${student.firstName}`,
-              body,
-              type: "LEAVE",
-              meta: { date, studentId: student.id },
-              read: false,
-              createdAt: new Date().toISOString(),
-            });
-          }
-        }
-        entry.notificationSent = true;
-      }
+      entry.notificationSent = true;
     }
 
     if (existingIdx >= 0) {
@@ -5670,6 +5633,56 @@ export function getSchoolSubscription(schoolId: string) {
     isExpired,
     status,
     availablePlans: SUBSCRIPTION_PLANS,
+  };
+}
+
+export function getSchoolPlanLimits(schoolId: string) {
+  const db = readDB();
+  const school = db.schools.find((s) => s.id === schoolId);
+  const planId = (school?.plan || "OFFER_MONTHLY").toUpperCase();
+
+  let maxTeachers = 50;
+  let maxStudents = 1000;
+  let maxPrincipals = 2;
+  let planName = "1-Month Offer";
+
+  if (planId === "TERM" || planId === "STANDARD") {
+    maxTeachers = 100;
+    maxStudents = 2000;
+    maxPrincipals = 5;
+    planName = "Term Plan (6 Months)";
+  } else if (planId === "ANNUAL" || planId === "PREMIUM") {
+    maxTeachers = 500;
+    maxStudents = 10000;
+    maxPrincipals = 10;
+    planName = "Annual Plan (1 Year)";
+  }
+
+  const currentTeachers = (db.users || []).filter(
+    (u: any) => u.schoolId === schoolId && u.role === "TEACHER" && u.isActive !== false
+  ).length;
+  const currentStudents = (db.users || []).filter(
+    (u: any) => u.schoolId === schoolId && u.role === "STUDENT" && u.isActive !== false
+  ).length;
+  const currentPrincipals = (db.users || []).filter(
+    (u: any) => u.schoolId === schoolId && u.role === "PRINCIPAL" && u.isActive !== false
+  ).length;
+
+  return {
+    planId,
+    planName,
+    maxTeachers,
+    maxStudents,
+    maxPrincipals,
+    currentTeachers,
+    currentStudents,
+    currentPrincipals,
+    teachersAvailable: Math.max(0, maxTeachers - currentTeachers),
+    studentsAvailable: Math.max(0, maxStudents - currentStudents),
+    principalsAvailable: Math.max(0, maxPrincipals - currentPrincipals),
+    isTeacherLimitReached: currentTeachers >= maxTeachers,
+    isStudentLimitReached: currentStudents >= maxStudents,
+    isPrincipalLimitReached: currentPrincipals >= maxPrincipals,
   };
 }
 

@@ -1243,7 +1243,7 @@ export default function HomeScreen() {
                       <Text style={{ fontSize: 13, fontWeight: "700", color: on ? "#ffffff" : Colors.text }}>
                         {toTitleCase(c.firstName)}{" "}
                         <Text style={{ fontSize: 11, fontWeight: "500", color: on ? "rgba(255,255,255,0.85)" : Colors.textMuted }}>
-                          ({c.className || ""}{c.section ? `-${c.section}` : ""})
+                          ({c.className || ""}{c.section ? `-${c.section}` : ""}{(c.rollNumber || c.rollNo) ? ` · Roll: ${c.rollNumber || c.rollNo}` : ""})
                         </Text>
                       </Text>
                       {kidBadge > 0 && !on && (

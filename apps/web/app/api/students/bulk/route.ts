@@ -8,6 +8,7 @@ import {
   cleanPhoneNumber,
   ensureClass,
   readDB,
+  getSchoolPlanLimits,
 } from "@/lib/store";
 import {
   sendEmail,
@@ -375,6 +376,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "No valid student rows to upload" },
         { status: 400 }
+      );
+    }
+
+    // Check school plan student limit
+    const limits = getSchoolPlanLimits(auth.schoolId);
+    if (limits.currentStudents + validRows.length > limits.maxStudents) {
+      return NextResponse.json(
+        {
+          error: `Plan limit exceeded: Your current plan (${limits.planName}) allows up to ${limits.maxStudents} students (${limits.studentsAvailable} slots remaining). Please upgrade your subscription to add ${validRows.length} more students.`,
+          code: "PLAN_LIMIT_REACHED",
+          maxStudents: limits.maxStudents,
+          currentStudents: limits.currentStudents,
+          availableSlots: limits.studentsAvailable,
+        },
+        { status: 403 }
       );
     }
 

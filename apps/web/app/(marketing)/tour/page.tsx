@@ -19,6 +19,7 @@ import {
   Calendar,
   FileCheck,
   ShieldCheck,
+  ChevronLeft,
 } from "lucide-react";
 import MarketingNavbar from "@/components/marketing/MarketingNavbar";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
@@ -193,16 +194,10 @@ export default function PlatformTourPage() {
                   </div>
                 </div>
 
-                {/* Mobile Phone Mockup Frame (4 Cols) */}
+                {/* Mobile Phone Mockup Frame (4 Cols) - Clean Bezel Without Notch */}
                 <div className="lg:col-span-4 group relative flex flex-col items-center">
-                  <div className="w-full max-w-[240px] sm:max-w-[270px] rounded-[38px] border-[6px] border-slate-800 bg-slate-900 p-1 shadow-xl hover:shadow-2xl transition-all">
-                    <div className="rounded-[30px] overflow-hidden bg-slate-950 border border-slate-800 relative">
-                      {/* Dynamic Island / Notch */}
-                      <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 w-20 h-4 bg-black rounded-full flex items-center justify-center">
-                        <div className="w-2.5 h-2.5 rounded-full bg-slate-800/80 mr-2" />
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/80" />
-                      </div>
-
+                  <div className="w-full max-w-[220px] sm:max-w-[235px] rounded-[32px] border-[5px] border-slate-800 bg-slate-900 p-1 shadow-xl hover:shadow-2xl transition-all">
+                    <div className="rounded-[26px] overflow-hidden bg-slate-950 border border-slate-800 relative">
                       <div
                         className="relative overflow-hidden cursor-pointer aspect-9/18.5 bg-slate-900 flex items-center justify-center group/mimg"
                         onClick={() => setLightboxImg({ src: item.mobileImage, title: item.title, type: "Mobile" })}
@@ -238,65 +233,55 @@ export default function PlatformTourPage() {
                   </div>
                   <div
                     className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 p-2 cursor-pointer group/extra"
-                    onClick={() => setLightboxImg({ src: item.extraWebImage!, title: `${item.title} - ${item.extraLabel}`, type: "Web" })}
+                    onClick={() => setLightboxImg({ src: item.extraWebImage!, title: `${item.title} - ${item.extraLabel || 'Extra View'}`, type: "Web" })}
                   >
                     <img
                       src={item.extraWebImage}
                       alt={item.extraLabel || item.title}
-                      className="w-full max-h-[360px] object-contain rounded-xl mx-auto group-hover/extra:scale-[1.01] transition"
+                      className="w-full h-auto max-h-[400px] object-contain object-top rounded-xl group-hover/extra:scale-[1.01] transition-transform duration-300"
                       loading="lazy"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Verified Feature Functions Grid */}
-              <div className="pt-4 border-t border-slate-100">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                  Core Built-in Capabilities
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {item.features.map((feat, fIdx) => (
-                    <div
-                      key={fIdx}
-                      className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 font-medium"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      <span className="leading-snug">{feat}</span>
-                    </div>
-                  ))}
-                </div>
+              {/* Highlights Feature Badges */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-6 border-t border-slate-100">
+                {item.features.map((feat, fIdx) => (
+                  <div
+                    key={fIdx}
+                    className="flex items-start gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 font-medium"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{feat}</span>
+                  </div>
+                ))}
               </div>
             </motion.div>
           ))}
         </section>
 
-        {/* Bottom CTA Banner */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
-          <div className="rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 text-white p-8 sm:p-12 text-center relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="relative max-w-2xl mx-auto space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-indigo-200 text-xs font-bold border border-white/10">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Zero Infrastructure Setup Needed</span>
-              </div>
+        {/* CTA Bottom Banner */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 sm:mt-24">
+          <div className="rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 p-8 sm:p-12 text-center text-white relative overflow-hidden shadow-2xl">
+            <div className="relative z-10 max-w-2xl mx-auto space-y-4">
               <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-                Ready to Experience My School for Your Institution?
+                Ready to transform your school's digital operations?
               </h2>
-              <p className="text-sm text-indigo-100/90 leading-relaxed">
-                Join modern schools transitioning to paperless operations, instant parent engagement, and automated grading.
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Join hundreds of educational institutions managing attendance, gradebooks, announcements, and parent engagement effortlessly.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/register-school"
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-indigo-900 font-extrabold text-sm shadow-lg hover:bg-slate-100 transition flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white hover:bg-slate-100 text-indigo-950 font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>Register Your School Free</span>
+                  <span>Register School Account</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   href="/login"
-                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/10 border border-white/20 text-white font-bold text-sm hover:bg-white/20 transition flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs transition flex items-center justify-center cursor-pointer"
                 >
                   <span>Institution Portal Login</span>
                 </Link>
@@ -314,30 +299,42 @@ export default function PlatformTourPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative max-w-5xl w-full max-h-[90vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-slate-700"
+              className="relative max-w-5xl w-full max-h-[92vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-slate-700"
             >
               <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-600 text-white">
-                    {lightboxImg.type} View
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-200 truncate">
-                    {lightboxImg.title}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setLightboxImg(null)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition cursor-pointer border border-slate-700"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-600 text-white">
+                      {lightboxImg.type} View
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-slate-200 truncate">
+                      {lightboxImg.title}
+                    </span>
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setLightboxImg(null)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer flex items-center gap-1"
+                  title="Close (Esc)"
                 >
+                  <span className="text-xs font-medium text-slate-400 hidden sm:inline">Close</span>
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-4 overflow-auto flex-1 flex items-center justify-center bg-slate-100 max-h-[calc(90vh-60px)]">
+              <div className="p-4 overflow-auto flex-1 flex items-center justify-center bg-slate-100 max-h-[calc(92vh-60px)]">
                 <img
                   src={lightboxImg.src}
                   alt={lightboxImg.title}
-                  className="max-h-[80vh] w-auto object-contain rounded-lg shadow-sm"
+                  className="max-h-[82vh] w-auto object-contain rounded-lg shadow-sm"
                 />
               </div>
             </motion.div>

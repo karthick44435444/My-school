@@ -238,8 +238,9 @@ export default function ParentDashboard() {
   }
 
   const theme = user.themeColor || "#6366F1";
+  const childRoll = selectedChild ? (selectedChild.rollNumber || (selectedChild as any).rollNo || "") : "";
   const childLabel = selectedChild
-    ? `${formatPersonName(selectedChild.firstName, selectedChild.lastName)} (Class ${selectedChild.className || ""}${selectedChild.section ? `-${selectedChild.section}` : ""})`
+    ? `${formatPersonName(selectedChild.firstName, selectedChild.lastName)} (Class ${selectedChild.className || ""}${selectedChild.section ? `-${selectedChild.section}` : ""}${childRoll ? ` · Roll: ${childRoll}` : ""})`
     : "Child";
 
   return (
@@ -254,6 +255,7 @@ export default function ParentDashboard() {
             </span>
             {children.map((c) => {
               const isSelected = selectedChild?.id === c.id;
+              const roll = c.rollNumber || (c as any).rollNo || "";
               return (
                 <button
                   key={c.id}
@@ -274,6 +276,7 @@ export default function ParentDashboard() {
                   >
                     Class {c.className}
                     {c.section ? `-${c.section}` : ""}
+                    {roll ? ` · Roll ${roll}` : ""}
                   </span>
                 </button>
               );

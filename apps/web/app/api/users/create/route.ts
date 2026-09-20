@@ -8,6 +8,7 @@ import {
   normalizeEmail,
   isSamePhone,
   getTeacherClasses,
+  getSchoolPlanLimits,
 } from "@/lib/store";
 import { sendEmail, credentialsEmailHtml, studentAndParentCredentialsEmailHtml } from "@/lib/email";
 
@@ -86,6 +87,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (role === "PRINCIPAL") {
+      const limits = getSchoolPlanLimits(auth.schoolId);
+      if (limits.isPrincipalLimitReached) {
+        return NextResponse.json(
+          {
+            error: `Principal limit reached: Your current plan (${limits.planName}) allows up to ${limits.maxPrincipals} principals. Please upgrade your subscription to add more principals.`,
+            code: "PLAN_LIMIT_REACHED",
+          },
+          { status: 403 }
+        );
+      }
+
       const dup = findDuplicateUser({
         schoolId: auth.schoolId,
         role: "PRINCIPAL",
@@ -142,6 +154,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (role === "TEACHER") {
+      const limits = getSchoolPlanLimits(auth.schoolId);
+      if (limits.isTeacherLimitReached) {
+        return NextResponse.json(
+          {
+            error: `Teacher limit reached: Your current plan (${limits.planName}) allows up to ${limits.maxTeachers} teachers. Please upgrade your subscription to add more teachers.`,
+            code: "PLAN_LIMIT_REACHED",
+          },
+          { status: 403 }
+        );
+      }
+
       const dup = findDuplicateUser({
         schoolId: auth.schoolId,
         role: "TEACHER",
@@ -205,6 +228,17 @@ export async function POST(req: NextRequest) {
     }
 
     // STUDENT
+    const limits = getSchoolPlanLimits(auth.schoolId);
+    if (limits.isStudentLimitReached) {
+      return NextResponse.json(
+        {
+          error: `Student limit reached: Your current plan (${limits.planName}) allows up to ${limits.maxStudents} students. Please upgrade your subscription to add more students.`,
+          code: "PLAN_LIMIT_REACHED",
+        },
+        { status: 403 }
+      );
+    }
+
     if (!body.dateOfBirth) {
       return NextResponse.json({ error: "Date of birth is required" }, { status: 400 });
     }

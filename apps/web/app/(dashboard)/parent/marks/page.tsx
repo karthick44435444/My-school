@@ -312,6 +312,7 @@ export default function ParentMarksPage() {
                   {c.className && (
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
                       Class {c.className}{c.section ? `-${c.section}` : ""}
+                      {(c.rollNumber || (c as any).rollNo) ? ` · Roll ${c.rollNumber || (c as any).rollNo}` : ""}
                     </span>
                   )}
                   {badges[c.id] > 0 && (
