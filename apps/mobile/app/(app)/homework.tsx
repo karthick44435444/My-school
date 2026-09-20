@@ -593,7 +593,11 @@ export default function HomeworkScreen() {
                 delayLongPress={400}
                 style={({ pressed }) => [
                   styles.card,
-                  highlightId === item.id && { borderWidth: 2, borderColor: color, backgroundColor: color + "10" },
+                  highlightId === item.id && {
+                    borderWidth: 2,
+                    borderColor: color,
+                    backgroundColor: Colors.card,
+                  },
                   pressed && isTeacher && { opacity: 0.9 },
                 ]}
               >

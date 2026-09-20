@@ -2641,7 +2641,7 @@ export default function MarksScreen() {
                   highlightId === item.id && {
                     borderWidth: 2,
                     borderColor: color,
-                    backgroundColor: color + "12",
+                    backgroundColor: Colors.card,
                   },
                 ]}
                 onPress={() => openProgressCard(item)}
@@ -2818,7 +2818,7 @@ export default function MarksScreen() {
                 highlightId === item.id && {
                   borderWidth: 2,
                   borderColor: color,
-                  backgroundColor: color + "12",
+                  backgroundColor: Colors.card,
                 },
               ]}
               onPress={() => {

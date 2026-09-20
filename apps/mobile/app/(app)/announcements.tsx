@@ -349,7 +349,7 @@ export default function AnnouncementsScreen() {
                 delayLongPress={450}
                 style={[
                   styles.card,
-                  hi ? { borderColor: color, borderWidth: 2, backgroundColor: color + "10" } : undefined,
+                  hi ? { borderColor: color, borderWidth: 2, backgroundColor: Colors.card } : undefined,
                 ]}
               >
                 <View style={styles.row}>
