@@ -80,13 +80,21 @@ export async function GET(
       });
     }
 
+    const ext = path.extname(safeBaseFilename).toLowerCase();
+    const contentType = stored.mimeType && stored.mimeType !== "application/octet-stream"
+      ? stored.mimeType
+      : (MIME_MAP[ext] || "image/jpeg");
+
     return new NextResponse(new Uint8Array(stored.buffer), {
       status: 200,
       headers: {
-        "Content-Type": stored.mimeType || "application/octet-stream",
+        "Content-Type": contentType,
+        "Content-Length": String(stored.buffer.length),
+        "Accept-Ranges": "bytes",
         "Cache-Control": "public, max-age=31536000, immutable",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
       },
     });
   } catch {

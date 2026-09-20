@@ -102,8 +102,14 @@ export async function resolveMediaUrl(url?: string | null): Promise<string | und
     return u;
   }
   const base = ((await getApiBase()) || DEFAULT_API).replace(/\/+$/, "");
-  if (u.startsWith("/")) return `${base}${u}`;
-  return `${base}/${u}`;
+  let cleanPath = u.replace(/^\/+/, "");
+  if (cleanPath.startsWith("public/uploads/")) {
+    cleanPath = cleanPath.replace(/^public\//, "");
+  }
+  if (!cleanPath.startsWith("uploads/") && !cleanPath.startsWith("api/uploads/")) {
+    cleanPath = `uploads/${cleanPath}`;
+  }
+  return `${base}/${cleanPath}`;
 }
 
 export function resolveMediaUrlSync(url: string | null | undefined, apiBase?: string): string | undefined {
@@ -115,8 +121,14 @@ export function resolveMediaUrlSync(url: string | null | undefined, apiBase?: st
     return u;
   }
   const base = (apiBase || getApiBaseSync() || DEFAULT_API).replace(/\/+$/, "");
-  if (u.startsWith("/")) return `${base}${u}`;
-  return `${base}/${u}`;
+  let cleanPath = u.replace(/^\/+/, "");
+  if (cleanPath.startsWith("public/uploads/")) {
+    cleanPath = cleanPath.replace(/^public\//, "");
+  }
+  if (!cleanPath.startsWith("uploads/") && !cleanPath.startsWith("api/uploads/")) {
+    cleanPath = `uploads/${cleanPath}`;
+  }
+  return `${base}/${cleanPath}`;
 }
 
 export async function getToken(): Promise<string | null> {

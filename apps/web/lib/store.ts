@@ -5933,8 +5933,8 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
   const db = readDB();
   const cleanName = path.basename(filename).toLowerCase();
   
-  // 1. Find in db.uploadedFiles
-  const file = (db.uploadedFiles || []).find((f) => f.filename.toLowerCase() === cleanName);
+  // 1. Find in db.uploadedFiles by exact name
+  let file = (db.uploadedFiles || []).find((f) => f.filename.toLowerCase() === cleanName);
   if (file && file.data) {
     return {
       buffer: Buffer.from(file.data, "base64"),
@@ -5942,7 +5942,22 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     };
   }
 
-  // 2. Check if a user/student has a base64 photoUrl in db.users
+  // 2. Base-name / fuzzy match (e.g. student_1x1_ev7y.jpg -> student_1x1.jpg, photo_nm03.jpg -> photo.jpg)
+  const baseNoExt = cleanName.replace(/\.[^.]+$/, "");
+  const baseNoSuffix = baseNoExt.replace(/_[a-z0-9]{4,8}$/i, "");
+  file = (db.uploadedFiles || []).find((f) => {
+    const fLower = f.filename.toLowerCase();
+    const fNoExt = fLower.replace(/\.[^.]+$/, "");
+    return fLower === baseNoSuffix || fNoExt === baseNoSuffix || fNoExt.startsWith(baseNoSuffix);
+  });
+  if (file && file.data) {
+    return {
+      buffer: Buffer.from(file.data, "base64"),
+      mimeType: file.mimeType || "application/octet-stream",
+    };
+  }
+
+  // 3. Check if a user/student has a base64 photoUrl in db.users
   const userMatch = (db.users || []).find((u) => {
     if (!u.photoUrl) return false;
     const urlClean = path.basename(u.photoUrl).toLowerCase();
@@ -5957,6 +5972,21 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
       return {
         buffer: Buffer.from(match[2], "base64"),
         mimeType: match[1],
+      };
+    }
+  }
+
+  // 4. Default avatar fallback for avatar/student/profile requests
+  if (cleanName.includes("student") || cleanName.includes("admin") || cleanName.includes("profile") || cleanName.includes("photo")) {
+    const fallback = (db.uploadedFiles || []).find((f) => 
+      f.filename.toLowerCase().includes("student") ||
+      f.filename.toLowerCase().includes("profile") ||
+      f.filename.toLowerCase().includes("photo")
+    );
+    if (fallback && fallback.data) {
+      return {
+        buffer: Buffer.from(fallback.data, "base64"),
+        mimeType: fallback.mimeType || "image/jpeg",
       };
     }
   }

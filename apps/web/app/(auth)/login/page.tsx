@@ -32,7 +32,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [form, setForm] = useState({ schoolCode: "", username: "", password: "" });
+  const [form, setForm] = useState({
+    schoolCode: "",
+    username: "",
+    password: "",
+  });
 
   useEffect(() => {
     // Check if school code was previously stored
@@ -72,7 +76,10 @@ export default function LoginPage() {
       sessionStorage.setItem("myschool_user", str);
       localStorage.setItem("myschool_user", str);
       if (rememberMe) {
-        localStorage.setItem("myschool_last_school_code", form.schoolCode.trim());
+        localStorage.setItem(
+          "myschool_last_school_code",
+          form.schoolCode.trim(),
+        );
       }
       if (typeof window !== "undefined") {
         (window as any).__myschool_user = data.user;
@@ -145,12 +152,17 @@ export default function LoginPage() {
                   <GraduationCap className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900">Unified Campus Cloud</h3>
-                  <p className="text-[11px] text-slate-500">Admin • Principal • Teacher • Student • Parent</p>
+                  <h3 className="text-xs font-bold text-slate-900">
+                    Unified Campus Cloud
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Admin • Principal • Teacher • Student • Parent
+                  </p>
                 </div>
               </div>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                Empowering modern institutions with real-time attendance, gradebooks, automated notices, and parent engagement.
+                Empowering modern institutions with real-time attendance,
+                gradebooks, automated notices, and parent engagement.
               </p>
             </div>
           </div>
@@ -162,13 +174,19 @@ export default function LoginPage() {
             {/* Top Brand Header with Work Logo */}
             <div className="flex items-center gap-3 mb-8">
               <div className="w-11 h-11 rounded-2xl bg-white p-2 flex items-center justify-center shadow-md shadow-indigo-500/10 border border-slate-200">
-                <img src="/logo.png" alt="MySchool" className="w-full h-full object-contain" />
+                <img
+                  src="/logo.png"
+                  alt="MySchool"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <span className="text-xl font-extrabold tracking-tight text-slate-900">
                   My School
                 </span>
-                <p className="text-xs text-slate-500 font-medium">Smart Campus Management System</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  Smart Campus Management System
+                </p>
               </div>
             </div>
 
@@ -183,7 +201,11 @@ export default function LoginPage() {
             </div>
 
             {/* Login Form */}
-            <form onSubmit={handleLogin} className="space-y-4" autoComplete="on">
+            <form
+              onSubmit={handleLogin}
+              className="space-y-4"
+              autoComplete="on"
+            >
               {/* School Code Input */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
@@ -196,9 +218,14 @@ export default function LoginPage() {
                     name="schoolCode"
                     autoComplete="organization"
                     value={form.schoolCode}
-                    onChange={(e) => setForm({ ...form, schoolCode: e.target.value.toUpperCase() })}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        schoolCode: e.target.value.toUpperCase(),
+                      })
+                    }
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 font-mono text-sm placeholder:text-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition shadow-sm"
-                    placeholder="e.g. SCH001"
+                    placeholder="SCH-xxxxx"
                     required
                   />
                 </div>
@@ -216,7 +243,9 @@ export default function LoginPage() {
                     name="username"
                     autoComplete="username"
                     value={form.username}
-                    onChange={(e) => setForm({ ...form, username: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, username: e.target.value })
+                    }
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 text-sm placeholder:text-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition shadow-sm"
                     placeholder="Enter your username"
                     required
@@ -236,18 +265,26 @@ export default function LoginPage() {
                     name="password"
                     autoComplete="current-password"
                     value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, password: e.target.value })
+                    }
                     className="login-password-input w-full pl-10 pr-12 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 text-sm placeholder:text-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition shadow-sm"
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -261,7 +298,10 @@ export default function LoginPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
-                <label htmlFor="rememberMe" className="text-xs font-medium text-slate-600 cursor-pointer">
+                <label
+                  htmlFor="rememberMe"
+                  className="text-xs font-medium text-slate-600 cursor-pointer"
+                >
                   Remember school code on this device
                 </label>
               </div>
@@ -290,7 +330,8 @@ export default function LoginPage() {
           {/* Bottom Security Footer */}
           <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
             <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Secure SSL Encrypted
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Secure
+              SSL Encrypted
             </span>
             <span>v2.4</span>
           </div>
@@ -313,5 +354,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-

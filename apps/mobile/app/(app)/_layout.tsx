@@ -33,7 +33,7 @@ function tabsForRole(role?: string): TabDef[] {
         { name: "index", title: "Home", icon: "home", iconOutline: "home-outline" },
         { name: "homework", title: "Homework", icon: "book", iconOutline: "book-outline", badge: "homework" },
         { name: "attendance", title: "Attendance", icon: "checkbox", iconOutline: "checkbox-outline" },
-        { name: "marks", title: "Exams & Marks", icon: "ribbon", iconOutline: "ribbon-outline", badge: "marks" },
+        { name: "marks", title: "Exams", icon: "ribbon", iconOutline: "ribbon-outline", badge: "marks" },
         { name: "announcements", title: "Notice", icon: "megaphone", iconOutline: "megaphone-outline", badge: "announcements" },
       ];
     case "PRINCIPAL":

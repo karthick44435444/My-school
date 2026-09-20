@@ -16,44 +16,68 @@ export default function MarketingFooter() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" onClick={triggerTopLoader} className="flex items-center gap-3">
+            <Link
+              href="/"
+              onClick={triggerTopLoader}
+              className="flex items-center gap-3"
+            >
               <div className="w-10 h-10 rounded-2xl bg-white p-2 flex items-center justify-center shadow-md shadow-indigo-500/10 border border-slate-200">
-                <img src="/logo.png" alt="My School" className="w-full h-full object-contain" />
+                <img
+                  src="/logo.png"
+                  alt="My School"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="text-xl font-extrabold text-slate-900 tracking-tight">
                 My School
               </span>
             </Link>
             <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
-              Unified multi-tenant cloud platform empowering educational institutions with modern academic workflows, real-time attendance, gradebooks, and seamless parent collaboration.
+              Unified multi-tenant cloud platform empowering educational
+              institutions with modern academic workflows, real-time attendance,
+              gradebooks, and seamless parent collaboration.
             </p>
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full w-max border border-emerald-200">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>ISO 27001 & Student Data Protection Compliant</span>
-            </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-4">Platform</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-4">
+              Platform
+            </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>
-                <Link href="/" onClick={triggerTopLoader} className="hover:text-indigo-600 transition">
+                <Link
+                  href="/"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
                   Overview & Features
                 </Link>
               </li>
               <li>
-                <Link href="/about" onClick={triggerTopLoader} className="hover:text-indigo-600 transition">
+                <Link
+                  href="/about"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
                   About Our Mission
                 </Link>
               </li>
               <li>
-                <Link href="/register-school" onClick={triggerTopLoader} className="hover:text-indigo-600 transition">
+                <Link
+                  href="/register-school"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
                   Pricing & Plans
                 </Link>
               </li>
               <li>
-                <Link href="/login" onClick={triggerTopLoader} className="hover:text-indigo-600 transition">
+                <Link
+                  href="/login"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
                   Portal Sign In
                 </Link>
               </li>
@@ -62,25 +86,43 @@ export default function MarketingFooter() {
 
           {/* Support & Legal */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-4">Legal & Support</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-4">
+              Legal & Support
+            </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>
-                <Link href="/contact" onClick={triggerTopLoader} className="hover:text-indigo-600 transition">
+                <Link
+                  href="/contact"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
                   Help & Contact Us
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" onClick={triggerTopLoader} className="hover:text-indigo-600 transition">
+                <Link
+                  href="/privacy"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/privacy#isolation" onClick={triggerTopLoader} className="hover:text-indigo-600 transition">
+                <Link
+                  href="/privacy#isolation"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
                   Data Security Standards
                 </Link>
               </li>
               <li>
-                <Link href="/privacy#student-data" onClick={triggerTopLoader} className="hover:text-indigo-600 transition">
+                <Link
+                  href="/privacy#student-data"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
                   Student Privacy Rights
                 </Link>
               </li>
@@ -89,7 +131,9 @@ export default function MarketingFooter() {
 
           {/* Contact Direct */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-4">Contact Info</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-4">
+              Contact Info
+            </h4>
             <ul className="space-y-3 text-xs text-slate-500 font-medium">
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -109,11 +153,32 @@ export default function MarketingFooter() {
 
         {/* Bottom copyright */}
         <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} My School Platform. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} My School Platform. All rights
+            reserved.
+          </p>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" onClick={triggerTopLoader} className="hover:text-slate-600 transition">Privacy Policy</Link>
-            <Link href="/contact" onClick={triggerTopLoader} className="hover:text-slate-600 transition">Contact Support</Link>
-            <Link href="/login" onClick={triggerTopLoader} className="hover:text-slate-600 transition">Institution Login</Link>
+            <Link
+              href="/privacy"
+              onClick={triggerTopLoader}
+              className="hover:text-slate-600 transition"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/contact"
+              onClick={triggerTopLoader}
+              className="hover:text-slate-600 transition"
+            >
+              Contact Support
+            </Link>
+            <Link
+              href="/login"
+              onClick={triggerTopLoader}
+              className="hover:text-slate-600 transition"
+            >
+              Institution Login
+            </Link>
           </div>
         </div>
       </div>

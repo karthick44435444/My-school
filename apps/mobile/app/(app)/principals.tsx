@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { api, getApiBase, getApiBaseSync, getToken, resolveMediaUrlSync } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -445,7 +446,7 @@ export default function PrincipalsScreen() {
               {/* Photo Upload Area - Same UI as Teacher and Student */}
               <Pressable style={styles.photoPick} onPress={pickPhoto} disabled={uploading}>
                 {photoUri ? (
-                  <Image source={{ uri: photoUri }} style={styles.photoBig} />
+                  <ExpoImage source={{ uri: photoUri }} style={styles.photoBig} contentFit="cover" cachePolicy="memory-disk" />
                 ) : (
                   <View style={[styles.photoBig, styles.photoPh]}>
                     <Ionicons name="camera" size={28} color={Colors.textMuted} />
