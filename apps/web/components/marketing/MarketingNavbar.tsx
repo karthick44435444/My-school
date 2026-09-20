@@ -14,6 +14,7 @@ export default function MarketingNavbar() {
   // Preload routes for instantaneous transitions
   useEffect(() => {
     router.prefetch("/");
+    router.prefetch("/tour");
     router.prefetch("/about");
     router.prefetch("/contact");
     router.prefetch("/privacy");
@@ -23,6 +24,7 @@ export default function MarketingNavbar() {
 
   const navLinks = [
     { label: "Home", href: "/" },
+    { label: "Platform Tour", href: "/tour" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
     { label: "Privacy Policy", href: "/privacy" },

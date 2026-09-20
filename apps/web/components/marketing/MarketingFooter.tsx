@@ -56,6 +56,15 @@ export default function MarketingFooter() {
               </li>
               <li>
                 <Link
+                  href="/tour"
+                  onClick={triggerTopLoader}
+                  className="hover:text-indigo-600 transition"
+                >
+                  Platform Tour & UI Gallery
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/about"
                   onClick={triggerTopLoader}
                   className="hover:text-indigo-600 transition"

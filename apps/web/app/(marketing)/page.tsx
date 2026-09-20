@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import MarketingNavbar from "@/components/marketing/MarketingNavbar";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
+import PlatformShowcaseSlideshow from "@/components/marketing/PlatformShowcaseSlideshow";
 
 export default function MarketingPage() {
   const router = useRouter();
@@ -181,136 +182,14 @@ export default function MarketingPage() {
             </Link>
           </motion.div>
 
-          {/* Hero Dashboard Showcase Visual */}
+          {/* Hero Dashboard Interactive Slideshow Visual */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="relative max-w-5xl mx-auto rounded-3xl border border-slate-200/90 bg-white p-3 sm:p-4 shadow-2xl shadow-indigo-500/10"
+            className="w-full"
           >
-            <div className="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative">
-              {/* Top Window Bar */}
-              <div className="h-10 bg-white border-b border-slate-200/80 px-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-rose-400" />
-                  <div className="w-3 h-3 rounded-full bg-amber-400" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                </div>
-                <div className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-4 py-1 rounded-full border border-slate-200">
-                  myschool.app/dashboard
-                </div>
-                <div className="w-12" />
-              </div>
-
-              {/* Mock Dashboard Preview Content */}
-              <div className="p-6 sm:p-8 space-y-6 text-left">
-                {/* Dashboard Stats Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Total Students
-                    </span>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 block">
-                      1,420
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 mt-1">
-                      <CheckCircle2 className="w-3 h-3" /> Active Enrolled
-                    </span>
-                  </div>
-
-                  <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Faculty Members
-                    </span>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 block">
-                      68
-                    </span>
-                    <span className="text-[11px] font-bold text-indigo-600 flex items-center gap-1 mt-1">
-                      <Users className="w-3 h-3" /> Across 12 Depts
-                    </span>
-                  </div>
-
-                  <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Today Attendance
-                    </span>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 block">
-                      98.4%
-                    </span>
-                    <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 mt-1">
-                      <Zap className="w-3 h-3" /> 1,397 Present
-                    </span>
-                  </div>
-
-                  <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Classes Active
-                    </span>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 block">
-                      32
-                    </span>
-                    <span className="text-[11px] font-bold text-purple-600 flex items-center gap-1 mt-1">
-                      <GraduationCap className="w-3 h-3" /> Grade 1 to 12
-                    </span>
-                  </div>
-                </div>
-
-                {/* Lower Mock Graph & Action Strip */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                        Weekly Campus Attendance Trend
-                      </h4>
-                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                        +2.4% vs last week
-                      </span>
-                    </div>
-                    {/* Simulated mini bar chart */}
-                    <div className="h-28 flex items-end justify-between gap-3 pt-4 px-2">
-                      {[
-                        { day: "Mon", h: "88%", val: "96.2%" },
-                        { day: "Tue", h: "94%", val: "98.1%" },
-                        { day: "Wed", h: "92%", val: "97.5%" },
-                        { day: "Thu", h: "98%", val: "99.0%" },
-                        { day: "Fri", h: "96%", val: "98.4%" },
-                        { day: "Sat", h: "82%", val: "94.0%" },
-                      ].map((bar, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                          <div
-                            style={{ height: bar.h }}
-                            className="w-full max-w-[40px] rounded-t-lg bg-gradient-to-t from-indigo-600 to-purple-500 opacity-90 hover:opacity-100 transition"
-                          />
-                          <span className="text-[10px] font-semibold text-slate-500">{bar.day}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                        Recent Campus Notices
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-0.5">
-                          <span className="font-bold text-slate-800 block">Term 2 Exam Timetable</span>
-                          <span className="text-[10px] text-slate-400">Published by Principal • 2h ago</span>
-                        </div>
-                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-0.5">
-                          <span className="font-bold text-slate-800 block">Annual Sports Day Notice</span>
-                          <span className="text-[10px] text-slate-400">All Grades • Yesterday</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-indigo-600">
-                      <span>View All Notices</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PlatformShowcaseSlideshow />
           </motion.div>
         </div>
       </section>
