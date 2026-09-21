@@ -5946,31 +5946,115 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
   const db = readDB();
   const cleanName = path.basename(filename).toLowerCase();
   
+  const MIME_MAP: Record<string, string> = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".pdf": "application/pdf",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".csv": "text/csv",
+    ".txt": "text/plain",
+  };
+
   // 1. Find in db.uploadedFiles by exact name
   let file = (db.uploadedFiles || []).find((f) => f.filename.toLowerCase() === cleanName);
   if (file && file.data) {
     return {
       buffer: Buffer.from(file.data, "base64"),
-      mimeType: file.mimeType || "application/octet-stream",
+      mimeType: file.mimeType || MIME_MAP[path.extname(cleanName).toLowerCase()] || "application/octet-stream",
     };
   }
 
-  // 2. Base-name / fuzzy match (e.g. student_1x1_ev7y.jpg -> student_1x1.jpg, photo_nm03.jpg -> photo.jpg)
+  // 2. Base-name / fuzzy match (e.g. 1788509548441_73vevm.jpg, photo_nm03.jpg -> photo.jpg)
   const baseNoExt = cleanName.replace(/\.[^.]+$/, "");
   const baseNoSuffix = baseNoExt.replace(/_[a-z0-9]{4,8}$/i, "");
   file = (db.uploadedFiles || []).find((f) => {
     const fLower = f.filename.toLowerCase();
     const fNoExt = fLower.replace(/\.[^.]+$/, "");
-    return fLower === baseNoSuffix || fNoExt === baseNoSuffix || fNoExt.startsWith(baseNoSuffix);
+    return fLower === cleanName || fLower === baseNoSuffix || fNoExt === baseNoSuffix || fNoExt.startsWith(baseNoSuffix);
   });
   if (file && file.data) {
     return {
       buffer: Buffer.from(file.data, "base64"),
-      mimeType: file.mimeType || "application/octet-stream",
+      mimeType: file.mimeType || MIME_MAP[path.extname(cleanName).toLowerCase()] || "application/octet-stream",
     };
   }
 
-  // 3. Check if a user/student has a base64 or matching photoUrl in db.users
+  // 3. Search disk in all possible locations across root, apps/web, public, uploads, .data
+  const candidateDiskPaths = [
+    path.join(process.cwd(), "apps", "web", "public", "uploads", path.basename(filename)),
+    path.join(process.cwd(), "public", "uploads", path.basename(filename)),
+    path.join(process.cwd(), "apps", "web", ".data", "uploads", path.basename(filename)),
+    path.join(process.cwd(), ".data", "uploads", path.basename(filename)),
+    path.join(process.cwd(), "apps", "web", "public", path.basename(filename)),
+    path.join(process.cwd(), "public", path.basename(filename)),
+    path.join(__dirname, "..", "public", "uploads", path.basename(filename)),
+    path.join(__dirname, "..", "..", "public", "uploads", path.basename(filename)),
+    path.join(__dirname, "..", "public", path.basename(filename)),
+    path.join(__dirname, "..", "..", "public", path.basename(filename)),
+  ];
+
+  for (const diskPath of candidateDiskPaths) {
+    try {
+      if (fs.existsSync(diskPath) && fs.statSync(diskPath).isFile()) {
+        const buf = fs.readFileSync(diskPath);
+        const ext = path.extname(diskPath).toLowerCase();
+        const mime = MIME_MAP[ext] || "image/jpeg";
+        // Cache in database so subsequent requests never hit disk
+        saveUploadedFile(path.basename(filename), buf, mime, buf.length);
+        return { buffer: buf, mimeType: mime };
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // 4. Check in db.homeworks attachments
+  for (const hw of db.homeworks || []) {
+    const atts: any[] = Array.isArray(hw.attachments) ? [...hw.attachments] : [];
+    if (hw.attachmentUrl) atts.push(hw.attachmentUrl);
+    for (const a of atts) {
+      const aStr = typeof a === "string" ? a : a?.url || a?.uri || "";
+      if (aStr) {
+        const aBase = path.basename(aStr).toLowerCase();
+        if (aBase === cleanName || aStr.toLowerCase().includes(cleanName)) {
+          if (aStr.startsWith("data:")) {
+            const match = aStr.match(/^data:([^;]+);base64,(.+)$/);
+            if (match) {
+              const buf = Buffer.from(match[2], "base64");
+              return { buffer: buf, mimeType: match[1] };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 5. Check in db.announcements attachments
+  for (const ann of db.announcements || []) {
+    const aStr = (ann as any).attachmentUrl || (ann as any).imageUrl || (ann as any).attachment;
+    if (aStr) {
+      const aBase = path.basename(aStr).toLowerCase();
+      if (aBase === cleanName || aStr.toLowerCase().includes(cleanName)) {
+        if (aStr.startsWith("data:")) {
+          const match = aStr.match(/^data:([^;]+);base64,(.+)$/);
+          if (match) {
+            const buf = Buffer.from(match[2], "base64");
+            return { buffer: buf, mimeType: match[1] };
+          }
+        }
+      }
+    }
+  }
+
+  // 6. Check if a user/student has a base64 or matching photoUrl in db.users
   const userMatch = (db.users || []).find((u) => {
     if (!u.photoUrl) return false;
     const urlClean = path.basename(u.photoUrl).toLowerCase();
@@ -5989,7 +6073,7 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     }
   }
 
-  // 4. Check if a school has a matching or base64 logoUrl in db.schools
+  // 7. Check if a school has a matching or base64 logoUrl in db.schools
   const schoolMatch = (db.schools || []).find((s) => {
     if (!s.logoUrl) return false;
     const urlClean = path.basename(s.logoUrl).toLowerCase();
@@ -6008,61 +6092,19 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     }
   }
 
-  // 5. Check in db.homeworks attachments
-  for (const hw of db.homeworks || []) {
-    const atts: any[] = Array.isArray(hw.attachments) ? [...hw.attachments] : [];
-    if (hw.attachmentUrl) atts.push(hw.attachmentUrl);
-    for (const a of atts) {
-      const aStr = typeof a === "string" ? a : a?.url || a?.uri || "";
-      if (aStr && path.basename(aStr).toLowerCase() === cleanName) {
-        if (aStr.startsWith("data:")) {
-          const match = aStr.match(/^data:([^;]+);base64,(.+)$/);
-          if (match) {
-            return {
-              buffer: Buffer.from(match[2], "base64"),
-              mimeType: match[1],
-            };
-          }
-        }
-      }
-    }
-  }
-
-  // 6. Default avatar fallback for avatar/student/profile/logo requests
-  if (cleanName.includes("student") || cleanName.includes("admin") || cleanName.includes("profile") || cleanName.includes("photo") || cleanName.includes("logo")) {
-    const fallback = (db.uploadedFiles || []).find((f) => 
-      f.filename.toLowerCase().includes("student") ||
-      f.filename.toLowerCase().includes("profile") ||
-      f.filename.toLowerCase().includes("photo") ||
-      f.filename.toLowerCase().includes("logo")
-    );
-    if (fallback && fallback.data) {
-      return {
-        buffer: Buffer.from(fallback.data, "base64"),
-        mimeType: fallback.mimeType || "image/jpeg",
-      };
-    }
-  }
-
   return null;
 }
 
 export function migrateLegacyUploadsToDB(): number {
   try {
     const candidateDirs = [
-      path.join(process.cwd(), "public", "uploads"),
       path.join(process.cwd(), "apps", "web", "public", "uploads"),
-      path.join(process.cwd(), ".data", "uploads"),
+      path.join(process.cwd(), "public", "uploads"),
       path.join(process.cwd(), "apps", "web", ".data", "uploads"),
+      path.join(process.cwd(), ".data", "uploads"),
+      path.join(__dirname, "..", "public", "uploads"),
+      path.join(__dirname, "..", "..", "public", "uploads"),
     ];
-    const uploadDir = candidateDirs.find((d) => fs.existsSync(d) && fs.readdirSync(d).length > 0);
-    if (!uploadDir) return 0;
-
-    const files = fs.readdirSync(uploadDir);
-    if (!files || files.length === 0) return 0;
-
-    const db = readDB();
-    if (!Array.isArray(db.uploadedFiles)) db.uploadedFiles = [];
 
     const MIME_MAP: Record<string, string> = {
       ".png": "image/png",
@@ -6081,28 +6123,37 @@ export function migrateLegacyUploadsToDB(): number {
       ".txt": "text/plain",
     };
 
+    const db = readDB();
+    if (!Array.isArray(db.uploadedFiles)) db.uploadedFiles = [];
+
     let count = 0;
-    for (const filename of files) {
-      const fullPath = path.join(uploadDir, filename);
-      try {
-        if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) continue;
-        const cleanName = path.basename(filename);
-        const alreadyStored = db.uploadedFiles.some((f) => f.filename.toLowerCase() === cleanName.toLowerCase());
-        if (!alreadyStored) {
-          const buf = fs.readFileSync(fullPath);
-          const ext = path.extname(cleanName).toLowerCase();
-          const mime = MIME_MAP[ext] || "application/octet-stream";
-          db.uploadedFiles.push({
-            filename: cleanName,
-            data: buf.toString("base64"),
-            mimeType: mime,
-            size: buf.length,
-            createdAt: new Date().toISOString(),
-          });
-          count++;
+    for (const uploadDir of candidateDirs) {
+      if (!fs.existsSync(uploadDir)) continue;
+      const files = fs.readdirSync(uploadDir);
+      if (!files || files.length === 0) continue;
+
+      for (const filename of files) {
+        const fullPath = path.join(uploadDir, filename);
+        try {
+          if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) continue;
+          const cleanName = path.basename(filename);
+          const alreadyStored = db.uploadedFiles.some((f) => f.filename.toLowerCase() === cleanName.toLowerCase());
+          if (!alreadyStored) {
+            const buf = fs.readFileSync(fullPath);
+            const ext = path.extname(cleanName).toLowerCase();
+            const mime = MIME_MAP[ext] || "application/octet-stream";
+            db.uploadedFiles.push({
+              filename: cleanName,
+              data: buf.toString("base64"),
+              mimeType: mime,
+              size: buf.length,
+              createdAt: new Date().toISOString(),
+            });
+            count++;
+          }
+        } catch {
+          /* ignore individual file error */
         }
-      } catch {
-        /* ignore individual file error */
       }
     }
 

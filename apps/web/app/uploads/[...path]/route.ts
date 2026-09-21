@@ -42,27 +42,29 @@ export async function GET(
     const safeBaseFilename = path.basename(rawPath);
     const safeRelPath = path.normalize(rawPath).replace(/^(\.\.[\/\\])+/, "");
 
-    // 1. Fetch directly from Database Store (No local disk reliance)
+    // 1. Fetch directly from Database Store (includes automatic disk scan & DB persistence)
     const { getUploadedFile, saveUploadedFile } = await import("@/lib/store");
     let stored = getUploadedFile(safeBaseFilename);
 
-    // 2. Legacy disk fallback (import to DB if found, but do NOT write new files to disk)
+    // 2. Extra relative disk fallback
     if (!stored) {
-      const possiblePaths = [
+      const candidatePaths = [
+        path.join(process.cwd(), "apps", "web", "public", "uploads", safeBaseFilename),
         path.join(process.cwd(), "public", "uploads", safeBaseFilename),
-        path.join(process.cwd(), ".data", "uploads", safeBaseFilename),
-        path.join(process.cwd(), "public", safeBaseFilename),
+        path.join(process.cwd(), "apps", "web", "public", "uploads", safeRelPath),
         path.join(process.cwd(), "public", "uploads", safeRelPath),
-        path.join(process.cwd(), ".data", "uploads", safeRelPath),
+        path.join(process.cwd(), "apps", "web", ".data", "uploads", safeBaseFilename),
+        path.join(process.cwd(), ".data", "uploads", safeBaseFilename),
+        path.join(process.cwd(), "apps", "web", "public", safeBaseFilename),
+        path.join(process.cwd(), "public", safeBaseFilename),
       ];
 
-      for (const p of possiblePaths) {
+      for (const p of candidatePaths) {
         if (fs.existsSync(p) && fs.statSync(p).isFile()) {
           try {
             const buf = fs.readFileSync(p);
             const ext = path.extname(p).toLowerCase();
             const mime = MIME_MAP[ext] || "application/octet-stream";
-            // Persist into database so it is permanently in DB
             stored = { buffer: buf, mimeType: mime };
             saveUploadedFile(safeBaseFilename, buf, mime, buf.length);
             break;
@@ -74,13 +76,11 @@ export async function GET(
     }
 
     if (!stored) {
-      const ext = path.extname(safeBaseFilename).toLowerCase();
+      // Only serve generic avatar SVG for explicit avatar requests
       if (
-        [".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif", ".ico"].includes(ext) ||
-        safeBaseFilename.includes("photo") ||
-        safeBaseFilename.includes("avatar") ||
-        safeBaseFilename.includes("logo") ||
-        safeBaseFilename.includes("student")
+        safeBaseFilename.startsWith("avatar") ||
+        safeBaseFilename.includes("default-avatar") ||
+        safeBaseFilename === "user-avatar.png"
       ) {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none"><rect width="128" height="128" rx="24" fill="#6366F1"/><circle cx="64" cy="48" r="22" fill="#FFFFFF"/><path d="M28 108C28 88.1178 44.1178 72 64 72C83.8822 72 100 88.1178 100 108" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/></svg>`;
         return new NextResponse(svg, {

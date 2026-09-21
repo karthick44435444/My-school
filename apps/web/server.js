@@ -66,15 +66,19 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url, true);
       const pathname = parsedUrl.pathname || "";
 
-      // Direct static stream for uploaded files (/uploads/...)
-      if (pathname.startsWith("/uploads/")) {
-        const rawFilename = pathname.replace(/^\/uploads\//, "");
+      // Direct static stream for uploaded files (/uploads/... or /api/uploads/...)
+      if (pathname.startsWith("/uploads/") || pathname.startsWith("/api/uploads/")) {
+        const rawFilename = pathname.replace(/^\/(api\/)?uploads\//, "");
         const cleanFilename = path.normalize(rawFilename).replace(/^(\.\.[\/\\])+/, "");
         const possiblePaths = [
           path.join(__dirname, "public", "uploads", cleanFilename),
           path.join(__dirname, ".data", "uploads", cleanFilename),
+          path.join(process.cwd(), "apps", "web", "public", "uploads", cleanFilename),
+          path.join(process.cwd(), "apps", "web", ".data", "uploads", cleanFilename),
           path.join(process.cwd(), "public", "uploads", cleanFilename),
           path.join(process.cwd(), ".data", "uploads", cleanFilename),
+          path.join(__dirname, "public", cleanFilename),
+          path.join(process.cwd(), "public", cleanFilename),
         ];
 
         for (const p of possiblePaths) {
