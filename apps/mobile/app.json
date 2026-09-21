@@ -23,7 +23,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#6366F1"
+        "backgroundColor": "#156afd"
       },
       "package": "com.myschool.app",
       "googleServicesFile": "./google-services.json"
@@ -34,7 +34,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#6366F1",
+          "color": "#156afd",
           "sounds": [
             "./assets/sounds/notification_sound.ogg",
             "./assets/sounds/notification_sound_ios.wav"

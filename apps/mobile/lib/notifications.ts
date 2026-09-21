@@ -48,7 +48,7 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
         name: "My School Notifications",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#6366F1",
+        lightColor: "#156afd",
         sound: "notification_sound.ogg",
         enableLights: true,
         enableVibrate: true,
@@ -79,7 +79,7 @@ export async function triggerLocalNotification(payload: {
         sound: Platform.OS === "ios" ? "notification_sound_ios.wav" : "notification_sound.ogg",
         data: payload.data || {},
         badge: 1,
-        color: "#6366F1",
+        color: "#156afd",
       },
       trigger: null,
     });

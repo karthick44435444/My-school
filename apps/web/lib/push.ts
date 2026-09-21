@@ -124,6 +124,7 @@ async function sendExpoPush(
     priority: "high" as const,
     channelId: "default",
     badge: 1,
+    color: "#156afd",
     _displayInForeground: true,
   }));
   const res = await fetch("https://exp.host/--/api/v2/push/send", {
@@ -179,7 +180,7 @@ async function sendFcmAdmin(
           defaultVibrateTimings: true,
           defaultSound: false,
           defaultLightSettings: true,
-          color: "#4F46E5",
+          color: "#156afd",
           icon: "notification_icon",
         },
       },
