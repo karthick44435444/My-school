@@ -117,7 +117,7 @@ async function sendExpoPush(
 ) {
   const messages = tokens.map((to) => ({
     to,
-    sound: "notification_sound.ogg",
+    sound: "default",
     title: payload.title,
     body: payload.body,
     data: payload.data || {},
@@ -175,10 +175,10 @@ async function sendFcmAdmin(
         priority: "high",
         notification: {
           channelId: "default",
-          sound: "notification_sound",
+          sound: "default",
           priority: "max",
           defaultVibrateTimings: true,
-          defaultSound: false,
+          defaultSound: true,
           defaultLightSettings: true,
           color: "#156afd",
           icon: "notification_icon",
@@ -187,7 +187,7 @@ async function sendFcmAdmin(
       apns: {
         payload: {
           aps: {
-            sound: "notification_sound_ios.wav",
+            sound: "default",
             badge: 1,
           },
         },
@@ -212,11 +212,9 @@ async function sendFcmAdmin(
     return { ok: true, id: response };
   } catch (err: any) {
     console.error("[push:fcm-v1] Error sending to token:", token.slice(0, 15) + "...", err?.message || err);
-    // Auto-prune dead/expired tokens
+    // Auto-prune only confirmed uninstalled / unregistered device tokens
     if (
-      err?.code === "messaging/registration-token-not-registered" ||
-      err?.code === "messaging/invalid-registration-token" ||
-      err?.code === "messaging/invalid-argument"
+      err?.code === "messaging/registration-token-not-registered"
     ) {
       removePushTokenByValue(token);
     }

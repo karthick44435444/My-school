@@ -17,17 +17,19 @@ try {
   /* ignore */
 }
 
-function resolveProjectId(): string | undefined {
+const DEFAULT_EAS_PROJECT_ID = "1f2602b9-fc02-42a1-9323-5c8f22be9885";
+
+function resolveProjectId(): string {
   const extra = Constants.expoConfig?.extra as any;
   const id =
     extra?.eas?.projectId ||
     (Constants as any).easConfig?.projectId ||
-    process.env.EXPO_PUBLIC_PROJECT_ID ||
-    undefined;
-  if (!id || typeof id !== "string") return undefined;
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(id) || id.includes("a1b2c3d4")) return undefined;
-  return id;
+    process.env.EXPO_PUBLIC_PROJECT_ID;
+  if (id && typeof id === "string") {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(id) && !id.includes("a1b2c3d4")) return id;
+  }
+  return DEFAULT_EAS_PROJECT_ID;
 }
 
 export async function ensureNotificationPermissions(): Promise<boolean> {
@@ -94,14 +96,14 @@ export async function getExpoPushToken(): Promise<string | null> {
   if (!ok) return null;
 
   const projectId = resolveProjectId();
-  // 1. If a valid EAS project UUID is configured, get Expo push token
-  if (projectId) {
-    try {
-      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-      if (tokenData?.data) return tokenData.data;
-    } catch (e) {
-      console.log("[push] Expo push token fetch info:", e);
-    }
+  // 1. Get Expo push token
+  try {
+    const tokenData = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined
+    );
+    if (tokenData?.data) return tokenData.data;
+  } catch (e) {
+    console.log("[push] Expo push token fetch info:", e);
   }
 
   // 2. Native Device Push Token (Firebase FCM on Android / APNs on iOS)
@@ -128,23 +130,27 @@ export async function setupPushForUser(): Promise<{
 
     const tokensToRegister: string[] = [];
 
-    // Try Native Device Push Token (Firebase FCM)
+    // 1. Prioritize Expo Push Token (Guaranteed to route via Expo delivery network)
+    const projectId = resolveProjectId();
+    try {
+      const expoToken = await Notifications.getExpoPushTokenAsync(
+        projectId ? { projectId } : undefined
+      );
+      if (expoToken?.data && !tokensToRegister.includes(expoToken.data)) {
+        tokensToRegister.push(expoToken.data);
+      }
+    } catch (err) {
+      console.log("[push] Expo token fetch error:", err);
+    }
+
+    // 2. Native Device Push Token (Firebase FCM / APNs)
     try {
       const deviceToken = await Notifications.getDevicePushTokenAsync();
-      if (deviceToken?.data) {
+      if (deviceToken?.data && !tokensToRegister.includes(String(deviceToken.data))) {
         tokensToRegister.push(String(deviceToken.data));
       }
-    } catch {}
-
-    // Try Expo Push Token
-    const projectId = resolveProjectId();
-    if (projectId) {
-      try {
-        const expoToken = await Notifications.getExpoPushTokenAsync({ projectId });
-        if (expoToken?.data && !tokensToRegister.includes(expoToken.data)) {
-          tokensToRegister.push(expoToken.data);
-        }
-      } catch {}
+    } catch (err) {
+      console.log("[push] Device token fetch error:", err);
     }
 
     if (tokensToRegister.length === 0) {

@@ -40,8 +40,56 @@ export default function SettingsScreen() {
     }
   };
 
+  const [pushTesting, setPushTesting] = useState(false);
+
+  const handleTestPush = async () => {
+    setPushTesting(true);
+    try {
+      const { triggerLocalNotification, setupPushForUser } = await import("@/lib/notifications");
+      // 1. Ensure token registered
+      await setupPushForUser();
+      // 2. Trigger local pop-up banner immediately
+      await triggerLocalNotification({
+        title: "🔔 Push Notification Working!",
+        body: "Local & remote notifications are configured and active on your device.",
+        data: { type: "GENERAL" },
+      });
+      // 3. Trigger remote server push
+      const res = await api<any>("/api/push", {
+        method: "POST",
+        body: { action: "test" },
+      });
+      Alert.alert(
+        "Notification Sent!",
+        `Push test dispatched. Registered devices: ${res?.registeredTokensCount ?? 1}`
+      );
+    } catch (err: any) {
+      Alert.alert("Notification Info", err?.message || "Failed to trigger test push");
+    } finally {
+      setPushTesting(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={{ padding: spacing.md, paddingBottom: TAB_BAR_CLEARANCE }}>
+      <Card style={{ marginBottom: spacing.md }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <Ionicons name="notifications" size={20} color={themeColor} />
+          <Text style={styles.cardTitle}>Push Notifications</Text>
+        </View>
+        <Text style={styles.muted}>
+          Test sound, banner, and device delivery for announcements, homework, and attendance alerts.
+        </Text>
+        <View style={{ marginTop: 12 }}>
+          <Button
+            title="Send Test Notification"
+            onPress={handleTestPush}
+            loading={pushTesting}
+            color={themeColor}
+          />
+        </View>
+      </Card>
+
       {canChangePw ? (
         <Card>
           <Text style={styles.cardTitle}>Change password</Text>
