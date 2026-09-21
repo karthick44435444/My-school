@@ -49,7 +49,7 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#156afd",
-        sound: "notification_sound.ogg",
+        sound: "notification_sound.wav",
         enableLights: true,
         enableVibrate: true,
         showBadge: true,
@@ -76,7 +76,7 @@ export async function triggerLocalNotification(payload: {
       content: {
         title: payload.title,
         body: payload.body,
-        sound: Platform.OS === "ios" ? "notification_sound_ios.wav" : "notification_sound.ogg",
+        sound: Platform.OS === "ios" ? "notification_sound_ios.wav" : "notification_sound.wav",
         data: payload.data || {},
         badge: 1,
         color: "#156afd",
