@@ -92,6 +92,50 @@ function getFileName(url?: string): string {
   }
 }
 
+function AttachmentThumb({ uri, onPress, color }: { uri: string; onPress: () => void; color: string }) {
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <Pressable onPress={onPress} style={styles.imageAttThumbBox}>
+      {!failed ? (
+        <ExpoImage
+          source={{ uri }}
+          style={styles.imageAttThumb}
+          contentFit="cover"
+          transition={150}
+          onLoadStart={() => setLoading(true)}
+          onLoad={() => setLoading(false)}
+          onError={() => {
+            setFailed(true);
+            setLoading(false);
+          }}
+          cachePolicy="memory-disk"
+        />
+      ) : (
+        <View style={[styles.imageAttThumb, { backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" }]}>
+          <Ionicons name="image-outline" size={24} color="#94A3B8" />
+        </View>
+      )}
+      {loading && !failed && (
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: "rgba(241,245,249,0.75)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ActivityIndicator size="small" color={color} />
+        </View>
+      )}
+      <View style={styles.imageAttZoomIcon}>
+        <Ionicons name="expand" size={10} color="#fff" />
+      </View>
+    </Pressable>
+  );
+}
+
 export default function HomeworkScreen() {
   const { user, themeColor } = useAuth();
   const badges = useBadges();
@@ -124,6 +168,7 @@ export default function HomeworkScreen() {
   const [saving, setSaving] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [lightboxLoading, setLightboxLoading] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -652,21 +697,11 @@ export default function HomeworkScreen() {
                       if (isImg) {
                         return (
                           <View key={i} style={styles.imageAttCard}>
-                            <Pressable
+                            <AttachmentThumb
+                              uri={resolved}
                               onPress={() => setPreviewImage(resolved)}
-                              style={styles.imageAttThumbBox}
-                            >
-                              <ExpoImage
-                                source={{ uri: resolved }}
-                                style={styles.imageAttThumb}
-                                contentFit="cover"
-                                transition={150}
-                                cachePolicy="memory-disk"
-                              />
-                              <View style={styles.imageAttZoomIcon}>
-                                <Ionicons name="expand" size={10} color="#fff" />
-                              </View>
-                            </Pressable>
+                              color={color}
+                            />
                             <View style={styles.imageAttMeta}>
                               <Text style={styles.imageAttTitle} numberOfLines={1}>
                                 {fileName}
@@ -800,12 +835,29 @@ export default function HomeworkScreen() {
           </View>
           <View style={styles.lightboxBody}>
             {previewImage && (
-              <ExpoImage
-                source={{ uri: previewImage }}
-                style={styles.lightboxImage}
-                contentFit="contain"
-                transition={200}
-              />
+              <>
+                <ExpoImage
+                  source={{ uri: previewImage }}
+                  style={styles.lightboxImage}
+                  contentFit="contain"
+                  transition={200}
+                  onLoadStart={() => setLightboxLoading(true)}
+                  onLoad={() => setLightboxLoading(false)}
+                  onError={() => setLightboxLoading(false)}
+                  cachePolicy="memory-disk"
+                />
+                {lightboxLoading && (
+                  <View
+                    style={{
+                      ...StyleSheet.absoluteFillObject,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <ActivityIndicator size="large" color="#ffffff" />
+                  </View>
+                )}
+              </>
             )}
           </View>
         </View>

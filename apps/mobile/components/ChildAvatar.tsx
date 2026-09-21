@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import { getApiBaseSync, resolveMediaUrlSync } from "@/lib/api";
 import { Colors } from "@/constants/theme";
@@ -28,6 +28,7 @@ export function SafeAvatar({
   isParent?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(Boolean(photoUrl));
   const base = apiBase || getApiBaseSync();
   const uri = !failed ? resolveMediaUrlSync(photoUrl || undefined, base) : null;
   const letter = ((name || "?").trim()[0] || "?").toUpperCase();
@@ -35,23 +36,43 @@ export function SafeAvatar({
 
   useEffect(() => {
     setFailed(false);
+    if (photoUrl) setLoading(true);
   }, [photoUrl, apiBase, isParent]);
 
   if (uri && !failed) {
     return (
-      <ExpoImage
-        source={{ uri }}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: radius,
-          backgroundColor: "#E2E8F0",
-        }}
-        contentFit="cover"
-        transition={150}
-        onError={() => setFailed(true)}
-        cachePolicy="memory-disk"
-      />
+      <View style={{ width: size, height: size, borderRadius: radius, overflow: "hidden", position: "relative" }}>
+        <ExpoImage
+          source={{ uri }}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: radius,
+            backgroundColor: "#E2E8F0",
+          }}
+          contentFit="cover"
+          transition={150}
+          onLoadStart={() => setLoading(true)}
+          onLoad={() => setLoading(false)}
+          onError={() => {
+            setFailed(true);
+            setLoading(false);
+          }}
+          cachePolicy="memory-disk"
+        />
+        {loading && (
+          <View
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              backgroundColor: "rgba(226,232,240,0.6)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ActivityIndicator size={size > 60 ? "small" : 12} color={color} />
+          </View>
+        )}
+      </View>
     );
   }
 
