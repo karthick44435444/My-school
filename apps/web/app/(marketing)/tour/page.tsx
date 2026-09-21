@@ -266,7 +266,7 @@ export default function PlatformTourPage() {
           <div className="rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 p-8 sm:p-12 text-center text-white relative overflow-hidden shadow-2xl">
             <div className="relative z-10 max-w-2xl mx-auto space-y-4">
               <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-                Ready to transform your school's digital operations?
+                Ready to transform your school&apos;s digital operations?
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                 Join hundreds of educational institutions managing attendance, gradebooks, announcements, and parent engagement effortlessly.

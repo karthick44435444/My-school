@@ -7,3 +7,6 @@ dist/
 .env.*
 !.env.example
 apps/web/firebase-service-account.json
+.DS_Store
+Thumbs.db
+node_modules/.prisma/
