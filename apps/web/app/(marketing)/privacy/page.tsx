@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
       id: "isolation",
       title: "1. Multi-Tenant School Data Isolation",
       content:
-        "Every school operating on My School is assigned a dedicated, strictly isolated cryptographic tenant identifier. Student records, faculty files, attendance logs, and marks belonging to one institution are never accessible or co-mingled with another institution.",
+        "Every school operating on SchoolVajo is assigned a dedicated, strictly isolated cryptographic tenant identifier. Student records, faculty files, attendance logs, and marks belonging to one institution are never accessible or co-mingled with another institution.",
     },
     {
       id: "student-data",
@@ -83,7 +83,7 @@ export default function PrivacyPolicyPage() {
                 Privacy & Data <span className="text-indigo-600">Protection Policy</span>
               </h1>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                We believe trust is the cornerstone of education. Learn how My School protects student, faculty, and institutional data with multi-tenant isolation, encrypted storage, and non-commercialization guarantees.
+                We believe trust is the cornerstone of education. Learn how SchoolVajo protects student, faculty, and institutional data with multi-tenant isolation, encrypted storage, and non-commercialization guarantees.
               </p>
               <div className="flex items-center gap-4 text-xs font-semibold text-slate-500 pt-1">
                 <span>Last Updated: September 2026</span>
@@ -171,10 +171,10 @@ export default function PrivacyPolicyPage() {
               </p>
             </div>
             <a
-              href="mailto:privacy@myschool.com"
+              href="mailto:privacy@schoolvajo.com"
               className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition shadow-sm shrink-0 flex items-center gap-2"
             >
-              <Mail className="w-4 h-4" /> privacy@myschool.com
+              <Mail className="w-4 h-4" /> privacy@schoolvajo.com
             </a>
           </div>
         </div>

@@ -549,7 +549,7 @@ export default function ProfileScreen() {
                   <View style={styles.schoolBadge}>
                     <Ionicons name="business-outline" size={13} color="#475569" style={{ marginRight: 4 }} />
                     <Text style={styles.schoolBadgeText} numberOfLines={1}>
-                      {user?.schoolName || "My School"}
+                      {user?.schoolName || "SchoolVajo"}
                     </Text>
                   </View>
                 </View>
@@ -676,7 +676,7 @@ export default function ProfileScreen() {
                 <View style={styles.coverBottomTitle}>
                   <Text style={styles.coverSubText}>INSTITUTION SETTINGS</Text>
                   <Text style={styles.coverMainText} numberOfLines={1}>
-                    {school.name || user?.schoolName || "My School"}
+                    {school.name || user?.schoolName || "SchoolVajo"}
                   </Text>
                 </View>
               </View>

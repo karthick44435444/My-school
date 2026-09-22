@@ -413,7 +413,7 @@ export default function AdminSettingsPage() {
                       </span>
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
                         <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                        {user.schoolName || "My School"}
+                        {user.schoolName || "SchoolVajo"}
                       </span>
                     </div>
                   </div>
@@ -644,7 +644,7 @@ export default function AdminSettingsPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
                     <div className="absolute bottom-4 left-6 text-white">
                       <div className="text-xs font-bold uppercase tracking-wider text-white/80">Institution Settings</div>
-                      <div className="text-xl sm:text-2xl md:text-3xl font-black">{school.name || user.schoolName || "My School"}</div>
+                      <div className="text-xl sm:text-2xl md:text-3xl font-black">{school.name || user.schoolName || "SchoolVajo"}</div>
                     </div>
                   </div>
 

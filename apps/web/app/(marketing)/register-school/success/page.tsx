@@ -56,7 +56,7 @@ export default function RegisterSuccessPage() {
   const copyAll = () => {
     if (!credentials) return;
     const loginUrl = typeof window !== "undefined" ? `${window.location.origin}/login` : "https://myschool.app/login";
-    const text = `My School Login Credentials
+    const text = `SchoolVajo Login Credentials
 ==============================
 School Name: ${credentials.schoolName}
 School Code: ${credentials.schoolCode}

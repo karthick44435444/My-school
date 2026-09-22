@@ -92,7 +92,7 @@ export default function MarketingPage() {
 
   const faqs = [
     {
-      q: "How does My School isolate each school's data?",
+      q: "How does SchoolVajo isolate each school's data?",
       a: "Every registered institution is assigned a unique, isolated cryptographic tenant ID in our database. Data, documents, student records, and marks are strictly partitioned so no two schools can ever access each other's records.",
     },
     {
@@ -109,7 +109,7 @@ export default function MarketingPage() {
     },
     {
       q: "What devices are supported?",
-      a: "My School runs on any modern web browser (Chrome, Safari, Firefox, Edge) on desktop/tablets, as well as dedicated responsive mobile interfaces for smartphones.",
+      a: "SchoolVajo runs on any modern web browser (Chrome, Safari, Firefox, Edge) on desktop/tablets, as well as dedicated responsive mobile interfaces for smartphones.",
     },
   ];
 
@@ -470,7 +470,7 @@ export default function MarketingPage() {
               Frequently Asked Questions
             </h2>
             <p className="text-xs sm:text-sm text-slate-500">
-              Everything you need to know about the My School cloud platform.
+              Everything you need to know about the SchoolVajo cloud platform.
             </p>
           </div>
 
@@ -527,7 +527,7 @@ export default function MarketingPage() {
               Transform Your School Management Today
             </h2>
             <p className="text-sm sm:text-base text-indigo-100 max-w-xl mx-auto leading-relaxed">
-              Join forward-thinking schools using My School to empower faculty, delight parents, and streamline administration.
+              Join forward-thinking schools using SchoolVajo to empower faculty, delight parents, and streamline administration.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <Link

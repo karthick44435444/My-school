@@ -28,7 +28,7 @@ export default function PushNotificationManager() {
     import("@/lib/socketClient").then(({ subscribeNewNotification }) => {
       import("@/lib/notificationPopups").then(({ displayNotificationAlert }) => {
         unsubSocket = subscribeNewNotification((n) => {
-          const title = n.title || "🔔 My School Notification";
+          const title = n.title || "🔔 SchoolVajo Notification";
           const body = n.body || n.message || "";
           const notifId = n.id;
           const meta = n.meta || n.data || {};

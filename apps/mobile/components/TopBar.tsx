@@ -127,7 +127,7 @@ export default function TopBar() {
             )}
             <View style={{ flex: 1 }}>
               <Text style={styles.school} numberOfLines={1}>
-                {user?.schoolName || "My School"}
+                {user?.schoolName || "SchoolVajo"}
               </Text>
               <Text style={styles.role} numberOfLines={1}>
                 {user?.role === "ADMIN" ? "Administrator" : user?.role}

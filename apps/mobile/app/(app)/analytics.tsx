@@ -413,7 +413,7 @@ export default function AnalyticsScreen() {
         });
         const resData = await res.json();
         const records = resData?.records || [];
-        const schoolTitle = user?.schoolName || "MySchool Platform";
+        const schoolTitle = user?.schoolName || "SchoolVajo";
 
         const htmlReport = `
 <!DOCTYPE html>

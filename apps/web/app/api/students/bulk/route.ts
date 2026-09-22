@@ -424,11 +424,11 @@ export async function POST(req: NextRequest) {
           try {
             await sendEmail({
               to: row.parentEmail,
-              subject: `My School — Student & Parent Credentials (${(auth as any).schoolName || auth.schoolCode})`,
+              subject: `SchoolVajo — Student & Parent Credentials (${(auth as any).schoolName || auth.schoolCode})`,
               html: studentAndParentCredentialsEmailHtml({
                 studentName: `${row.firstName} ${row.lastName || ""}`.trim(),
                 parentName: row.parentName || "Parent",
-                schoolName: (auth as any).schoolName || "My School",
+                schoolName: (auth as any).schoolName || "SchoolVajo",
                 schoolCode: auth.schoolCode,
                 studentUsername: result.credentials.student.username,
                 studentPassword: result.credentials.student.password,
@@ -449,7 +449,7 @@ export async function POST(req: NextRequest) {
           try {
             await sendEmail({
               to: row.email,
-              subject: `My School — Student Portal Credentials (${(auth as any).schoolName || auth.schoolCode})`,
+              subject: `SchoolVajo — Student Portal Credentials (${(auth as any).schoolName || auth.schoolCode})`,
               html: credentialsEmailHtml({
                 role: "STUDENT",
                 schoolCode: auth.schoolCode,

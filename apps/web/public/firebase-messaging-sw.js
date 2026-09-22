@@ -1,4 +1,4 @@
-/* Firebase messaging service worker for My School */
+/* Firebase messaging service worker for SchoolVajo */
 
 self.addEventListener("push", (event) => {
   let payload = {};
@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
   const notification = payload.notification || {};
   const data = payload.data || {};
 
-  const title = notification.title || data.title || "My School Notification";
+  const title = notification.title || data.title || "SchoolVajo Notification";
   const body = notification.body || data.body || "You have a new update";
   const icon = notification.icon || data.icon || "/logo.png";
   const badge = notification.badge || data.badge || "/logo.png";

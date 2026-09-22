@@ -48,11 +48,11 @@ export default function MarketingNavbar() {
           className="flex items-center gap-2.5 group shrink-0"
         >
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 p-2 flex items-center justify-center border border-slate-200/80 shadow-xs group-hover:scale-105 group-hover:border-indigo-300 transition-all">
-            <img src="/logo.png" alt="My School" className="w-full h-full object-contain" />
+            <img src="/logo.png" alt="SchoolVajo" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 flex items-center gap-1 leading-tight">
-              My School
+              SchoolVajo
             </span>
             <span className="text-[9px] sm:text-[10px] font-bold text-indigo-600 uppercase tracking-wider -mt-0.5">
               Cloud Campus

@@ -77,14 +77,14 @@ export default function AboutPage() {
               className="lg:col-span-6 space-y-6"
             >
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" /> About My School
+                <Sparkles className="w-3.5 h-3.5" /> About SchoolVajo
               </div>
               <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
                 Empowering Modern Education with a{" "}
                 <span className="text-indigo-600">Unified Campus Cloud</span>
               </h1>
               <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                My School was built to bridge the gap between educational administration, faculty workflows, student engagement, and parent transparency. We combine intuitive design with enterprise-grade multi-tenant architecture.
+                SchoolVajo was built to bridge the gap between educational administration, faculty workflows, student engagement, and parent transparency. We combine intuitive design with enterprise-grade multi-tenant architecture.
               </p>
               <div className="flex flex-wrap gap-4 pt-2">
                 <Link
@@ -113,7 +113,7 @@ export default function AboutPage() {
               <div className="rounded-3xl overflow-hidden border border-slate-200/80 bg-white shadow-xl shadow-slate-200/60 p-2">
                 <img
                   src="/about-banner.jpg"
-                  alt="My School Community & Ecosystem"
+                  alt="SchoolVajo Community & Ecosystem"
                   className="w-full h-auto rounded-2xl object-cover"
                 />
               </div>
@@ -204,7 +204,7 @@ export default function AboutPage() {
               href="/register-school"
               className="inline-flex items-center gap-2 text-xs font-bold text-white underline underline-offset-4 hover:text-indigo-200"
             >
-              Get started with My School →
+              Get started with SchoolVajo →
             </Link>
           </motion.div>
         </div>

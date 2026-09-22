@@ -1254,7 +1254,7 @@ export default function MarksScreen() {
         marksMap[m.studentId][subKey] = m;
       }
 
-      const schoolTitle = school?.name || (user as any)?.schoolName || "MySchool Platform";
+      const schoolTitle = school?.name || (user as any)?.schoolName || "SchoolVajo";
       const schoolAddress = school?.location || school?.address || "";
       const schoolLogoUrl = resolveMediaUrlSync(school?.logoUrl || (user as any)?.schoolLogo, apiBase);
       const examTitle = ex.name || "Exam Marksheet";
@@ -1452,7 +1452,7 @@ export default function MarksScreen() {
   const handleDownloadTimetablePDF = async (ex: ExamItem) => {
     setDownloadingTimetablePdf(true);
     try {
-      const schoolTitle = school?.name || (user as any)?.schoolName || "MySchool Platform";
+      const schoolTitle = school?.name || (user as any)?.schoolName || "SchoolVajo";
       const schoolAddress = school?.location || school?.address || "";
       const schoolLogoUrl = resolveMediaUrlSync(school?.logoUrl || (user as any)?.schoolLogo, apiBase);
       const examTitle = toTitleCase(ex.name || "Exam Timetable");
@@ -1692,7 +1692,7 @@ export default function MarksScreen() {
   };
 
   const generateProgressCardHtml = (group: any) => {
-    const schoolTitle = school?.name || (user as any)?.schoolName || "MySchool Platform";
+    const schoolTitle = school?.name || (user as any)?.schoolName || "SchoolVajo";
     const schoolAddress = school?.location || school?.address || "";
     const schoolLogoUrl = resolveMediaUrlSync(school?.logoUrl || (user as any)?.schoolLogo, apiBase);
     const studentName = toTitleCase(group.studentName || "Student");
@@ -3123,7 +3123,7 @@ export default function MarksScreen() {
                   >
                     <View style={{ flex: 1, marginRight: 8 }}>
                       <Text style={{ color: "#fff", fontSize: 15, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                        {school?.name || (user as any)?.schoolName || "MySchool Platform"}
+                        {school?.name || (user as any)?.schoolName || "SchoolVajo"}
                       </Text>
                       <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "600", marginTop: 2 }}>
                         Official Examination Schedule & Timetable
@@ -4085,7 +4085,7 @@ export default function MarksScreen() {
               )}
               <View style={{ flex: 1 }}>
                 <Text style={styles.pcSchool}>
-                  {school?.name || (user as any)?.schoolName || "My School"}
+                  {school?.name || (user as any)?.schoolName || "SchoolVajo"}
                 </Text>
                 {!!(school?.location || school?.address) && (
                   <Text style={styles.pcAddr} numberOfLines={2}>
@@ -4357,7 +4357,7 @@ export default function MarksScreen() {
                   )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.printSchoolName}>
-                      {school?.name || (user as any)?.schoolName || "My School"}
+                      {school?.name || (user as any)?.schoolName || "SchoolVajo"}
                     </Text>
                     {!!(school?.location || school?.address) && (
                       <Text style={styles.printSchoolAddr}>
@@ -4624,7 +4624,7 @@ export default function MarksScreen() {
               {/* 6. Footer Note */}
               <View style={styles.printFooterNote}>
                 <Text style={{ fontSize: 10, color: "#94a3b8", textAlign: "center" }}>
-                  This is an official computer-generated progress report issued by {school?.name || (user as any)?.schoolName || "My School"}.
+                  This is an official computer-generated progress report issued by {school?.name || (user as any)?.schoolName || "SchoolVajo"}.
                 </Text>
               </View>
             </View>

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       const targetUserId = body.userId || auth.userId;
       const tokens = getTokensForUser(targetUserId);
       const testResult = await notifyUser(targetUserId, {
-        title: body.title || "🔔 My School Test Notification",
+        title: body.title || "🔔 SchoolVajo Test Notification",
         body: body.body || "Push notifications are working smoothly across your device and web browser!",
         type: "GENERAL",
       });

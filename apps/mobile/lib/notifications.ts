@@ -47,7 +47,7 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
 
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
-        name: "My School Notifications",
+        name: "SchoolVajo Notifications",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#156afd",

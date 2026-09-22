@@ -1,4 +1,4 @@
-# My School – Expo Mobile App
+# SchoolVajo – Expo Mobile App
 
 Complete React Native (Expo) client that talks to the **same Next.js APIs** as the web app.
 
@@ -125,4 +125,4 @@ Configure `eas.json` and Expo account as needed. Point `extra.apiUrl` to your pr
 
 ---
 
-Built to match the My School web design system and APIs end-to-end.
+Built to match the SchoolVajo web design system and APIs end-to-end.

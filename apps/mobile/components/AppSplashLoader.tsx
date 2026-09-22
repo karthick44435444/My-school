@@ -12,7 +12,7 @@ interface AppSplashLoaderProps {
 
 export function AppSplashLoader({
   themeColor,
-  appName = "My School",
+  appName = "SchoolVajo",
 }: AppSplashLoaderProps) {
   const activeColor = themeColor || Colors.primary || "#4F46E5";
 

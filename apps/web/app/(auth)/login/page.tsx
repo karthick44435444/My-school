@@ -176,13 +176,13 @@ export default function LoginPage() {
               <div className="w-11 h-11 rounded-2xl bg-white p-2 flex items-center justify-center shadow-md shadow-indigo-500/10 border border-slate-200">
                 <img
                   src="/logo.png"
-                  alt="MySchool"
+                  alt="SchoolVajo"
                   className="w-full h-full object-contain"
                 />
               </div>
               <div>
                 <span className="text-xl font-extrabold tracking-tight text-slate-900">
-                  My School
+                  SchoolVajo
                 </span>
                 <p className="text-xs text-slate-500 font-medium">
                   Smart Campus Management System

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       try {
         await sendEmail({
           to: result.admin.email,
-          subject: `My School — Administrator Credentials for ${result.school.displayName || result.school.name}`,
+          subject: `SchoolVajo — Administrator Credentials for ${result.school.displayName || result.school.name}`,
           html: credentialsEmailHtml({
             role: "ADMIN",
             schoolCode: result.school.schoolCode,

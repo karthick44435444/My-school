@@ -1,4 +1,4 @@
-// My School Data Store with PostgreSQL & Prisma Integration
+// SchoolVajo Data Store with PostgreSQL & Prisma Integration
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
@@ -2183,7 +2183,7 @@ export function teacherCheckInToExcelXML(
   }>,
   meta?: { schoolName?: string; from?: string; to?: string }
 ): string {
-  const schoolName = meta?.schoolName || "MySchool Platform";
+  const schoolName = meta?.schoolName || "SchoolVajo";
   const from = meta?.from || "";
   const to = meta?.to || "";
 
@@ -2382,7 +2382,7 @@ export function attendanceToExcelXML(
   rows: ReturnType<typeof exportAttendance>,
   meta?: { schoolName?: string; from?: string; to?: string; className?: string; section?: string; status?: string }
 ): string {
-  const schoolName = meta?.schoolName || "MySchool Platform";
+  const schoolName = meta?.schoolName || "SchoolVajo";
   const from = meta?.from || (rows.length ? rows[rows.length - 1].date : "");
   const to = meta?.to || (rows.length ? rows[0].date : "");
   const className = meta?.className || "All";

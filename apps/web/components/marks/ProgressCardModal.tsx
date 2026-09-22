@@ -83,7 +83,7 @@ export default function ProgressCardModal({
   onClose,
   examGroup,
   student,
-  schoolName = "MySchool Platform",
+  schoolName = "SchoolVajo",
   schoolLogo,
   schoolAddress,
   themeColor = "#6366F1",

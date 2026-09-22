@@ -92,7 +92,7 @@ function getGrade(pct: number): { grade: string; text: string; color: { r: numbe
 
 export function exportExamMarksPDF(options: ExamPDFExportOptions) {
   const {
-    schoolName = "MySchool Platform",
+    schoolName = "SchoolVajo",
     themeColor = "#6366F1",
     teacherName,
     exam,
@@ -686,7 +686,7 @@ export interface ExamTimetableExportOptions {
 
 export function exportExamTimetablePDF(options: ExamTimetableExportOptions) {
   const {
-    schoolName = "MySchool Platform",
+    schoolName = "SchoolVajo",
     themeColor = "#6366F1",
     exam,
   } = options;
@@ -928,7 +928,7 @@ export async function downloadExamMarksPDF(
   const userData = userRes.ok ? await userRes.json() : { users: [] };
 
   exportExamMarksPDF({
-    schoolName: options?.schoolName || "MySchool Platform",
+    schoolName: options?.schoolName || "SchoolVajo",
     themeColor: options?.themeColor || "#6366F1",
     teacherName: options?.teacherName,
     exam: examData.exam,

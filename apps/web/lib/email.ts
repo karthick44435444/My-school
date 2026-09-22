@@ -31,7 +31,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
 
   if (provider === "resend") {
     const key = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM || "My School <onboarding@resend.dev>";
+    const from = process.env.EMAIL_FROM || "SchoolVajo <onboarding@resend.dev>";
     if (!key) {
       console.warn("[email] RESEND_API_KEY missing");
       return { success: false, error: "RESEND_API_KEY missing" };
@@ -74,7 +74,7 @@ export function otpEmailHtml(code: string, schoolName?: string) {
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg, #4338ca 0%, #6366f1 100%);padding:28px 32px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">My School</h1>
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">SchoolVajo</h1>
               <p style="margin:4px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">${schoolName || "Smart School Platform"}</p>
             </td>
           </tr>
@@ -83,7 +83,7 @@ export function otpEmailHtml(code: string, schoolName?: string) {
             <td style="padding:32px 32px 24px;">
               <h2 style="margin:0 0 12px;color:#0f172a;font-size:18px;font-weight:700;">Password Reset Request</h2>
               <p style="margin:0 0 20px;color:#475569;font-size:14px;line-height:1.6;">
-                We received a request to reset your password for <strong>${schoolName || "My School"}</strong>. Use the verification code below to proceed:
+                We received a request to reset your password for <strong>${schoolName || "SchoolVajo"}</strong>. Use the verification code below to proceed:
               </p>
               
               <div style="background-color:#f1f5f9;border:1.5px dashed #cbd5e1;border-radius:14px;padding:18px;text-align:center;margin-bottom:20px;">
@@ -98,7 +98,7 @@ export function otpEmailHtml(code: string, schoolName?: string) {
           <!-- Footer -->
           <tr>
             <td style="background-color:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;text-align:center;">
-              <p style="margin:0;color:#94a3b8;font-size:12px;">© ${new Date().getFullYear()} My School Platform. All rights reserved.</p>
+              <p style="margin:0;color:#94a3b8;font-size:12px;">© ${new Date().getFullYear()} SchoolVajo. All rights reserved.</p>
             </td>
           </tr>
         </table>
@@ -153,9 +153,9 @@ export function credentialsEmailHtml(opts: {
           <tr>
             <td style="background:linear-gradient(135deg, #3730a3 0%, #4338ca 50%, #6366f1 100%);padding:32px 32px 28px;text-align:center;">
               <div style="display:inline-block;background:rgba(255,255,255,0.2);padding:6px 14px;border-radius:20px;margin-bottom:10px;">
-                <span style="color:#ffffff;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">${opts.schoolName || "My School"}</span>
+                <span style="color:#ffffff;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">${opts.schoolName || "SchoolVajo"}</span>
               </div>
-              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Welcome to My School</h1>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Welcome to SchoolVajo</h1>
               <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:14px;">Your official account has been created</p>
             </td>
           </tr>
@@ -167,7 +167,7 @@ export function credentialsEmailHtml(opts: {
                 Hello <strong>${opts.recipientName || opts.username}</strong>,
               </p>
               <p style="margin:0 0 20px;color:#475569;font-size:14px;line-height:1.6;">
-                Your <strong>${roleLabel}</strong> account is ready to use on <strong>${opts.schoolName || "My School"}</strong> portal. Below are your secure login credentials:
+                Your <strong>${roleLabel}</strong> account is ready to use on <strong>${opts.schoolName || "SchoolVajo"}</strong> portal. Below are your secure login credentials:
               </p>
 
               <!-- Credentials Card -->
@@ -216,7 +216,7 @@ export function credentialsEmailHtml(opts: {
           <tr>
             <td style="background-color:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;text-align:center;">
               <p style="margin:0 0 4px;color:#94a3b8;font-size:12px;">🔒 Keep your login credentials secure. Never share your password with anyone.</p>
-              <p style="margin:0;color:#cbd5e1;font-size:11px;">© ${new Date().getFullYear()} ${opts.schoolName || "My School"}. All rights reserved.</p>
+              <p style="margin:0;color:#cbd5e1;font-size:11px;">© ${new Date().getFullYear()} ${opts.schoolName || "SchoolVajo"}. All rights reserved.</p>
             </td>
           </tr>
         </table>
@@ -352,7 +352,7 @@ export function notificationEmailHtml(title: string, body: string, schoolName?: 
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:520px;background-color:#ffffff;border-radius:20px;border:1px solid #e2e8f0;box-shadow:0 10px 25px -5px rgba(0,0,0,0.05);overflow:hidden;">
           <tr>
             <td style="background:linear-gradient(135deg, #4338ca 0%, #6366f1 100%);padding:24px 32px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:800;">${schoolName || "My School"}</h1>
+              <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:800;">${schoolName || "SchoolVajo"}</h1>
             </td>
           </tr>
           <tr>
@@ -363,7 +363,7 @@ export function notificationEmailHtml(title: string, body: string, schoolName?: 
           </tr>
           <tr>
             <td style="background-color:#f8fafc;padding:16px 32px;border-top:1px solid #e2e8f0;text-align:center;">
-              <p style="margin:0;color:#94a3b8;font-size:12px;">Open the My School app or portal to view complete details.</p>
+              <p style="margin:0;color:#94a3b8;font-size:12px;">Open the SchoolVajo app or portal to view complete details.</p>
             </td>
           </tr>
         </table>

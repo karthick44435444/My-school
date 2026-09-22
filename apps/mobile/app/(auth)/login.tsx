@@ -72,7 +72,7 @@ export default function LoginScreen() {
               resizeMode="contain"
             />
           </View>
-          <Title style={{ textAlign: "center", color: "#fff" }}>My School</Title>
+          <Title style={{ textAlign: "center", color: "#fff" }}>SchoolVajo</Title>
           <Subtitle
             style={{ textAlign: "center", color: "rgba(255,255,255,0.85)" }}
           >

@@ -161,7 +161,7 @@ export function setupForegroundPushListener(onReceived?: (payload: any) => void)
       const { displayNotificationAlert } = await import("./notificationPopups");
       const messaging = getMessaging(app);
       unsubscribe = onMessage(messaging, (payload) => {
-        const title = payload.notification?.title || payload.data?.title || "🔔 My School Notification";
+        const title = payload.notification?.title || payload.data?.title || "🔔 SchoolVajo Notification";
         const body = payload.notification?.body || payload.data?.body || "";
         const targetUrl = payload.data?.url || payload.fcmOptions?.link || "/";
         const notifId = payload.data?.notificationId;

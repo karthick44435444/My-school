@@ -113,7 +113,7 @@ async function loadImageDataUrl(url: string): Promise<string | null> {
  */
 export async function exportStudentAttendancePDF(options: AttendanceExportOptions) {
   const {
-    schoolName = "MySchool Platform",
+    schoolName = "SchoolVajo",
     schoolLogo = null,
     themeColor = "#6366F1",
     records = [],
@@ -448,7 +448,7 @@ export async function exportStudentAttendancePDF(options: AttendanceExportOption
  */
 export function exportStudentAttendanceExcel(options: AttendanceExportOptions) {
   const {
-    schoolName = "MySchool Platform",
+    schoolName = "SchoolVajo",
     records = [],
     from,
     to,
@@ -485,7 +485,7 @@ export function exportStudentAttendanceExcel(options: AttendanceExportOptions) {
  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
   <Title>${xmlEsc(schoolName)} - Student Attendance Report</Title>
   <Subject>Attendance Export</Subject>
-  <Author>MySchool Platform</Author>
+  <Author>SchoolVajo</Author>
   <Created>${new Date().toISOString()}</Created>
  </DocumentProperties>
  <Styles>
@@ -1001,7 +1001,7 @@ export function exportTeacherCheckInExcel(options: {
   to: string;
 }) {
   const {
-    schoolName = "MySchool Platform",
+    schoolName = "SchoolVajo",
     records = [],
     from,
     to,
@@ -1032,7 +1032,7 @@ export function exportTeacherCheckInExcel(options: {
  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
   <Title>${xmlEsc(schoolName)} - Teacher Check-In Report</Title>
   <Subject>Teacher Attendance Export</Subject>
-  <Author>MySchool Platform</Author>
+  <Author>SchoolVajo</Author>
   <Created>${new Date().toISOString()}</Created>
  </DocumentProperties>
  <Styles>

@@ -60,7 +60,7 @@ export default function PrincipalAnalyticsPage() {
         to,
         className: tab === "students" ? (className || undefined) : undefined,
         section: tab === "students" ? (section || undefined) : undefined,
-        schoolName: user?.schoolName || "MySchool Platform",
+        schoolName: user?.schoolName || "SchoolVajo",
         themeColor: user?.themeColor || "#6366F1",
       });
       toast.success(

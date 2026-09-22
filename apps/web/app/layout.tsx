@@ -8,10 +8,10 @@ import TopProgressBar from "@/components/TopProgressBar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "My School",
+  title: "SchoolVajo",
   description:
     "Complete multi-tenant school management platform with beautiful UI for Admin, Principal, Teachers, Students & Parents.",
-  applicationName: "My School",
+  applicationName: "SchoolVajo",
   icons: {
     icon: [
       { url: "/favicon.ico" },

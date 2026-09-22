@@ -81,7 +81,7 @@ export default function ContactPage() {
               <div className="rounded-3xl overflow-hidden border border-slate-200/80 bg-white p-2 shadow-xl shadow-slate-200/60">
                 <img
                   src="/contact-banner.jpg"
-                  alt="Contact My School Support"
+                  alt="Contact SchoolVajo Support"
                   className="w-full h-auto rounded-2xl object-cover"
                 />
               </div>
@@ -96,7 +96,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <span className="font-bold text-slate-900 block">Email Inquiries</span>
-                      <span>support@myschool.com</span>
+                      <span>support@schoolvajo.com</span>
                     </div>
                   </div>
 
@@ -126,7 +126,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <span className="font-bold text-slate-900 block">Headquarters</span>
-                      <span>My School Technologies, Tech Boulevard, Bangalore 560100, India</span>
+                      <span>SchoolVajo Technologies, Tech Boulevard, Bangalore 560100, India</span>
                     </div>
                   </div>
                 </div>
@@ -148,7 +148,7 @@ export default function ContactPage() {
                     </div>
                     <h3 className="text-2xl font-bold text-slate-900">Inquiry Received!</h3>
                     <p className="text-sm text-slate-600 max-w-md mx-auto">
-                      Thank you for contacting My School. An institution advisor has been assigned to your query and will get back to you within 2 business hours.
+                      Thank you for contacting SchoolVajo. An institution advisor has been assigned to your query and will get back to you within 2 business hours.
                     </p>
                     <button
                       type="button"

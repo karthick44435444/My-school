@@ -473,7 +473,7 @@ function TeacherAttendance({ color }: { color: string }) {
         }
       } else {
         // PDF HTML Report
-        const schoolTitle = (user as any)?.schoolName || "MySchool Platform";
+        const schoolTitle = (user as any)?.schoolName || "SchoolVajo";
         const schoolAddress = (user as any)?.schoolAddress || (user as any)?.schoolLocation || "";
         const schoolLogoUrl = resolveMediaUrlSync((user as any)?.schoolLogo, apiBase);
         const presentCount = historyRecords.filter((r) => String(r.status).toUpperCase().includes("PRESENT")).length;
@@ -2151,7 +2151,7 @@ function PrincipalAttendance({ color }: { color: string }) {
         });
         const resData = await res.json();
         const records = resData?.records || [];
-        const schoolTitle = (user as any)?.schoolName || "MySchool Platform";
+        const schoolTitle = (user as any)?.schoolName || "SchoolVajo";
         const schoolAddress = (user as any)?.schoolAddress || (user as any)?.schoolLocation || "";
         const schoolLogoUrl = resolveMediaUrlSync((user as any)?.schoolLogo, base);
         const presentCount = records.filter((r: any) => String(r.status).toUpperCase().includes("PRESENT")).length;

@@ -36,7 +36,7 @@ export function SchoolDetailsModal({
 }) {
   const { user, themeColor } = useAuth();
   const [school, setSchool] = useState<School | null>(() => ({
-    name: user?.schoolName || "My School",
+    name: user?.schoolName || "SchoolVajo",
     schoolCode: (user as any)?.schoolCode || "",
     logoUrl: (user as any)?.schoolLogo || undefined,
     themeColor: themeColor || Colors.primary,
@@ -123,7 +123,7 @@ export function SchoolDetailsModal({
 
             {/* School Name */}
             <Text style={styles.name} numberOfLines={2}>
-              {school?.name || user?.schoolName || "My School"}
+              {school?.name || user?.schoolName || "SchoolVajo"}
             </Text>
 
             {/* Code Badge */}

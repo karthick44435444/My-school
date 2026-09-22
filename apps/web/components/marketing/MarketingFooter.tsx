@@ -24,12 +24,12 @@ export default function MarketingFooter() {
               <div className="w-10 h-10 rounded-2xl bg-white p-2 flex items-center justify-center shadow-md shadow-indigo-500/10 border border-slate-200">
                 <img
                   src="/logo.png"
-                  alt="My School"
+                  alt="SchoolVajo"
                   className="w-full h-full object-contain"
                 />
               </div>
               <span className="text-xl font-extrabold text-slate-900 tracking-tight">
-                My School
+                SchoolVajo
               </span>
             </Link>
             <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
@@ -146,7 +146,7 @@ export default function MarketingFooter() {
             <ul className="space-y-3 text-xs text-slate-500 font-medium">
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-indigo-600 shrink-0" />
-                <span>support@myschool.com</span>
+                <span>support@schoolvajo.com</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -163,7 +163,7 @@ export default function MarketingFooter() {
         {/* Bottom copyright */}
         <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <p>
-            © {new Date().getFullYear()} My School Platform. All rights
+            © {new Date().getFullYear()} SchoolVajo. All rights
             reserved.
           </p>
           <div className="flex items-center gap-6">

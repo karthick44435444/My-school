@@ -1,4 +1,4 @@
-# My School – Complete School Management System
+# SchoolVajo – Complete School Management System
 
 Modern multi-tenant SaaS School Management Platform with **Web (Next.js)** + **Mobile (Expo)** apps, shared APIs, push notifications, and email OTP.
 

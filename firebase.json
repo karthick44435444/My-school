@@ -7,7 +7,7 @@
     "providers": {
       "emailPassword": true,
       "googleSignIn": {
-        "oAuthBrandDisplayName": "My School",
+        "oAuthBrandDisplayName": "SchoolVajo",
         "supportEmail": "firebase-adminsdk-fbsvc@my-school-1980d.iam.gserviceaccount.com",
         "authorizedRedirectUris": [
           "http://localhost:3000",

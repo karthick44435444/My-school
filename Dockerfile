@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for My School
+# Multi-stage Dockerfile for SchoolVajo
 FROM node:20-alpine AS base
 
 # Install OpenSSL for Prisma

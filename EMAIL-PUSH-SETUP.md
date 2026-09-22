@@ -22,14 +22,15 @@ Without keys, everything still works in **demo mode** (emails/push logged in the
 1. Go to [https://resend.com](https://resend.com) and sign up.
 2. Open **API Keys** → **Create API Key** → copy the key (`re_...`).
 3. For production: **Domains** → add your domain (e.g. `mail.yourschool.com`) and verify DNS.
-4. Until domain is verified, you can only send **to your own signup email** with `EMAIL_FROM=My School <onboarding@resend.dev>`.
+4. Until domain is verified, you can only send **to your own signup email** with `EMAIL_FROM=SchoolVajo <onboarding@resend.dev>`.
+5. Once your domain is verified on Resend, you can send to any recipient with:
+   ```env
+   EMAIL_FROM="SchoolVajo <notifications@your-school-domain.com>"
+   ```
 
-### Step B — Configure `.env` in `apps/web`
-
+For local testing before verifying a domain, you can also keep the default:
 ```env
-EMAIL_ENABLED="true"
-EMAIL_PROVIDER="resend"
-EMAIL_FROM="My School <onboarding@resend.dev>"
+EMAIL_FROM="SchoolVajo <onboarding@resend.dev>"
 RESEND_API_KEY="re_xxxxxxxxxxxxxxxx"
 ```
 

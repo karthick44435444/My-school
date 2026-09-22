@@ -734,7 +734,7 @@ export default function TeacherExamsPage() {
     setDownloadingPdfId(ex.id);
     try {
       await downloadExamMarksPDF(ex.id, {
-        schoolName: user?.schoolName || "MySchool Platform",
+        schoolName: user?.schoolName || "SchoolVajo",
         themeColor: user?.themeColor || "#6366F1",
         teacherName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || undefined,
       });
@@ -752,7 +752,7 @@ export default function TeacherExamsPage() {
     setExportingTimetablePdf(true);
     try {
       exportExamTimetablePDF({
-        schoolName: user?.schoolName || "MySchool Platform",
+        schoolName: user?.schoolName || "SchoolVajo",
         themeColor: user?.themeColor || "#6366F1",
         exam: ex,
       });
@@ -2013,7 +2013,7 @@ export default function TeacherExamsPage() {
                 >
                   <div>
                     <h3 className="font-black text-lg tracking-wide uppercase">
-                      {user?.schoolName || "MySchool Platform"}
+                      {user?.schoolName || "SchoolVajo"}
                     </h3>
                     <p className="text-xs opacity-90 font-medium">
                       Official Examination Schedule &amp; Timetable

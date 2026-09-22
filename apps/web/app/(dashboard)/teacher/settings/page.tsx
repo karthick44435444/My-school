@@ -215,7 +215,7 @@ export default function TeacherSettingsPage() {
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
                     <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                    {user.schoolName || "My School"}
+                    {user.schoolName || "SchoolVajo"}
                   </span>
                 </div>
               </div>

@@ -408,7 +408,7 @@ export default function Sidebar({ user }: SidebarProps) {
           )}
           <div className="min-w-0">
             <div className="font-bold text-slate-900 text-xs sm:text-sm truncate">
-              {user.schoolName || "My School"}
+              {user.schoolName || "SchoolVajo"}
             </div>
             <div className="text-[10px] text-slate-500 truncate">{user.schoolCode}</div>
           </div>
@@ -496,7 +496,7 @@ export default function Sidebar({ user }: SidebarProps) {
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="font-bold text-slate-900 text-sm truncate">
-                    {user.schoolName || "My School"}
+                    {user.schoolName || "SchoolVajo"}
                   </div>
                   <div className="text-xs text-slate-500 truncate">{user.schoolCode}</div>
                 </div>
@@ -535,7 +535,7 @@ export default function Sidebar({ user }: SidebarProps) {
           )}
           <div className="min-w-0">
             <div className="font-bold text-slate-900 text-sm truncate">
-              {user.schoolName || "My School"}
+              {user.schoolName || "SchoolVajo"}
             </div>
             <div className="text-xs text-slate-500">{user.schoolCode}</div>
           </div>

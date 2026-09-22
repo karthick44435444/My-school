@@ -35,7 +35,7 @@ export function displayNotificationAlert(opts: NotificationPopupOptions) {
     recentlyShownIds.delete(notifId);
   }, 8000);
 
-  const title = opts.title || "🔔 My School Notification";
+  const title = opts.title || "🔔 SchoolVajo Notification";
   const body = opts.body || "";
   const icon = opts.icon || "/logo.png";
   const url = opts.url || (opts.notificationId ? `/?markRead=${opts.notificationId}` : undefined);

@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
       if (result.email) {
         await sendEmail({
           to: result.email,
-          subject: "My School — Password reset OTP",
-          html: otpEmailHtml(result.demoCode, "My School"),
+          subject: "SchoolVajo — Password reset OTP",
+          html: otpEmailHtml(result.demoCode, "SchoolVajo"),
           text: `Your OTP is ${result.demoCode}. Valid 15 minutes.`,
         });
       }
