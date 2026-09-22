@@ -44,7 +44,6 @@ type TeacherClass = { className: string; section?: string; role?: string };
 const emptyForm = {
   firstName: "",
   lastName: "",
-  email: "",
   phone: "",
   gender: "MALE",
   rollNumber: "",
@@ -520,13 +519,12 @@ export default function StudentsScreen() {
     setForm({
       firstName: s.firstName || "",
       lastName: s.lastName || "",
-      email: s.email || "",
       phone: s.phone || "",
       gender: s.gender || "MALE",
       rollNumber: s.rollNumber || s.rollNo || "",
       dateOfBirth: s.dateOfBirth || "",
       parentName: s.parentName || "",
-      parentEmail: s.parentEmail || "",
+      parentEmail: s.parentEmail || (!s.email?.includes("@student.local") ? s.email : "") || "",
       photoUrl: s.photoUrl || "",
       className: s.className || "",
       section: s.section || "A",
@@ -545,7 +543,6 @@ export default function StudentsScreen() {
           body: {
             firstName: form.firstName,
             lastName: form.lastName,
-            email: form.email?.trim() || undefined,
             phone: form.phone,
             gender: form.gender,
             rollNumber: form.rollNumber?.trim() || undefined,
@@ -562,7 +559,6 @@ export default function StudentsScreen() {
           role: "STUDENT",
           firstName: form.firstName,
           lastName: form.lastName,
-          email: form.email?.trim() || undefined,
           phone: form.phone,
           gender: form.gender,
           rollNumber: form.rollNumber?.trim() || undefined,
@@ -990,7 +986,7 @@ export default function StudentsScreen() {
                   </Text>
                   <Text style={styles.meta}>
                     Roll: {item.rollNumber || item.rollNo || "-"} · {str(item.className)}
-                    {item.section ? ` · ${str(item.section)}` : ""} · {str(item.email)}
+                    {item.section ? ` · ${str(item.section)}` : ""}{item.parentEmail ? ` · ${str(item.parentEmail)}` : (!item.email?.includes("@student.local") && item.email ? ` · ${str(item.email)}` : "")}
                   </Text>
                 </View>
               </Pressable>
@@ -1140,16 +1136,6 @@ export default function StudentsScreen() {
                   </Pressable>
                 )}
 
-                {!!detail.email && !detail.email.includes("@student.local") && (
-                  <Pressable
-                    style={styles.infoRow}
-                    onPress={() => Linking.openURL(`mailto:${detail.email}`)}
-                  >
-                    <Ionicons name="mail" size={18} color={color} />
-                    <Text style={styles.infoText}>{detail.email}</Text>
-                  </Pressable>
-                )}
-
                 {!!detail.dateOfBirth && (
                   <View style={styles.infoRow}>
                     <Ionicons name="calendar" size={18} color={color} />
@@ -1171,13 +1157,13 @@ export default function StudentsScreen() {
                   </View>
                 )}
 
-                {!!detail.parentEmail && (
+                {!!(detail.parentEmail || (!detail.email?.includes("@student.local") && detail.email)) && (
                   <Pressable
                     style={styles.infoRow}
-                    onPress={() => Linking.openURL(`mailto:${detail.parentEmail}`)}
+                    onPress={() => Linking.openURL(`mailto:${detail.parentEmail || detail.email}`)}
                   >
                     <Ionicons name="mail-outline" size={18} color={color} />
-                    <Text style={styles.infoText}>{detail.parentEmail}</Text>
+                    <Text style={styles.infoText}>{detail.parentEmail || detail.email}</Text>
                   </Pressable>
                 )}
 

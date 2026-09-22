@@ -1318,11 +1318,11 @@ export function findDuplicateUser(opts: {
       const sameName =
         (u.firstName || "").trim().toLowerCase() === fn &&
         (u.lastName || "").trim().toLowerCase() === ln;
-      const sameEmail = normalizeEmail(u.email) === em;
       if (opts.role === "STUDENT") {
         const sameDob = (u.dateOfBirth || "").trim() === dob;
-        return sameName && sameEmail && sameDob;
+        return sameName && (sameDob || !dob);
       }
+      const sameEmail = normalizeEmail(u.email) === em;
       return sameName && sameEmail;
     }) || null
   );
@@ -3184,34 +3184,21 @@ export function updateUser(userId: string, data: Partial<{
         if (dup) throw new Error("Teacher with this phone number already exists in this school.");
       }
     }
-  } else if (user.role === "STUDENT") {
-    const effEmail = data.email !== undefined ? data.email : user.email;
-    const effParentEmail = data.parentEmail !== undefined ? data.parentEmail : user.parentEmail;
-    if (effEmail && effParentEmail && !effEmail.includes("@student.local")) {
-      if (normalizeEmail(effEmail) === normalizeEmail(effParentEmail)) {
-        throw new Error("Student email and Parent email cannot be the same.");
-      }
-    }
-    if (data.email !== undefined && data.email.trim() && !data.email.includes("@student.local")) {
-      const normStEmail = normalizeEmail(data.email);
-      if (normStEmail !== normalizeEmail(user.email)) {
-        const dup = (db.users || []).find(
-          (u: any) =>
-            u.schoolId === user.schoolId &&
-            u.role === "STUDENT" &&
-            u.id !== userId &&
-            u.isActive &&
-            !u.email?.includes("@student.local") &&
-            normalizeEmail(u.email) === normStEmail
-        );
-        if (dup) throw new Error("Student with this email already exists in this school.");
-      }
-    }
   }
 
   if (data.firstName !== undefined) user.firstName = data.firstName;
   if (data.lastName !== undefined) user.lastName = data.lastName;
-  if (data.email !== undefined) user.email = data.email.trim();
+  if (user.role === "STUDENT") {
+    if (data.parentEmail !== undefined) {
+      const pEm = data.parentEmail ? data.parentEmail.trim().toLowerCase() : undefined;
+      user.parentEmail = pEm;
+      user.email = pEm || "";
+    } else if (data.email !== undefined) {
+      user.email = data.email.trim();
+    }
+  } else {
+    if (data.email !== undefined) user.email = data.email.trim();
+  }
   if (data.phone !== undefined) user.phone = data.phone;
   if (data.photoUrl !== undefined) user.photoUrl = data.photoUrl;
   if (data.gender !== undefined) user.gender = data.gender;
@@ -3222,7 +3209,7 @@ export function updateUser(userId: string, data: Partial<{
     user.rollNo = rVal;
   }
   if (data.parentName !== undefined) user.parentName = data.parentName ? data.parentName.trim() : undefined;
-  if (data.parentEmail !== undefined) user.parentEmail = data.parentEmail ? data.parentEmail.trim().toLowerCase() : undefined;
+  if (data.parentEmail !== undefined && user.role !== "STUDENT") user.parentEmail = data.parentEmail ? data.parentEmail.trim().toLowerCase() : undefined;
   if (data.dateOfBirth !== undefined) user.dateOfBirth = data.dateOfBirth;
 
   if (user.role === "TEACHER") {

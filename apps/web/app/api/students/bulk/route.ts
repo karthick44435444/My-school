@@ -268,8 +268,6 @@ export async function POST(req: NextRequest) {
       if (email) {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           errors.push("Student Email format is invalid");
-        } else if (normalizeEmail(email) === normalizeEmail(parentEmail)) {
-          errors.push("Student email and Parent email cannot be the same");
         } else if (seenBatchEmails.has(normalizeEmail(email))) {
           errors.push(`Duplicate student email '${email}' in this file`);
         } else {

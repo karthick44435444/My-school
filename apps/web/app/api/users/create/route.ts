@@ -268,27 +268,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Parent email is required" }, { status: 400 });
     }
 
-    if (body.email && body.parentEmail && !body.email.includes("@student.local")) {
-      if (normalizeEmail(body.email) === normalizeEmail(body.parentEmail)) {
-        return NextResponse.json(
-          { error: "Student email and Parent email cannot be the same." },
-          { status: 400 }
-        );
-      }
-    }
-
     const dup = findDuplicateUser({
       schoolId: auth.schoolId,
       role: "STUDENT",
       firstName: body.firstName,
       lastName: body.lastName,
-      email: body.email,
       dateOfBirth: body.dateOfBirth,
     });
     if (dup) {
       return NextResponse.json(
         {
-          error: `Student already exists with the same name, email and date of birth (${dup.firstName} ${dup.lastName || ""}).`.trim(),
+          error: `Student already exists with the same name and date of birth (${dup.firstName} ${dup.lastName || ""}).`.trim(),
         },
         { status: 409 }
       );

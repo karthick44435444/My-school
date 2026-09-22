@@ -289,7 +289,6 @@ export default function TeacherStudentsPage() {
         body: JSON.stringify({
           firstName: editUser.firstName,
           lastName: editUser.lastName,
-          email: editUser.email,
           phone: editUser.phone,
           dateOfBirth: editUser.dateOfBirth,
           parentName: editUser.parentName,
