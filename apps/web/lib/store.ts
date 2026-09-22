@@ -241,6 +241,21 @@ export interface StoredUploadedFile {
   createdAt?: string;
 }
 
+export interface StoredContactSubmission {
+  id: string;
+  name: string;
+  schoolName?: string;
+  email: string;
+  phone?: string;
+  role: string;
+  message: string;
+  status: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DB {
   schools: StoredSchool[];
   users: StoredUser[];
@@ -257,6 +272,7 @@ export interface DB {
   readReceipts?: StoredReadReceipt[];
   otps?: StoredOtp[];
   uploadedFiles?: StoredUploadedFile[];
+  contactSubmissions?: StoredContactSubmission[];
 }
 
 function ensureDataDir() {
@@ -332,6 +348,7 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
         pushTokens,
         readReceipts,
         uploadedFiles,
+        contactSubmissions,
       ] = await Promise.all([
         prisma.school.findMany({ include: { subscription: true } }),
         prisma.user.findMany(),
@@ -347,6 +364,7 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
         prisma.pushToken.findMany(),
         prisma.readReceipt.findMany(),
         (prisma as any).uploadedFile ? (prisma as any).uploadedFile.findMany({ take: 2000 }) : Promise.resolve([]),
+        (prisma as any).contactSubmission ? (prisma as any).contactSubmission.findMany({ orderBy: { createdAt: "desc" }, take: 1000 }) : Promise.resolve([]),
       ]);
 
       const hydrated: DB = {
@@ -551,6 +569,22 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
               createdAt: f.createdAt ? (typeof f.createdAt === "string" ? f.createdAt : f.createdAt.toISOString()) : new Date().toISOString(),
             }))
           : (_cachedDB?.uploadedFiles || readDBFromFile().uploadedFiles || []),
+        contactSubmissions: Array.isArray(contactSubmissions) && contactSubmissions.length > 0
+          ? contactSubmissions.map((cs: any) => ({
+              id: cs.id,
+              name: cs.name,
+              schoolName: cs.schoolName || undefined,
+              email: cs.email,
+              phone: cs.phone || undefined,
+              role: cs.role || "ADMIN",
+              message: cs.message,
+              status: cs.status || "PENDING",
+              ipAddress: cs.ipAddress || undefined,
+              userAgent: cs.userAgent || undefined,
+              createdAt: cs.createdAt ? (typeof cs.createdAt === "string" ? cs.createdAt : cs.createdAt.toISOString()) : new Date().toISOString(),
+              updatedAt: cs.updatedAt ? (typeof cs.updatedAt === "string" ? cs.updatedAt : cs.updatedAt.toISOString()) : new Date().toISOString(),
+            }))
+          : (_cachedDB?.contactSubmissions || readDBFromFile().contactSubmissions || []),
       };
 
       ensureDataDir();
@@ -1003,6 +1037,42 @@ export async function syncToPostgres(db: DB) {
             itemId,
             entityType: type,
             entityId: itemId,
+          },
+        }).catch(() => {});
+      }
+    }
+
+    // 13. Sync Contact Submissions
+    if (Array.isArray(db.contactSubmissions) && (prisma as any).contactSubmission) {
+      for (const item of db.contactSubmissions) {
+        if (!item.id || !item.email) continue;
+        await (prisma as any).contactSubmission.upsert({
+          where: { id: item.id },
+          create: {
+            id: item.id,
+            name: item.name,
+            schoolName: item.schoolName || null,
+            email: item.email,
+            phone: item.phone || null,
+            role: item.role || "ADMIN",
+            message: item.message,
+            status: item.status || "PENDING",
+            ipAddress: item.ipAddress || null,
+            userAgent: item.userAgent || null,
+            createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+            updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+          },
+          update: {
+            name: item.name,
+            schoolName: item.schoolName || null,
+            email: item.email,
+            phone: item.phone || null,
+            role: item.role || "ADMIN",
+            message: item.message,
+            status: item.status || "PENDING",
+            ipAddress: item.ipAddress || null,
+            userAgent: item.userAgent || null,
+            updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
           },
         }).catch(() => {});
       }
@@ -6238,6 +6308,110 @@ export function migrateLegacyUploadsToDB(): number {
   } catch {
     return 0;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Contact Submissions Management
+// ---------------------------------------------------------------------------
+
+export async function createContactSubmission(data: {
+  name: string;
+  schoolName?: string;
+  email: string;
+  phone?: string;
+  role?: string;
+  message: string;
+  ipAddress?: string;
+  userAgent?: string;
+}): Promise<StoredContactSubmission> {
+  const db = readDB();
+  if (!Array.isArray(db.contactSubmissions)) db.contactSubmissions = [];
+
+  const now = new Date().toISOString();
+  const id = `cs_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  const submission: StoredContactSubmission = {
+    id,
+    name: data.name.trim(),
+    schoolName: data.schoolName?.trim() || undefined,
+    email: data.email.trim().toLowerCase(),
+    phone: data.phone?.trim() || undefined,
+    role: data.role?.trim() || "ADMIN",
+    message: data.message.trim(),
+    status: "PENDING",
+    ipAddress: data.ipAddress || undefined,
+    userAgent: data.userAgent || undefined,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  db.contactSubmissions.unshift(submission);
+  writeDB(db);
+
+  // Directly persist to Postgres Server DB ContactSubmission table
+  if (prisma && process.env.DATABASE_URL && (prisma as any).contactSubmission) {
+    try {
+      const created = await (prisma as any).contactSubmission.create({
+        data: {
+          id: submission.id,
+          name: submission.name,
+          schoolName: submission.schoolName || null,
+          email: submission.email,
+          phone: submission.phone || null,
+          role: submission.role,
+          message: submission.message,
+          status: submission.status,
+          ipAddress: submission.ipAddress || null,
+          userAgent: submission.userAgent || null,
+          createdAt: new Date(submission.createdAt),
+          updatedAt: new Date(submission.updatedAt),
+        },
+      });
+      console.log(`[Postgres ContactSubmission Created]: ID ${created.id} for ${created.email}`);
+    } catch (err: any) {
+      console.error("[ContactSubmission Postgres Insert Error]:", err?.message);
+    }
+  }
+
+  return submission;
+}
+
+export function getContactSubmissions(): StoredContactSubmission[] {
+  const db = readDB();
+  return (db.contactSubmissions || []).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
+export async function updateContactSubmissionStatus(
+  id: string,
+  status: "PENDING" | "CONTACTED" | "RESOLVED" | "ARCHIVED"
+): Promise<StoredContactSubmission | null> {
+  const db = readDB();
+  if (!Array.isArray(db.contactSubmissions)) return null;
+
+  const item = db.contactSubmissions.find((s) => s.id === id);
+  if (!item) return null;
+
+  item.status = status;
+  item.updatedAt = new Date().toISOString();
+  writeDB(db);
+
+  if (prisma && process.env.DATABASE_URL && (prisma as any).contactSubmission) {
+    try {
+      await (prisma as any).contactSubmission.update({
+        where: { id },
+        data: {
+          status,
+          updatedAt: new Date(item.updatedAt),
+        },
+      });
+    } catch (err: any) {
+      console.error("[ContactSubmission Status Update Error]:", err?.message);
+    }
+  }
+
+  return item;
 }
 
 

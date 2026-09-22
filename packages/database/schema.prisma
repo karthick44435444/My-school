@@ -515,6 +515,25 @@ model UploadedFile {
   @@index([filename])
 }
 
+model ContactSubmission {
+  id          String   @id @default(cuid())
+  name        String
+  schoolName  String?
+  email       String
+  phone       String?
+  role        String   @default("ADMIN")
+  message     String   @db.Text
+  status      String   @default("PENDING")
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([email])
+  @@index([createdAt])
+  @@index([status])
+}
+
 
 enum Role {
   ADMIN
