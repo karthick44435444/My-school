@@ -18,6 +18,7 @@ export default function MarketingNavbar() {
     router.prefetch("/about");
     router.prefetch("/contact");
     router.prefetch("/privacy");
+    router.prefetch("/download");
     router.prefetch("/login");
     router.prefetch("/register-school");
   }, [router]);
@@ -25,9 +26,9 @@ export default function MarketingNavbar() {
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "Platform Tour", href: "/tour" },
+    { label: "Mobile App", href: "/download" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
-    { label: "Privacy Policy", href: "/privacy" },
   ];
 
   const triggerTopLoader = () => {

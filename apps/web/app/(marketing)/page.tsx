@@ -29,6 +29,7 @@ import {
 import MarketingNavbar from "@/components/marketing/MarketingNavbar";
 import MarketingFooter from "@/components/marketing/MarketingFooter";
 import PlatformShowcaseSlideshow from "@/components/marketing/PlatformShowcaseSlideshow";
+import AppDownloadSection from "@/components/marketing/AppDownloadSection";
 
 export default function MarketingPage() {
   const router = useRouter();
@@ -165,18 +166,25 @@ export default function MarketingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-16"
           >
             <Link
               href="/register-school"
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-indigo-600 text-white font-bold text-sm sm:text-base shadow-lg shadow-indigo-600/25 hover:bg-indigo-700 hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2.5"
+              className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-indigo-600 text-white font-bold text-sm sm:text-base shadow-lg shadow-indigo-600/25 hover:bg-indigo-700 hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2.5"
             >
               <span>Create Your School Free</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
+              href="/download"
+              className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-900 text-white font-bold text-sm sm:text-base shadow-md hover:bg-slate-800 hover:scale-[1.02] transition-all flex items-center justify-center gap-2.5"
+            >
+              <Smartphone className="w-5 h-5 text-indigo-400" />
+              <span>Download Mobile App</span>
+            </Link>
+            <Link
               href="/login"
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold text-sm sm:text-base shadow-sm hover:bg-slate-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold text-sm sm:text-base shadow-sm hover:bg-slate-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-2"
             >
               <span>Institution Login</span>
             </Link>
@@ -461,6 +469,9 @@ export default function MarketingPage() {
           })}
         </div>
       </section>
+
+      {/* Mobile App Download Section with QR & Direct Download */}
+      <AppDownloadSection />
 
       {/* Frequently Asked Questions (FAQ) Accordion */}
       <section className="py-20 bg-slate-100/60 border-t border-slate-200/80">
