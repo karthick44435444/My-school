@@ -219,7 +219,7 @@ export function credentialsEmailHtml(opts: {
                   We’re making SchoolVajo better every day to provide schools with a simple, reliable, and modern management experience.
                 </p>
                 <p style="margin:0 0 8px;color:#047857;font-weight:700;">
-                  🎁 Access SchoolVajo Free During Our Development Phase
+                  Access SchoolVajo Free During Our Development Phase
                 </p>
                 <p style="margin:0 0 8px;color:#475569;">
                   As you use the platform, you may occasionally experience bugs, errors, missing information, or data inconsistencies. If you notice any issue, please let us know through email, Instagram, Facebook, or our support channels. Your feedback helps us identify and fix problems faster.
@@ -228,7 +228,7 @@ export function credentialsEmailHtml(opts: {
                   <strong>⚠️ Important:</strong> During this development/testing phase, we cannot guarantee against unexpected data loss, deletion, or data inconsistencies. Please use the platform with this understanding.
                 </div>
                 <p style="margin:8px 0 0;color:#3730a3;font-weight:600;">
-                  🙏 Thank you for your patience, feedback, and support.<br>
+                  Thank you for your patience, feedback, and support.<br>
                   Let’s build a better future for schools — together. 💙<br>
                   <span style="font-weight:700;color:#4338ca;">— Team SchoolVajo</span>
                 </p>

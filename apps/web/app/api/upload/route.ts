@@ -118,24 +118,49 @@ export async function POST(req: NextRequest) {
 
     // Store directly in database
     const { saveUploadedFile } = await import("@/lib/store");
-    saveUploadedFile(filename, buffer, file.type || undefined, file.size || buffer.length);
+    const mimeType = file.type || (safeExt === "pdf" ? "application/pdf" : "application/octet-stream");
+    await saveUploadedFile(filename, buffer, mimeType, file.size || buffer.length);
 
-    // If file is an image or document <= 3.5MB, return direct data URI so it is saved directly into the user/school/homework DB records
-    let url = `/api/uploads/${filename}`;
-    const mimeType = file.type || (safeExt === "pdf" ? "application/pdf" : "image/jpeg");
-    if (buffer.length <= 3.5 * 1024 * 1024) {
-      const base64Data = buffer.toString("base64");
-      url = `data:${mimeType};base64,${base64Data}`;
-    }
+    // Canonical URL for web and mobile
+    const url = `/api/uploads/${filename}`;
 
     return NextResponse.json({
       success: true,
       url,
-      fallbackUrl: `/api/uploads/${filename}`,
+      fallbackUrl: url,
       name: file.name || filename,
     });
   } catch (error: any) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: error.message || "Upload failed" }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/upload?url=... or ?filename=...
+ * Deletes the uploaded file from PostgreSQL and memory DB
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const filenameParam = searchParams.get("filename");
+    const urlParam = searchParams.get("url");
+    const target = filenameParam || urlParam;
+    if (!target) {
+      return NextResponse.json({ error: "filename or url is required" }, { status: 400 });
+    }
+    const cleanUrl = decodeURIComponent(target).split("?")[0].replace(/\\/g, "/");
+    const filename = path.basename(cleanUrl);
+    if (!filename || filename === "student.png" || filename === "boy.png" || filename === "admin.png") {
+      return NextResponse.json({ success: true });
+    }
+
+    const { deleteUploadedFile } = await import("@/lib/store");
+    await deleteUploadedFile(filename);
+
+    return NextResponse.json({ success: true, deleted: filename });
+  } catch (err: any) {
+    console.error("[DELETE /api/upload Error]:", err?.message);
+    return NextResponse.json({ error: err?.message || "Delete failed" }, { status: 500 });
   }
 }

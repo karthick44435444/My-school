@@ -85,8 +85,13 @@ app.prepare().then(() => {
           if (fs.existsSync(p) && fs.statSync(p).isFile()) {
             const ext = path.extname(p).toLowerCase();
             const contentType = MIME_MAP[ext] || "application/octet-stream";
+            const isDownload = parsedUrl.query?.download === "1";
+            const disposition = isDownload
+              ? `attachment; filename="${encodeURIComponent(path.basename(cleanFilename))}"`
+              : `inline; filename="${encodeURIComponent(path.basename(cleanFilename))}"`;
             res.writeHead(200, {
               "Content-Type": contentType,
+              "Content-Disposition": disposition,
               "Cache-Control": "public, max-age=31536000, immutable",
               "Access-Control-Allow-Origin": "*",
               "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",

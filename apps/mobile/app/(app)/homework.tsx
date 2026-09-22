@@ -54,6 +54,7 @@ function isImageUrl(url?: string): boolean {
   if (
     clean.startsWith("data:application/pdf") ||
     clean.endsWith(".pdf") ||
+    clean.includes(".pdf") ||
     clean.endsWith(".doc") ||
     clean.endsWith(".docx") ||
     clean.endsWith(".xls") ||
@@ -78,12 +79,7 @@ function isImageUrl(url?: string): boolean {
     clean.includes(".jpeg") ||
     clean.includes(".png") ||
     clean.includes(".webp") ||
-    clean.includes("/image/upload/") ||
-    clean.includes("/uploads/image") ||
-    clean.includes("image_") ||
-    clean.includes("photo") ||
-    clean.includes("student") ||
-    clean.includes("attachment")
+    clean.includes("/image/upload/")
   );
 }
 
@@ -95,12 +91,9 @@ function getFileName(url?: string): string {
     const clean = String(url).split("?")[0].replace(/\\/g, "/");
     let name = clean.split("/").pop() || "Attachment";
     name = decodeURIComponent(name);
-    const rawMatch = name.match(/^(\d{10,15})_([a-z0-9]+)\.([a-z0-9]+)$/i);
-    if (rawMatch) {
-      const ext = rawMatch[3].toLowerCase();
-      if (ext === "pdf") return "Document.pdf";
-      if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return `Image.${ext}`;
-      return `Attachment.${ext}`;
+    const stripped = name.replace(/_\d{10,15}_[a-z0-9]{4,8}(\.[a-z0-9]+)$/i, "$1");
+    if (stripped && stripped !== name && stripped.includes(".")) {
+      return stripped;
     }
     return name;
   } catch {
@@ -482,14 +475,24 @@ export default function HomeworkScreen() {
 
       const targetDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || "";
       const localUri = `${targetDir}${Date.now()}_${fileName}`;
-      const downloadRes = await FileSystem.downloadAsync(resolved, localUri);
+      let finalUri = localUri;
+
+      if (resolved.startsWith("data:")) {
+        const base64Data = resolved.replace(/^data:[^;]+;base64,/, "");
+        await FileSystem.writeAsStringAsync(localUri, base64Data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      } else {
+        const downloadRes = await FileSystem.downloadAsync(resolved, localUri);
+        finalUri = downloadRes.uri;
+      }
 
       // If it's an image, try to save directly to user's Photo Gallery
       if (isImg) {
         try {
           const { status } = await MediaLibrary.requestPermissionsAsync();
           if (status === "granted") {
-            await MediaLibrary.saveToLibraryAsync(downloadRes.uri);
+            await MediaLibrary.saveToLibraryAsync(finalUri);
             toast.success(`"${fileName}" saved to your Gallery!`);
             return;
           }
@@ -500,7 +503,7 @@ export default function HomeworkScreen() {
 
       // If expo-sharing is available, open share / save dialog
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(downloadRes.uri, {
+        await Sharing.shareAsync(finalUri, {
           dialogTitle: `Download ${fileName}`,
           mimeType: isImg ? "image/*" : fileName.toLowerCase().endsWith(".pdf") ? "application/pdf" : undefined,
           UTI: isImg ? "public.image" : fileName.toLowerCase().endsWith(".pdf") ? "com.adobe.pdf" : undefined,
@@ -513,6 +516,36 @@ export default function HomeworkScreen() {
       toast.error(err?.message || "Could not download attachment");
     } finally {
       setDownloadingUrl(null);
+    }
+  };
+
+  const handleOpenFile = async (rawUrl: string) => {
+    try {
+      const resolved = resolveMediaUrlSync(rawUrl, apiBase);
+      if (!resolved) {
+        toast.error("Invalid attachment URL");
+        return;
+      }
+      if (resolved.startsWith("data:")) {
+        const fileName = getFileName(rawUrl);
+        const targetDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || "";
+        const localUri = `${targetDir}${Date.now()}_${fileName}`;
+        const base64Data = resolved.replace(/^data:[^;]+;base64,/, "");
+        await FileSystem.writeAsStringAsync(localUri, base64Data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(localUri, {
+            dialogTitle: `Open ${fileName}`,
+            mimeType: fileName.toLowerCase().endsWith(".pdf") ? "application/pdf" : undefined,
+          });
+          return;
+        }
+      } else {
+        await Linking.openURL(resolved);
+      }
+    } catch {
+      toast.error("Could not open file");
     }
   };
 
@@ -782,11 +815,7 @@ export default function HomeworkScreen() {
                             </Text>
                             <View style={styles.imageAttActionsRow}>
                               <Pressable
-                                onPress={() => {
-                                  if (resolved) {
-                                    Linking.openURL(resolved).catch(() => toast.error("Could not open file"));
-                                  }
-                                }}
+                                onPress={() => handleOpenFile(url)}
                                 style={[styles.attActionBtn, { backgroundColor: color + "15" }]}
                               >
                                 <Ionicons name="open-outline" size={13} color={color} />
@@ -1037,7 +1066,16 @@ export default function HomeworkScreen() {
                       </Text>
                     </View>
                     <Pressable
-                      onPress={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                      onPress={() => {
+                        const toRemove = attachments[i];
+                        const removeUrl = toRemove?.url;
+                        if (removeUrl) {
+                          getApiBase().then((base) => {
+                            fetch(`${base}/api/upload?url=${encodeURIComponent(removeUrl)}`, { method: "DELETE" }).catch(() => {});
+                          });
+                        }
+                        setAttachments((prev) => prev.filter((_, j) => j !== i));
+                      }}
                       style={{ padding: 4 }}
                     >
                       <Ionicons name="close-circle" size={22} color={Colors.danger} />

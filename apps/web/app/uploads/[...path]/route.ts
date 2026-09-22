@@ -71,7 +71,7 @@ export async function GET(
             const ext = path.extname(p).toLowerCase();
             const mime = MIME_MAP[ext] || "application/octet-stream";
             stored = { buffer: buf, mimeType: mime };
-            saveUploadedFile(safeBaseFilename, buf, mime, buf.length);
+            await saveUploadedFile(safeBaseFilename, buf, mime, buf.length);
             break;
           } catch {
             /* ignore */
@@ -82,14 +82,12 @@ export async function GET(
 
     if (!stored) {
       const ext = path.extname(safeBaseFilename).toLowerCase();
-      const isImgRequest =
-        [".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif", ".ico"].includes(ext) ||
+      const isAvatarRequest =
         safeBaseFilename.startsWith("avatar") ||
-        safeBaseFilename.includes("photo") ||
-        safeBaseFilename.includes("student") ||
-        safeBaseFilename.includes("image");
+        safeBaseFilename === "user-avatar.png" ||
+        safeBaseFilename === "avatar.png";
 
-      if (isImgRequest) {
+      if (isAvatarRequest && [".png", ".jpg", ".jpeg", ".webp", ".svg"].includes(ext)) {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none"><rect width="128" height="128" rx="24" fill="#6366F1"/><circle cx="64" cy="48" r="22" fill="#FFFFFF"/><path d="M28 108C28 88.1178 44.1178 72 64 72C83.8822 72 100 88.1178 100 108" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/></svg>`;
         return new NextResponse(svg, {
           status: 200,
@@ -111,13 +109,19 @@ export async function GET(
     const ext = path.extname(safeBaseFilename).toLowerCase();
     const contentType = stored.mimeType && stored.mimeType !== "application/octet-stream"
       ? stored.mimeType
-      : (MIME_MAP[ext] || "image/jpeg");
+      : (MIME_MAP[ext] || "application/octet-stream");
+
+    const isDownload = req.nextUrl?.searchParams?.get("download") === "1";
+    const disposition = isDownload
+      ? `attachment; filename="${encodeURIComponent(safeBaseFilename)}"`
+      : `inline; filename="${encodeURIComponent(safeBaseFilename)}"`;
 
     return new NextResponse(new Uint8Array(stored.buffer), {
       status: 200,
       headers: {
         "Content-Type": contentType,
         "Content-Length": String(stored.buffer.length),
+        "Content-Disposition": disposition,
         "Accept-Ranges": "bytes",
         "Cache-Control": "public, max-age=31536000, immutable",
         "Access-Control-Allow-Origin": "*",

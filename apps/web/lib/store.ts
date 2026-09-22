@@ -3649,6 +3649,20 @@ export async function deleteHomework(id: string, schoolId: string) {
   const db = readDB();
   const idx = db.homeworks.findIndex((h) => h.id === id && h.schoolId === schoolId);
   if (idx < 0) throw new Error("Homework not found");
+
+  const hw = db.homeworks[idx];
+  const urlsToDelete: string[] = [];
+  if (hw.attachmentUrl) urlsToDelete.push(hw.attachmentUrl);
+  if (Array.isArray(hw.attachments)) {
+    for (const a of (hw.attachments as any[])) {
+      if (typeof a === "string") urlsToDelete.push(a);
+      else if (a && typeof a === "object") {
+        if (a.url) urlsToDelete.push(a.url);
+        else if (a.uri) urlsToDelete.push(a.uri);
+      }
+    }
+  }
+
   db.homeworks.splice(idx, 1);
   if ((db as any).readReceipts) {
     (db as any).readReceipts = (db as any).readReceipts.filter(
@@ -3665,6 +3679,17 @@ export async function deleteHomework(id: string, schoolId: string) {
       }).catch(() => {});
     } catch (err: any) {
       console.error("[deleteHomework Postgres Error]:", err?.message);
+    }
+  }
+
+  // Delete all associated attachment files from server DB
+  for (const u of urlsToDelete) {
+    if (u && !u.startsWith("data:")) {
+      const cleanUrl = decodeURIComponent(u).split("?")[0].replace(/\\/g, "/");
+      const fn = path.basename(cleanUrl);
+      if (fn && fn !== "student.png" && fn !== "boy.png" && fn !== "admin.png") {
+        await deleteUploadedFile(fn).catch(() => {});
+      }
     }
   }
 
@@ -5892,7 +5917,7 @@ export async function checkAndDispatchExpiryNotifications() {
   return { success: true, processed: results };
 }
 
-export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: string, size?: number): StoredUploadedFile {
+export async function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: string, size?: number): Promise<StoredUploadedFile> {
   const db = readDB();
   if (!Array.isArray(db.uploadedFiles)) db.uploadedFiles = [];
   const base64 = buffer.toString("base64");
@@ -5918,28 +5943,26 @@ export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: st
 
   writeDB(db);
 
-  // Asynchronously persist to Postgres Server DB UploadedFile table
+  // Directly persist to Postgres Server DB UploadedFile table
   if (prisma && process.env.DATABASE_URL) {
-    (async () => {
-      try {
-        await (prisma as any).uploadedFile.upsert({
-          where: { filename: cleanName },
-          create: {
-            filename: cleanName,
-            data: base64,
-            mimeType: entry.mimeType,
-            size: entry.size || 0,
-          },
-          update: {
-            data: base64,
-            mimeType: entry.mimeType,
-            size: entry.size || 0,
-          },
-        });
-      } catch (err: any) {
-        console.error("[UploadedFile Postgres Upsert Error]:", err?.message);
-      }
-    })();
+    try {
+      await (prisma as any).uploadedFile.upsert({
+        where: { filename: cleanName },
+        create: {
+          filename: cleanName,
+          data: base64,
+          mimeType: entry.mimeType,
+          size: entry.size || 0,
+        },
+        update: {
+          data: base64,
+          mimeType: entry.mimeType,
+          size: entry.size || 0,
+        },
+      });
+    } catch (err: any) {
+      console.error("[UploadedFile Postgres Upsert Error]:", err?.message);
+    }
   }
 
   return entry;
@@ -5952,28 +5975,27 @@ export async function getUploadedFileFromPostgres(filename: string): Promise<{ b
     const cleanName = path.basename(rawClean);
     if (!cleanName) return null;
 
-    const record = await (prisma as any).uploadedFile.findUnique({
+    // Exact match
+    let record = await (prisma as any).uploadedFile.findUnique({
       where: { filename: cleanName },
     });
+
+    // Case-insensitive exact match
+    if (!record) {
+      record = await (prisma as any).uploadedFile.findFirst({
+        where: {
+          filename: {
+            equals: cleanName,
+            mode: "insensitive",
+          },
+        },
+      });
+    }
+
     if (record && record.data) {
       return {
         buffer: Buffer.from(record.data, "base64"),
         mimeType: record.mimeType || "application/octet-stream",
-      };
-    }
-
-    const fuzzy = await (prisma as any).uploadedFile.findFirst({
-      where: {
-        filename: {
-          contains: path.parse(cleanName).name,
-          mode: "insensitive",
-        },
-      },
-    });
-    if (fuzzy && fuzzy.data) {
-      return {
-        buffer: Buffer.from(fuzzy.data, "base64"),
-        mimeType: fuzzy.mimeType || "application/octet-stream",
       };
     }
   } catch (err: any) {
@@ -5984,6 +6006,8 @@ export async function getUploadedFileFromPostgres(filename: string): Promise<{ b
 
 export async function deleteUploadedFile(filename: string) {
   const cleanName = path.basename(filename);
+  if (!cleanName) return;
+
   const db = readDB();
   if (db.uploadedFiles) {
     db.uploadedFiles = db.uploadedFiles.filter((f) => f.filename.toLowerCase() !== cleanName.toLowerCase());
@@ -5992,11 +6016,29 @@ export async function deleteUploadedFile(filename: string) {
   if (prisma && process.env.DATABASE_URL) {
     try {
       await (prisma as any).uploadedFile.deleteMany({
-        where: { filename: cleanName },
+        where: {
+          OR: [
+            { filename: cleanName },
+            { filename: { equals: cleanName, mode: "insensitive" } },
+          ],
+        },
       });
     } catch (err: any) {
       console.error("[deleteUploadedFile Postgres Error]:", err?.message);
     }
+  }
+
+  // Also clean up from candidate disk paths if present
+  const candidateDiskPaths = [
+    path.join(process.cwd(), "apps", "web", "public", "uploads", cleanName),
+    path.join(process.cwd(), "public", "uploads", cleanName),
+    path.join(process.cwd(), "apps", "web", ".data", "uploads", cleanName),
+    path.join(process.cwd(), ".data", "uploads", cleanName),
+  ];
+  for (const p of candidateDiskPaths) {
+    try {
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    } catch {}
   }
 }
 
@@ -6038,8 +6080,8 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     return null;
   };
 
-  // 1. Find in db.uploadedFiles by exact name
-  let file = (db.uploadedFiles || []).find((f) => f.filename.toLowerCase() === cleanName);
+  // 1. Find in db.uploadedFiles by exact name (case-insensitive)
+  const file = (db.uploadedFiles || []).find((f) => f.filename.toLowerCase() === cleanName);
   if (file && file.data) {
     return {
       buffer: Buffer.from(file.data, "base64"),
@@ -6047,38 +6089,14 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     };
   }
 
-  // 2. Base-name / fuzzy match (e.g. 1788509548441_73vevm.jpg, photo_nm03.jpg -> photo.jpg, student_1x1_ev7y.jpg -> student_1x1.jpg)
-  const baseNoExt = cleanName.replace(/\.[^.]+$/, "");
-  const baseNoSuffix = baseNoExt.replace(/_[a-z0-9]{4,8}$/i, "");
-  file = (db.uploadedFiles || []).find((f) => {
-    const fLower = f.filename.toLowerCase();
-    const fNoExt = fLower.replace(/\.[^.]+$/, "");
-    if (fLower === cleanName) return true;
-    if (baseNoSuffix.length >= 3) {
-      if (fLower === baseNoSuffix || fNoExt === baseNoSuffix) return true;
-      if (fNoExt.startsWith(baseNoSuffix) || baseNoSuffix.startsWith(fNoExt)) return true;
-    }
-    return false;
-  });
-  if (file && file.data) {
-    return {
-      buffer: Buffer.from(file.data, "base64"),
-      mimeType: file.mimeType || MIME_MAP[path.extname(cleanName).toLowerCase()] || "application/octet-stream",
-    };
-  }
-
-  // 3. Search disk in all possible locations across root, apps/web, public, uploads, .data
+  // 2. Search disk for exact filename
   const candidateDiskPaths = [
     path.join(process.cwd(), "apps", "web", "public", "uploads", path.basename(filename)),
     path.join(process.cwd(), "public", "uploads", path.basename(filename)),
     path.join(process.cwd(), "apps", "web", ".data", "uploads", path.basename(filename)),
     path.join(process.cwd(), ".data", "uploads", path.basename(filename)),
-    path.join(process.cwd(), "apps", "web", "public", path.basename(filename)),
-    path.join(process.cwd(), "public", path.basename(filename)),
     path.join(__dirname, "..", "public", "uploads", path.basename(filename)),
     path.join(__dirname, "..", "..", "public", "uploads", path.basename(filename)),
-    path.join(__dirname, "..", "public", path.basename(filename)),
-    path.join(__dirname, "..", "..", "public", path.basename(filename)),
   ];
 
   for (const diskPath of candidateDiskPaths) {
@@ -6086,9 +6104,9 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
       if (fs.existsSync(diskPath) && fs.statSync(diskPath).isFile()) {
         const buf = fs.readFileSync(diskPath);
         const ext = path.extname(diskPath).toLowerCase();
-        const mime = MIME_MAP[ext] || "image/jpeg";
-        // Cache in database so subsequent requests never hit disk
-        saveUploadedFile(path.basename(filename), buf, mime, buf.length);
+        const mime = MIME_MAP[ext] || "application/octet-stream";
+        // Cache in database
+        saveUploadedFile(path.basename(filename), buf, mime, buf.length).catch(() => {});
         return { buffer: buf, mimeType: mime };
       }
     } catch {
@@ -6096,7 +6114,7 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     }
   }
 
-  // 4. Check in db.homeworks attachments
+  // 3. Check in db.homeworks attachments
   for (const hw of db.homeworks || []) {
     const atts: any[] = Array.isArray(hw.attachments) ? [...hw.attachments] : [];
     if (hw.attachmentUrl) atts.push(hw.attachmentUrl);
@@ -6104,7 +6122,7 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
       const aStr = typeof a === "string" ? a : a?.url || a?.uri || "";
       if (aStr) {
         const aBase = path.basename(aStr).toLowerCase();
-        if (aBase === cleanName || aStr.toLowerCase().includes(cleanName)) {
+        if (aBase === cleanName) {
           const parsed = extractFromDataUri(aStr);
           if (parsed) return parsed;
         }
@@ -6112,25 +6130,23 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     }
   }
 
-  // 5. Check in db.announcements attachments
+  // 4. Check in db.announcements attachments
   for (const ann of db.announcements || []) {
     const aStr = (ann as any).attachmentUrl || (ann as any).imageUrl || (ann as any).attachment;
     if (aStr) {
       const aBase = path.basename(aStr).toLowerCase();
-      if (aBase === cleanName || aStr.toLowerCase().includes(cleanName)) {
+      if (aBase === cleanName) {
         const parsed = extractFromDataUri(aStr);
         if (parsed) return parsed;
       }
     }
   }
 
-  // 6. Check if a user/student has a base64 or matching photoUrl in db.users
+  // 5. Check if a user/student has a base64 or matching photoUrl in db.users
   const userMatch = (db.users || []).find((u) => {
     if (!u.photoUrl) return false;
     const urlClean = path.basename(u.photoUrl).toLowerCase();
-    if (urlClean === cleanName) return true;
-    if (u.id.toLowerCase() === cleanName || (u.username && u.username.toLowerCase() === cleanName)) return true;
-    return false;
+    return urlClean === cleanName;
   });
 
   if (userMatch?.photoUrl) {
@@ -6138,41 +6154,16 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     if (parsed) return parsed;
   }
 
-  // 7. Check if a school has a matching or base64 logoUrl in db.schools
+  // 6. Check if a school has a matching or base64 logoUrl in db.schools
   const schoolMatch = (db.schools || []).find((s) => {
     if (!s.logoUrl) return false;
     const urlClean = path.basename(s.logoUrl).toLowerCase();
-    if (urlClean === cleanName) return true;
-    if (s.id.toLowerCase() === cleanName || s.schoolCode.toLowerCase() === cleanName) return true;
-    return false;
+    return urlClean === cleanName;
   });
 
   if (schoolMatch?.logoUrl) {
     const parsed = extractFromDataUri(schoolMatch.logoUrl);
     if (parsed) return parsed;
-  }
-
-  // 8. Legacy / generated placeholder fallbacks (e.g., gemini_generated_..., chatgpt_image_...)
-  if (
-    cleanName.includes("gemini_generated") ||
-    cleanName.includes("chatgpt_image") ||
-    cleanName.includes("student_1x1") ||
-    cleanName.includes("user-avatar")
-  ) {
-    const fallbackEntry = (db.uploadedFiles || []).find(
-      (f) =>
-        f.filename.toLowerCase().includes("chatgpt") ||
-        f.filename.toLowerCase().includes("student") ||
-        f.filename.toLowerCase().includes("photo") ||
-        f.filename.toLowerCase().includes("profile") ||
-        f.filename.toLowerCase().includes("boy")
-    );
-    if (fallbackEntry && fallbackEntry.data) {
-      return {
-        buffer: Buffer.from(fallbackEntry.data, "base64"),
-        mimeType: fallbackEntry.mimeType || "image/jpeg",
-      };
-    }
   }
 
   return null;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, X, Search, Paperclip, Eye, Download, FileText, Sparkles } from "lucide-react";
+import { Loader2, Plus, Trash2, X, Search, Paperclip, Eye, Download, FileText, Sparkles, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import Sidebar from "@/components/dashboard/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ function isImageUrl(url: string): boolean {
   if (
     clean.startsWith("data:application/pdf") ||
     clean.endsWith(".pdf") ||
+    clean.includes(".pdf") ||
     clean.endsWith(".doc") ||
     clean.endsWith(".docx") ||
     clean.endsWith(".xls") ||
@@ -38,26 +39,21 @@ function isImageUrl(url: string): boolean {
     clean.includes(".jpeg") ||
     clean.includes(".png") ||
     clean.includes(".webp") ||
-    clean.includes("/image/upload/") ||
-    clean.includes("/uploads/image") ||
-    clean.includes("image_") ||
-    clean.includes("photo") ||
-    clean.includes("student") ||
-    clean.includes("attachment")
+    clean.includes("/image/upload/")
   );
 }
 
 function getFileName(url: string): string {
   try {
-    const clean = url.split("?")[0];
+    if (!url) return "Attachment";
+    if (url.startsWith("data:image/")) return "Image.jpg";
+    if (url.startsWith("data:application/pdf")) return "Document.pdf";
+    const clean = url.split("?")[0].replace(/\\/g, "/");
     let name = clean.split("/").pop() || "Attachment";
     name = decodeURIComponent(name);
-    const rawMatch = name.match(/^(\d{10,15})_([a-z0-9]+)\.([a-z0-9]+)$/i);
-    if (rawMatch) {
-      const ext = rawMatch[3].toLowerCase();
-      if (ext === "pdf") return "Document.pdf";
-      if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return `Image.${ext}`;
-      return `Attachment.${ext}`;
+    const stripped = name.replace(/_\d{10,15}_[a-z0-9]{4,8}(\.[a-z0-9]+)$/i, "$1");
+    if (stripped && stripped !== name && stripped.includes(".")) {
+      return stripped;
     }
     return name;
   } catch {
@@ -67,7 +63,17 @@ function getFileName(url: string): string {
 
 async function downloadAttachment(url: string, fileName?: string) {
   try {
-    const res = await fetch(url);
+    if (url.startsWith("data:")) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName || getFileName(url);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+    const downloadUrl = url.includes("?") ? `${url}&download=1` : `${url}?download=1`;
+    const res = await fetch(downloadUrl);
     if (!res.ok) throw new Error("Failed to fetch file");
     const blob = await res.blob();
     const blobUrl = window.URL.createObjectURL(blob);
@@ -80,6 +86,25 @@ async function downloadAttachment(url: string, fileName?: string) {
     setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
   } catch {
     window.open(url, "_blank");
+  }
+}
+
+function handleOpenDocument(e: React.MouseEvent, url: string) {
+  if (url.startsWith("data:")) {
+    e.preventDefault();
+    try {
+      const [header, base64] = url.split(",");
+      const mime = header.match(/:(.*?);/)?.[1] || "application/octet-stream";
+      const binStr = atob(base64);
+      const len = binStr.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = binStr.charCodeAt(i);
+      const blob = new Blob([bytes], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+    } catch {
+      window.open(url, "_blank");
+    }
   }
 }
 
@@ -321,6 +346,15 @@ export default function AdminHomeworkPage() {
                                     {fileName}
                                   </div>
                                   <div className="flex items-center gap-3 mt-1.5">
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={(e) => handleOpenDocument(e, url)}
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800"
+                                    >
+                                      <ExternalLink className="w-3 h-3" /> Open
+                                    </a>
                                     <button
                                       type="button"
                                       disabled={downloadingUrl === url}

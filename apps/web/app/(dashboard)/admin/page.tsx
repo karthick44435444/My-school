@@ -3,16 +3,32 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Users, GraduationCap, UserCheck, BookOpen, Plus, Loader2,
-  TrendingUp, Download, Calendar, ChevronRight, ArrowUpRight, Sparkles,
-  AlertTriangle, X, Info, Heart, Mail
+  Users,
+  GraduationCap,
+  UserCheck,
+  BookOpen,
+  Plus,
+  Loader2,
+  TrendingUp,
+  Download,
+  Calendar,
+  ChevronRight,
+  ArrowUpRight,
+  Sparkles,
+  AlertTriangle,
+  X,
+  Info,
+  Heart,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import CreateUserForm, { type CreateUserRole } from "@/components/forms/CreateUserForm";
+import CreateUserForm, {
+  type CreateUserRole,
+} from "@/components/forms/CreateUserForm";
 import CredentialsModal from "@/components/forms/CredentialsModal";
 import ExportAttendanceModal from "@/components/attendance/ExportAttendanceModal";
 
@@ -29,14 +45,14 @@ export default function AdminDashboard() {
   const [showExport, setShowExport] = useState(false);
   const [credentials, setCredentials] = useState<any>(null);
   const [classes, setClasses] = useState<any[]>([]);
-  const [showDevNotice, setShowDevNotice] = useState(true);
-  const [expandedDevNotice, setExpandedDevNotice] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     loadData().finally(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -136,14 +152,52 @@ export default function AdminDashboard() {
   const absentCount = Number(stats?.absent ?? 0);
   const lateCount = Number(stats?.late ?? 0);
   const halfDayCount = Number(stats?.halfDay ?? 0);
-  const unmarkedCount = Number(stats?.unmarked ?? Math.max(0, totalStudentsCount - (presentCount + absentCount + lateCount + halfDayCount)));
-  const attendanceRate = stats?.rate ?? stats?.percentage ?? (totalStudentsCount > 0 ? Math.round(((presentCount + lateCount * 0.8) / totalStudentsCount) * 100) : 0);
+  const unmarkedCount = Number(
+    stats?.unmarked ??
+      Math.max(
+        0,
+        totalStudentsCount -
+          (presentCount + absentCount + lateCount + halfDayCount),
+      ),
+  );
+  const attendanceRate =
+    stats?.rate ??
+    stats?.percentage ??
+    (totalStudentsCount > 0
+      ? Math.round(
+          ((presentCount + lateCount * 0.8) / totalStudentsCount) * 100,
+        )
+      : 0);
 
   const chartBars = [
-    { label: "Present", count: presentCount, bgFill: "bg-emerald-500", bgTrack: "bg-emerald-100/60", textCol: "text-emerald-700" },
-    { label: "Absent", count: absentCount, bgFill: "bg-rose-500", bgTrack: "bg-rose-100/60", textCol: "text-rose-700" },
-    { label: "Late / Half", count: lateCount + halfDayCount, bgFill: "bg-amber-500", bgTrack: "bg-amber-100/60", textCol: "text-amber-700" },
-    { label: "Unmarked", count: unmarkedCount, bgFill: "bg-slate-400", bgTrack: "bg-slate-200/60", textCol: "text-slate-600" },
+    {
+      label: "Present",
+      count: presentCount,
+      bgFill: "bg-emerald-500",
+      bgTrack: "bg-emerald-100/60",
+      textCol: "text-emerald-700",
+    },
+    {
+      label: "Absent",
+      count: absentCount,
+      bgFill: "bg-rose-500",
+      bgTrack: "bg-rose-100/60",
+      textCol: "text-rose-700",
+    },
+    {
+      label: "Late / Half",
+      count: lateCount + halfDayCount,
+      bgFill: "bg-amber-500",
+      bgTrack: "bg-amber-100/60",
+      textCol: "text-amber-700",
+    },
+    {
+      label: "Unmarked",
+      count: unmarkedCount,
+      bgFill: "bg-slate-400",
+      bgTrack: "bg-slate-200/60",
+      textCol: "text-slate-600",
+    },
   ];
   const maxChartVal = Math.max(...chartBars.map((b) => b.count), 1);
 
@@ -154,109 +208,41 @@ export default function AdminDashboard() {
       <main className="lg:ml-64 pt-20 lg:pt-8 p-4 sm:p-6 lg:p-8 min-h-screen">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-            <p className="text-slate-500 text-sm mt-1">Full control of {user.schoolName}</p>
+            <h1 className="text-2xl font-bold text-slate-900">
+              Admin Dashboard
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">
+              Full control of {user.schoolName}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => setShowExport(true)}
-              className="px-3.5 sm:px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-medium flex items-center gap-2 hover:bg-slate-50 transition shadow-sm cursor-pointer">
+            <button
+              onClick={() => setShowExport(true)}
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-medium flex items-center gap-2 hover:bg-slate-50 transition shadow-sm cursor-pointer"
+            >
               <Download className="w-4 h-4" /> Export Attendance
             </button>
-            <button onClick={() => setShowCreate("PRINCIPAL")}
+            <button
+              onClick={() => setShowCreate("PRINCIPAL")}
               className="px-3.5 sm:px-4 py-2 rounded-xl text-white text-sm font-medium flex items-center gap-2 cursor-pointer shadow-sm"
-              style={{ backgroundColor: theme }}>
+              style={{ backgroundColor: theme }}
+            >
               <Plus className="w-4 h-4" /> Principal
             </button>
-            <button onClick={() => setShowCreate("TEACHER")}
-              className="px-3.5 sm:px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-medium flex items-center gap-2 hover:bg-slate-50 cursor-pointer shadow-sm">
+            <button
+              onClick={() => setShowCreate("TEACHER")}
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-medium flex items-center gap-2 hover:bg-slate-50 cursor-pointer shadow-sm"
+            >
               <Plus className="w-4 h-4" /> Teacher
             </button>
-            <button onClick={() => setShowCreate("STUDENT")}
-              className="px-3.5 sm:px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-medium flex items-center gap-2 hover:bg-slate-50 cursor-pointer shadow-sm">
+            <button
+              onClick={() => setShowCreate("STUDENT")}
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-medium flex items-center gap-2 hover:bg-slate-50 cursor-pointer shadow-sm"
+            >
               <Plus className="w-4 h-4" /> Student
             </button>
           </div>
         </div>
-
-        {/* Active Development & Feedback Phase Notice */}
-        {showDevNotice && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 rounded-2xl border border-indigo-200/90 bg-gradient-to-r from-indigo-50 via-purple-50/40 to-white p-4 sm:p-5 shadow-xs"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-extrabold text-xs sm:text-sm text-slate-900">
-                      SchoolVajo is currently under active development.
-                    </h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      🎁 Free Development Phase
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
-                    We’re making SchoolVajo better every day to provide schools with a simple, reliable, and modern management experience.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setExpandedDevNotice((v) => !v)}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 px-2 py-1"
-                >
-                  {expandedDevNotice ? "Less details" : "Read notice & feedback"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDevNotice(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white transition"
-                  title="Dismiss banner"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {expandedDevNotice && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="mt-4 pt-3.5 border-t border-indigo-100 text-xs text-slate-600 space-y-2.5 sm:pl-12"
-              >
-                <p className="leading-relaxed">
-                  As you use the platform, you may occasionally experience bugs, errors, missing information, or data inconsistencies.
-                </p>
-                <p className="leading-relaxed">
-                  If you notice any issue, please let us know through <strong>email</strong>, <strong>Instagram</strong>, <strong>Facebook</strong>, or our support channels. Your feedback helps us identify and fix problems faster.
-                </p>
-
-                <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 flex items-start gap-2.5 text-amber-950">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-[11px] leading-relaxed">
-                    <strong>⚠️ Important:</strong> During this development/testing phase, we cannot guarantee against unexpected data loss, deletion, or data inconsistencies. Please use the platform with this understanding.
-                  </p>
-                </div>
-
-                <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-slate-700">
-                  <p className="font-medium">
-                    🙏 Thank you for your patience, feedback, and support.
-                  </p>
-                  <p className="font-bold text-indigo-700">
-                    Let’s build a better future for schools — together. 💙
-                    <span className="text-slate-500 font-normal ml-1.5">— Team SchoolVajo</span>
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        )}
 
         {/* 1. Colourful Overview Count Cards with Shapes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -293,12 +279,18 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="relative z-10">
-                  <div className="text-xs font-bold text-slate-500">{item.label}</div>
+                  <div className="text-xs font-bold text-slate-500">
+                    {item.label}
+                  </div>
                   <div className="min-h-[36px] flex items-center mt-1">
                     {loading ? (
-                      <Loader2 className={`w-6 h-6 animate-spin ${item.textCol}`} />
+                      <Loader2
+                        className={`w-6 h-6 animate-spin ${item.textCol}`}
+                      />
                     ) : (
-                      <div className={`text-2xl sm:text-3xl font-black tracking-tight ${item.textCol}`}>
+                      <div
+                        className={`text-2xl sm:text-3xl font-black tracking-tight ${item.textCol}`}
+                      >
                         {item.value}
                       </div>
                     )}
@@ -341,7 +333,12 @@ export default function AdminDashboard() {
                 </div>
                 <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  {new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                  {new Date().toLocaleDateString(undefined, {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </p>
               </div>
             </div>
@@ -386,9 +383,17 @@ export default function AdminDashboard() {
                     <Loader2 className="w-5 h-5 animate-spin text-emerald-600 my-0.5" />
                   ) : (
                     <>
-                      <span className="text-2xl font-black text-emerald-900">{presentCount}</span>
+                      <span className="text-2xl font-black text-emerald-900">
+                        {presentCount}
+                      </span>
                       <span className="text-[11px] text-emerald-700 font-medium ml-1.5">
-                        ({totalStudentsCount > 0 ? Math.round((presentCount / totalStudentsCount) * 100) : 0}%)
+                        (
+                        {totalStudentsCount > 0
+                          ? Math.round(
+                              (presentCount / totalStudentsCount) * 100,
+                            )
+                          : 0}
+                        %)
                       </span>
                     </>
                   )}
@@ -407,9 +412,15 @@ export default function AdminDashboard() {
                     <Loader2 className="w-5 h-5 animate-spin text-rose-600 my-0.5" />
                   ) : (
                     <>
-                      <span className="text-2xl font-black text-rose-900">{absentCount}</span>
+                      <span className="text-2xl font-black text-rose-900">
+                        {absentCount}
+                      </span>
                       <span className="text-[11px] text-rose-700 font-medium ml-1.5">
-                        ({totalStudentsCount > 0 ? Math.round((absentCount / totalStudentsCount) * 100) : 0}%)
+                        (
+                        {totalStudentsCount > 0
+                          ? Math.round((absentCount / totalStudentsCount) * 100)
+                          : 0}
+                        %)
                       </span>
                     </>
                   )}
@@ -428,8 +439,12 @@ export default function AdminDashboard() {
                     <Loader2 className="w-5 h-5 animate-spin text-amber-600 my-0.5" />
                   ) : (
                     <>
-                      <span className="text-2xl font-black text-amber-900">{lateCount + halfDayCount}</span>
-                      <span className="text-[11px] text-amber-700 font-medium ml-1.5">students</span>
+                      <span className="text-2xl font-black text-amber-900">
+                        {lateCount + halfDayCount}
+                      </span>
+                      <span className="text-[11px] text-amber-700 font-medium ml-1.5">
+                        students
+                      </span>
                     </>
                   )}
                 </div>
@@ -447,8 +462,12 @@ export default function AdminDashboard() {
                     <Loader2 className="w-5 h-5 animate-spin text-slate-500 my-0.5" />
                   ) : (
                     <>
-                      <span className="text-2xl font-black text-slate-800">{unmarkedCount}</span>
-                      <span className="text-[11px] text-slate-500 font-medium ml-1.5">pending</span>
+                      <span className="text-2xl font-black text-slate-800">
+                        {unmarkedCount}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-medium ml-1.5">
+                        pending
+                      </span>
                     </>
                   )}
                 </div>
@@ -458,7 +477,9 @@ export default function AdminDashboard() {
             {/* Rounded Corner Analytics Bar Chart */}
             <div className="lg:col-span-7 bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold text-slate-700">Attendance Distribution</span>
+                <span className="text-xs font-bold text-slate-700">
+                  Attendance Distribution
+                </span>
                 <span className="text-[11px] text-slate-400 font-medium">
                   Total Capacity: {totalStudentsCount} Students
                 </span>
@@ -466,12 +487,20 @@ export default function AdminDashboard() {
 
               <div className="flex items-end justify-around gap-4 h-40 pt-4 pb-1">
                 {chartBars.map((b) => {
-                  const barHeightPct = Math.max(8, Math.round((b.count / maxChartVal) * 100));
+                  const barHeightPct = Math.max(
+                    8,
+                    Math.round((b.count / maxChartVal) * 100),
+                  );
                   return (
-                    <div key={b.label} className="flex flex-col items-center flex-1 max-w-[90px] h-full justify-end">
+                    <div
+                      key={b.label}
+                      className="flex flex-col items-center flex-1 max-w-[90px] h-full justify-end"
+                    >
                       <div className="min-h-[20px] flex items-center justify-center mb-1.5">
                         {loading ? (
-                          <Loader2 className={`w-3.5 h-3.5 animate-spin ${b.textCol}`} />
+                          <Loader2
+                            className={`w-3.5 h-3.5 animate-spin ${b.textCol}`}
+                          />
                         ) : (
                           <span className={`text-xs font-black ${b.textCol}`}>
                             {b.count}
@@ -479,10 +508,14 @@ export default function AdminDashboard() {
                         )}
                       </div>
                       {/* Vertical Track with Corner Radius Pill */}
-                      <div className={`w-12 sm:w-14 h-24 rounded-2xl ${b.bgTrack} p-1 flex flex-col justify-end overflow-hidden border border-slate-200/50 shadow-2xs`}>
+                      <div
+                        className={`w-12 sm:w-14 h-24 rounded-2xl ${b.bgTrack} p-1 flex flex-col justify-end overflow-hidden border border-slate-200/50 shadow-2xs`}
+                      >
                         <motion.div
                           initial={{ height: 0 }}
-                          animate={{ height: `${loading ? 15 : barHeightPct}%` }}
+                          animate={{
+                            height: `${loading ? 15 : barHeightPct}%`,
+                          }}
                           transition={{ duration: 0.6, ease: "easeOut" }}
                           className={`w-full rounded-xl ${b.bgFill} shadow-xs ${loading ? "opacity-60 animate-pulse" : ""}`}
                         />
@@ -503,7 +536,12 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-slate-900">Principals</h2>
-              <Link href="/admin/principals" className="text-xs font-semibold text-indigo-600 hover:underline">View all</Link>
+              <Link
+                href="/admin/principals"
+                className="text-xs font-semibold text-indigo-600 hover:underline"
+              >
+                View all
+              </Link>
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -514,17 +552,26 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-3">
                 {principals.slice(0, 10).map((p) => (
-                  <Link key={p.id} href={`/admin/principals?highlight=${p.id}`}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-purple-50 transition cursor-pointer">
+                  <Link
+                    key={p.id}
+                    href={`/admin/principals?highlight=${p.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-purple-50 transition cursor-pointer"
+                  >
                     {p.photoUrl ? (
-                      <img src={p.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+                      <img
+                        src={p.photoUrl}
+                        alt=""
+                        className="w-9 h-9 rounded-full object-cover"
+                      />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-sm">
                         {p.firstName[0]}
                       </div>
                     )}
                     <div>
-                      <div className="text-sm font-medium">{p.firstName} {p.lastName}</div>
+                      <div className="text-sm font-medium">
+                        {p.firstName} {p.lastName}
+                      </div>
                       <div className="text-xs text-slate-500">{p.username}</div>
                     </div>
                   </Link>
@@ -535,8 +582,15 @@ export default function AdminDashboard() {
 
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-slate-900">Teachers ({teachers.length})</h2>
-              <Link href="/admin/teachers" className="text-xs font-semibold text-indigo-600 hover:underline">View all</Link>
+              <h2 className="font-bold text-slate-900">
+                Teachers ({teachers.length})
+              </h2>
+              <Link
+                href="/admin/teachers"
+                className="text-xs font-semibold text-indigo-600 hover:underline"
+              >
+                View all
+              </Link>
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -547,18 +601,29 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {teachers.slice(0, 10).map((t) => (
-                  <Link key={t.id} href={`/admin/teachers?highlight=${t.id}`}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition cursor-pointer">
+                  <Link
+                    key={t.id}
+                    href={`/admin/teachers?highlight=${t.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 transition cursor-pointer"
+                  >
                     {t.photoUrl ? (
-                      <img src={t.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+                      <img
+                        src={t.photoUrl}
+                        alt=""
+                        className="w-9 h-9 rounded-full object-cover"
+                      />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
                         {t.firstName[0]}
                       </div>
                     )}
                     <div>
-                      <div className="text-sm font-medium">{t.firstName} {t.lastName}</div>
-                      <div className="text-xs text-slate-500">{t.teacherType || "Teacher"} • {t.className || "-"}</div>
+                      <div className="text-sm font-medium">
+                        {t.firstName} {t.lastName}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {t.teacherType || "Teacher"} • {t.className || "-"}
+                      </div>
                     </div>
                   </Link>
                 ))}
@@ -568,8 +633,15 @@ export default function AdminDashboard() {
 
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-slate-900">Students ({students.length})</h2>
-              <Link href="/admin/students" className="text-xs font-semibold text-indigo-600 hover:underline">View all</Link>
+              <h2 className="font-bold text-slate-900">
+                Students ({students.length})
+              </h2>
+              <Link
+                href="/admin/students"
+                className="text-xs font-semibold text-indigo-600 hover:underline"
+              >
+                View all
+              </Link>
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -580,18 +652,29 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {students.slice(0, 10).map((s) => (
-                  <Link key={s.id} href={`/admin/students?highlight=${s.id}`}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-pink-50 transition cursor-pointer">
+                  <Link
+                    key={s.id}
+                    href={`/admin/students?highlight=${s.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-pink-50 transition cursor-pointer"
+                  >
                     {s.photoUrl ? (
-                      <img src={s.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+                      <img
+                        src={s.photoUrl}
+                        alt=""
+                        className="w-9 h-9 rounded-full object-cover"
+                      />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-pink-100 flex items-center justify-center text-pink-700 font-bold text-sm">
                         {s.firstName[0]}
                       </div>
                     )}
                     <div>
-                      <div className="text-sm font-medium">{s.firstName} {s.lastName}</div>
-                      <div className="text-xs text-slate-500">{s.className}-{s.section}</div>
+                      <div className="text-sm font-medium">
+                        {s.firstName} {s.lastName}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {s.className}-{s.section}
+                      </div>
                     </div>
                   </Link>
                 ))}

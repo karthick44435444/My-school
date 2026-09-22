@@ -15,6 +15,7 @@ import {
   File,
   ExternalLink,
   School,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import Sidebar from "@/components/dashboard/Sidebar";
@@ -30,6 +31,7 @@ function isImageUrl(url: string): boolean {
   if (
     clean.startsWith("data:application/pdf") ||
     clean.endsWith(".pdf") ||
+    clean.includes(".pdf") ||
     clean.endsWith(".doc") ||
     clean.endsWith(".docx") ||
     clean.endsWith(".xls") ||
@@ -54,26 +56,21 @@ function isImageUrl(url: string): boolean {
     clean.includes(".jpeg") ||
     clean.includes(".png") ||
     clean.includes(".webp") ||
-    clean.includes("/image/upload/") ||
-    clean.includes("/uploads/image") ||
-    clean.includes("image_") ||
-    clean.includes("photo") ||
-    clean.includes("student") ||
-    clean.includes("attachment")
+    clean.includes("/image/upload/")
   );
 }
 
 function getFileName(url: string): string {
   try {
-    const clean = url.split("?")[0];
+    if (!url) return "Attachment";
+    if (url.startsWith("data:image/")) return "Image.jpg";
+    if (url.startsWith("data:application/pdf")) return "Document.pdf";
+    const clean = url.split("?")[0].replace(/\\/g, "/");
     let name = clean.split("/").pop() || "Attachment";
     name = decodeURIComponent(name);
-    const rawMatch = name.match(/^(\d{10,15})_([a-z0-9]+)\.([a-z0-9]+)$/i);
-    if (rawMatch) {
-      const ext = rawMatch[3].toLowerCase();
-      if (ext === "pdf") return "Document.pdf";
-      if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return `Image.${ext}`;
-      return `Attachment.${ext}`;
+    const stripped = name.replace(/_\d{10,15}_[a-z0-9]{4,8}(\.[a-z0-9]+)$/i, "$1");
+    if (stripped && stripped !== name && stripped.includes(".")) {
+      return stripped;
     }
     return name;
   } catch {
@@ -83,7 +80,17 @@ function getFileName(url: string): string {
 
 async function downloadAttachment(url: string, fileName?: string) {
   try {
-    const res = await fetch(url);
+    if (url.startsWith("data:")) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName || getFileName(url);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+    const downloadUrl = url.includes("?") ? `${url}&download=1` : `${url}?download=1`;
+    const res = await fetch(downloadUrl);
     if (!res.ok) throw new Error("Failed to fetch file");
     const blob = await res.blob();
     const blobUrl = window.URL.createObjectURL(blob);
@@ -96,6 +103,25 @@ async function downloadAttachment(url: string, fileName?: string) {
     setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
   } catch {
     window.open(url, "_blank");
+  }
+}
+
+function handleOpenDocument(e: React.MouseEvent, url: string) {
+  if (url.startsWith("data:")) {
+    e.preventDefault();
+    try {
+      const [header, base64] = url.split(",");
+      const mime = header.match(/:(.*?);/)?.[1] || "application/octet-stream";
+      const binStr = atob(base64);
+      const len = binStr.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = binStr.charCodeAt(i);
+      const blob = new Blob([bytes], { type: mime });
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+    } catch {
+      window.open(url, "_blank");
+    }
   }
 }
 
@@ -497,6 +523,7 @@ export default function TeacherHomeworkPage() {
                                     href={url}
                                     target="_blank"
                                     rel="noreferrer"
+                                    onClick={(e) => handleOpenDocument(e, url)}
                                     className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800"
                                   >
                                     <ExternalLink className="w-3 h-3" /> Open
@@ -523,15 +550,30 @@ export default function TeacherHomeworkPage() {
                     </div>
                   )}
 
-                  <div className="absolute bottom-3.5 right-6 text-[11px] font-mono text-slate-400">
-                    {h.createdAt ? formatDateTime(h.createdAt) : ""}
+                  {/* Actions */}
+                  <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setDeleteHomeworkItem(h)}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 transition px-2.5 py-1.5 rounded-lg hover:bg-rose-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                    <span className="text-[11px] text-slate-400">
+                      Auto-expires in 7 days
+                    </span>
                   </div>
                 </div>
                 </div>
               );
             })}
+          </div>
+        )}
 
-            <div className="bg-white rounded-3xl border border-slate-200/80 px-4 shadow-xs">
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex justify-center">
+            <div className="bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-xs">
               <Pagination
                 page={page}
                 totalPages={totalPages}
@@ -588,115 +630,150 @@ export default function TeacherHomeworkPage() {
               <img
                 src={previewImage}
                 alt="Attachment Preview"
-                className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-lg"
+                className="max-h-[75vh] w-auto object-contain rounded-2xl"
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Create homework Modal */}
+      {/* Create Modal */}
       {show && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-100">
-            {/* Fixed Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0 sticky top-0 z-10">
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">Create Homework</h2>
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+          onClick={() => !saving && setShow(false)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-slate-900">Create New Homework</h2>
               <button
                 type="button"
                 onClick={() => setShow(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                disabled={saving}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Scrollable Body */}
-            <div className="p-6 overflow-y-auto flex-1 min-h-0">
-              <form onSubmit={create} className="space-y-3.5" noValidate>
+            <div className="mt-4">
+              <form onSubmit={create} className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-600">
-                    Homework Title <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    className={`w-full px-3.5 py-2.5 rounded-2xl border mt-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
-                      formErrors.title ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                    }`}
-                    placeholder="e.g. Chapter 4 Math Exercises"
-                    value={form.title}
-                    onChange={(e) => {
-                      setForm({ ...form, title: e.target.value });
-                      setFormErrors((prev) => ({ ...prev, title: "" }));
-                    }}
-                  />
-                  {formErrors.title && <p className="mt-1 text-xs text-red-600">{formErrors.title}</p>}
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-600">
-                    Class &amp; Section <span className="text-rose-500">*</span>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                    Class & Section <span className="text-rose-500">*</span>
                   </label>
                   <select
-                    className={`w-full px-3.5 py-2.5 rounded-2xl border mt-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white ${
-                      formErrors.className ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                    }`}
                     value={`${form.className}||${form.section}`}
                     onChange={(e) => {
-                      const [cn, sec] = e.target.value.split("||");
-                      setForm({ ...form, className: cn, section: sec || "" });
-                      setFormErrors((prev) => ({ ...prev, className: "" }));
+                      const [c, s] = e.target.value.split("||");
+                      setForm((f) => ({ ...f, className: c, section: s || "" }));
+                      if (formErrors.className) {
+                        setFormErrors((errs) => {
+                          const n = { ...errs };
+                          delete n.className;
+                          return n;
+                        });
+                      }
                     }}
+                    className={`w-full px-3 py-2.5 rounded-2xl border text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
+                      formErrors.className ? "border-rose-400 bg-rose-50/20" : "border-slate-200"
+                    }`}
                   >
-                    {classOptions.map((c: any) => (
+                    {classOptions.map((c) => (
                       <option
-                        key={`${c.className}-${c.section}`}
+                        key={`${c.className}-${c.section || ""}`}
                         value={`${c.className}||${c.section || ""}`}
                       >
-                        {c.className}
-                        {c.section ? `-${c.section}` : ""} (
-                        {c.role === "CLASS_TEACHER"
-                          ? "Class Teacher"
-                          : c.subjectName || "Subject"}
-                        )
+                        {c.displayName || `${c.className} - Section ${c.section || "A"}`}
                       </option>
                     ))}
                   </select>
-                  {formErrors.className && <p className="mt-1 text-xs text-red-600">{formErrors.className}</p>}
+                  {formErrors.className && (
+                    <p className="text-[11px] text-rose-500 mt-1 font-medium">{formErrors.className}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="text-xs font-bold text-slate-600">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                     Subject <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    className={`w-full px-3.5 py-2.5 rounded-2xl border mt-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
-                      formErrors.subject ? "border-red-400 bg-red-50/20" : "border-slate-200"
-                    }`}
-                    placeholder="e.g. Mathematics"
+                    type="text"
+                    required
+                    placeholder="e.g. Mathematics, Science, English"
                     value={form.subject}
                     onChange={(e) => {
-                      setForm({ ...form, subject: e.target.value });
-                      setFormErrors((prev) => ({ ...prev, subject: "" }));
+                      setForm((f) => ({ ...f, subject: e.target.value }));
+                      if (formErrors.subject) {
+                        setFormErrors((errs) => {
+                          const n = { ...errs };
+                          delete n.subject;
+                          return n;
+                        });
+                      }
                     }}
+                    className={`w-full px-3 py-2.5 rounded-2xl border text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
+                      formErrors.subject ? "border-rose-400 bg-rose-50/20" : "border-slate-200"
+                    }`}
                   />
-                  {formErrors.subject && <p className="mt-1 text-xs text-red-600">{formErrors.subject}</p>}
+                  {formErrors.subject && (
+                    <p className="text-[11px] text-rose-500 mt-1 font-medium">{formErrors.subject}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="text-xs font-bold text-slate-600">Description / Instructions</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                    Homework Title <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Chapter 4 Exercise 4.2"
+                    value={form.title}
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, title: e.target.value }));
+                      if (formErrors.title) {
+                        setFormErrors((errs) => {
+                          const n = { ...errs };
+                          delete n.title;
+                          return n;
+                        });
+                      }
+                    }}
+                    className={`w-full px-3 py-2.5 rounded-2xl border text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
+                      formErrors.title ? "border-rose-400 bg-rose-50/20" : "border-slate-200"
+                    }`}
+                  />
+                  {formErrors.title && (
+                    <p className="text-[11px] text-rose-500 mt-1 font-medium">{formErrors.title}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                    Instructions / Description
+                  </label>
                   <textarea
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 mt-1 text-sm font-medium min-h-[90px] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    placeholder="Instructions for students..."
+                    rows={3}
+                    placeholder="Provide details about the homework assignment..."
                     value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-2xl border border-slate-200 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
                   />
                 </div>
+
                 <div>
-                  <div className="text-xs font-bold text-slate-600 mb-1.5">
-                    Attachments (max 2 files or images)
-                  </div>
-                  <label className="flex items-center justify-center gap-2 border border-dashed border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50 rounded-2xl py-3 cursor-pointer text-xs font-bold text-indigo-600 transition shadow-2xs">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                    Attachments (Max 2 photos or documents)
+                  </label>
+                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer transition">
                     {uploading ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
                     ) : (
-                      <Paperclip className="w-4 h-4" />
+                      <Upload className="w-3.5 h-3.5 text-slate-500" />
                     )}
                     {uploading ? "Uploading attachment..." : "Add file or photo"}
                     <input
@@ -721,9 +798,13 @@ export default function TeacherHomeworkPage() {
                         <span className="flex-1 truncate font-medium text-slate-800">{a.name}</span>
                         <button
                           type="button"
-                          onClick={() =>
-                            setAttachments((prev) => prev.filter((_, j) => j !== i))
-                          }
+                          onClick={() => {
+                            const toRemove = attachments[i];
+                            if (toRemove?.url) {
+                              fetch(`/api/upload?url=${encodeURIComponent(toRemove.url)}`, { method: "DELETE" }).catch(() => {});
+                            }
+                            setAttachments((prev) => prev.filter((_, j) => j !== i));
+                          }}
                           className="text-rose-500 hover:text-rose-700 p-0.5"
                         >
                           <X className="w-4 h-4" />

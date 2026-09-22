@@ -63,9 +63,17 @@ export default function RegisterSchoolPage() {
       const sp = new URLSearchParams(window.location.search);
       const planParam = sp.get("plan");
       if (planParam && planParam === "BASIC") {
-        setForm((prev) => ({ ...prev, plan: planParam, billingCycle: "MONTHLY" }));
+        setForm((prev) => ({
+          ...prev,
+          plan: planParam,
+          billingCycle: "MONTHLY",
+        }));
       } else {
-        setForm((prev) => ({ ...prev, plan: "BASIC", billingCycle: "MONTHLY" }));
+        setForm((prev) => ({
+          ...prev,
+          plan: "BASIC",
+          billingCycle: "MONTHLY",
+        }));
       }
     }
   }, []);
@@ -81,13 +89,16 @@ export default function RegisterSchoolPage() {
             displayName: !form.displayName.trim()
               ? "Display name is required when school name exceeds 20 characters"
               : form.displayName.trim().length > 20
-              ? "Display name must be 20 characters or less"
-              : undefined,
+                ? "Display name must be 20 characters or less"
+                : undefined,
           }
         : {}),
       location: validateRequired(form.location, "Location"),
       email: validateEmail(form.email, true),
-      phone: validatePhone(form.phone, { required: true, countryCode: phoneCountry }),
+      phone: validatePhone(form.phone, {
+        required: true,
+        countryCode: phoneCountry,
+      }),
       themeColor: validateThemeColor(form.themeColor),
     });
     setErrors(next || {});
@@ -158,7 +169,10 @@ export default function RegisterSchoolPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           schoolName: form.schoolName.trim(),
-          displayName: form.schoolName.trim().length > 20 ? form.displayName.trim() : (form.displayName.trim() || undefined),
+          displayName:
+            form.schoolName.trim().length > 20
+              ? form.displayName.trim()
+              : form.displayName.trim() || undefined,
           location: form.location.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
@@ -184,7 +198,10 @@ export default function RegisterSchoolPage() {
         plan: form.plan,
       };
 
-      sessionStorage.setItem("myschool_new_school", JSON.stringify(credentials));
+      sessionStorage.setItem(
+        "myschool_new_school",
+        JSON.stringify(credentials),
+      );
       toast.success("School registered successfully!");
       router.push("/register-school/success");
     } catch (err: any) {
@@ -217,7 +234,10 @@ export default function RegisterSchoolPage() {
           </Link>
           <div className="flex items-center gap-2 text-xs text-slate-600">
             <span>Already registered?</span>
-            <Link href="/login" className="text-indigo-600 hover:text-indigo-700 font-semibold underline">
+            <Link
+              href="/login"
+              className="text-indigo-600 hover:text-indigo-700 font-semibold underline"
+            >
               Sign In
             </Link>
           </div>
@@ -232,7 +252,8 @@ export default function RegisterSchoolPage() {
             Register Your <span className="text-indigo-600">School</span>
           </h1>
           <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-            Set up your cloud campus in minutes with full administrative control.
+            Set up your cloud campus in minutes with full administrative
+            control.
           </p>
 
           {/* Stepper Progress Indicator */}
@@ -246,12 +267,18 @@ export default function RegisterSchoolPage() {
               }`}
             >
               <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[11px]">
-                {step > 1 ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : "1"}
+                {step > 1 ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  "1"
+                )}
               </div>
               <span>1. School Details</span>
             </button>
 
-            <div className={`h-0.5 w-10 rounded ${step === 2 ? "bg-indigo-600" : "bg-slate-200"}`} />
+            <div
+              className={`h-0.5 w-10 rounded ${step === 2 ? "bg-indigo-600" : "bg-slate-200"}`}
+            />
 
             <button
               onClick={() => {
@@ -289,7 +316,8 @@ export default function RegisterSchoolPage() {
               <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <School className="w-5 h-5 text-indigo-600" /> School Information
+                    <School className="w-5 h-5 text-indigo-600" /> School
+                    Information
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Enter the basic details to configure your school profile.
@@ -316,12 +344,18 @@ export default function RegisterSchoolPage() {
                         setErrors((er) => ({ ...er, schoolName: "" }));
                       }}
                       className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-50/50 text-slate-900 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-indigo-500/30 ${
-                        errors.schoolName ? "border-red-400 ring-1 ring-red-400/30" : "border-slate-200 focus:border-indigo-500"
+                        errors.schoolName
+                          ? "border-red-400 ring-1 ring-red-400/30"
+                          : "border-slate-200 focus:border-indigo-500"
                       }`}
                       placeholder="Public School"
                     />
                   </div>
-                  {errors.schoolName && <p className="mt-1 text-xs text-red-600">{errors.schoolName}</p>}
+                  {errors.schoolName && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.schoolName}
+                    </p>
+                  )}
                 </div>
 
                 {/* Display Name (Required & shown only when School Name exceeds 20 characters) */}
@@ -329,14 +363,20 @@ export default function RegisterSchoolPage() {
                   <div className="md:col-span-2 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200/90 space-y-2 animate-in fade-in duration-200">
                     <div className="flex items-center justify-between">
                       <label className="block text-xs font-bold uppercase tracking-wider text-indigo-900">
-                        Display Name (Short Name) <span className="text-indigo-600">*</span>
+                        Display Name (Short Name){" "}
+                        <span className="text-indigo-600">*</span>
                       </label>
-                      <span className={`text-[11px] font-mono font-bold ${form.displayName.length > 20 ? "text-rose-600" : "text-indigo-600"}`}>
+                      <span
+                        className={`text-[11px] font-mono font-bold ${form.displayName.length > 20 ? "text-rose-600" : "text-indigo-600"}`}
+                      >
                         {form.displayName.length}/20 characters
                       </span>
                     </div>
                     <p className="text-xs text-indigo-700/90 leading-relaxed">
-                      Your school name exceeds 20 characters. Please provide a short display name (up to 20 characters) to be displayed across application headers, navigation bars, and mobile screens.
+                      Your school name exceeds 20 characters. Please provide a
+                      short display name (up to 20 characters) to be displayed
+                      across application headers, navigation bars, and mobile
+                      screens.
                     </p>
                     <div className="relative">
                       <Sparkles className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 pointer-events-none" />
@@ -349,12 +389,18 @@ export default function RegisterSchoolPage() {
                           setErrors((er) => ({ ...er, displayName: "" }));
                         }}
                         className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-white text-slate-900 text-sm outline-none transition focus:ring-2 focus:ring-indigo-500/30 ${
-                          errors.displayName ? "border-red-400 ring-1 ring-red-400/30" : "border-indigo-200 focus:border-indigo-500"
+                          errors.displayName
+                            ? "border-red-400 ring-1 ring-red-400/30"
+                            : "border-indigo-200 focus:border-indigo-500"
                         }`}
                         placeholder="e.g. DPS International"
                       />
                     </div>
-                    {errors.displayName && <p className="mt-1 text-xs text-red-600 font-medium">{errors.displayName}</p>}
+                    {errors.displayName && (
+                      <p className="mt-1 text-xs text-red-600 font-medium">
+                        {errors.displayName}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -373,12 +419,18 @@ export default function RegisterSchoolPage() {
                         setErrors((er) => ({ ...er, location: "" }));
                       }}
                       className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-50/50 text-slate-900 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-indigo-500/30 ${
-                        errors.location ? "border-red-400 ring-1 ring-red-400/30" : "border-slate-200 focus:border-indigo-500"
+                        errors.location
+                          ? "border-red-400 ring-1 ring-red-400/30"
+                          : "border-slate-200 focus:border-indigo-500"
                       }`}
                       placeholder="Delhi, India"
                     />
                   </div>
-                  {errors.location && <p className="mt-1 text-xs text-red-600">{errors.location}</p>}
+                  {errors.location && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
 
                 {/* Admin Email */}
@@ -396,12 +448,16 @@ export default function RegisterSchoolPage() {
                         setErrors((er) => ({ ...er, email: "" }));
                       }}
                       className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-50/50 text-slate-900 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-indigo-500/30 ${
-                        errors.email ? "border-red-400 ring-1 ring-red-400/30" : "border-slate-200 focus:border-indigo-500"
+                        errors.email
+                          ? "border-red-400 ring-1 ring-red-400/30"
+                          : "border-slate-200 focus:border-indigo-500"
                       }`}
                       placeholder="admin@school.com"
                     />
                   </div>
-                  {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                  )}
                 </div>
 
                 {/* Phone Number (Required) */}
@@ -425,9 +481,12 @@ export default function RegisterSchoolPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                      <Palette className="w-3.5 h-3.5 text-indigo-600" /> Theme Color <span className="text-indigo-600">*</span>
+                      <Palette className="w-3.5 h-3.5 text-indigo-600" /> Theme
+                      Color <span className="text-indigo-600">*</span>
                     </label>
-                    <span className="text-[11px] text-slate-500">At least 30% dark</span>
+                    <span className="text-[11px] text-slate-500">
+                      At least 30% dark
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div
@@ -438,7 +497,10 @@ export default function RegisterSchoolPage() {
                         type="color"
                         value={form.themeColor}
                         onChange={(e) => {
-                          setForm({ ...form, themeColor: e.target.value.toUpperCase() });
+                          setForm({
+                            ...form,
+                            themeColor: e.target.value.toUpperCase(),
+                          });
                           setErrors((er) => ({ ...er, themeColor: "" }));
                         }}
                         className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
@@ -448,28 +510,44 @@ export default function RegisterSchoolPage() {
                       type="text"
                       value={form.themeColor || "#4F46E5"}
                       onChange={(e) => {
-                        setForm({ ...form, themeColor: e.target.value.toUpperCase() });
+                        setForm({
+                          ...form,
+                          themeColor: e.target.value.toUpperCase(),
+                        });
                         setErrors((er) => ({ ...er, themeColor: "" }));
                       }}
                       className={`flex-1 px-4 py-2 rounded-xl border bg-slate-50/50 text-slate-900 font-mono text-sm uppercase outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/30 ${
-                        errors.themeColor ? "border-red-400 ring-1 ring-red-400/30" : "border-slate-200 focus:border-indigo-500"
+                        errors.themeColor
+                          ? "border-red-400 ring-1 ring-red-400/30"
+                          : "border-slate-200 focus:border-indigo-500"
                       }`}
                       placeholder="#4F46E5"
                       maxLength={7}
                     />
                   </div>
-                  {errors.themeColor && <p className="mt-1 text-xs text-red-600">{errors.themeColor}</p>}
+                  {errors.themeColor && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.themeColor}
+                    </p>
+                  )}
                 </div>
 
                 {/* School Logo Upload (Optional) */}
                 <div className="md:col-span-2 pt-1">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                    School Logo <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                    School Logo{" "}
+                    <span className="text-slate-400 font-normal lowercase">
+                      (optional)
+                    </span>
                   </label>
                   <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
                     {logoPreview ? (
                       <div className="w-14 h-14 rounded-2xl bg-white p-2 border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
-                        <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="w-full h-full object-contain"
+                        />
                       </div>
                     ) : (
                       <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shrink-0 text-slate-400 shadow-sm">
@@ -479,10 +557,19 @@ export default function RegisterSchoolPage() {
                     <div className="flex-1 text-center sm:text-left">
                       <label className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer transition shadow-sm">
                         <Upload className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>{logoPreview ? "Change Logo" : "Upload School Logo"}</span>
-                        <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                        <span>
+                          {logoPreview ? "Change Logo" : "Upload School Logo"}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoChange}
+                          className="hidden"
+                        />
                       </label>
-                      <p className="text-[11px] text-slate-500 mt-1">PNG, JPG or WebP up to 5MB</p>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        PNG, JPG or WebP up to 5MB
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -515,7 +602,8 @@ export default function RegisterSchoolPage() {
               <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-indigo-600" /> Choose Subscription Plan
+                    <Sparkles className="w-5 h-5 text-indigo-600" /> Choose
+                    Subscription Plan
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Select the plan that fits your campus scale.
@@ -525,7 +613,9 @@ export default function RegisterSchoolPage() {
                 <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 self-start sm:self-auto">
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, billingCycle: "MONTHLY" })}
+                    onClick={() =>
+                      setForm({ ...form, billingCycle: "MONTHLY" })
+                    }
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       form.billingCycle === "MONTHLY"
                         ? "bg-white text-indigo-600 shadow-sm"
@@ -565,15 +655,17 @@ export default function RegisterSchoolPage() {
                         if (isAvailable) {
                           setForm({ ...form, plan: plan.id });
                         } else {
-                          toast.info("This plan is upcoming. 1-Month Special Offer (₹99) is currently active.");
+                          toast.info(
+                            "This plan is upcoming. 1-Month Special Offer (₹99) is currently active.",
+                          );
                         }
                       }}
                       className={`relative p-5 rounded-2xl border-2 transition-all flex flex-col justify-between ${
                         isAvailable && isSelected
                           ? "border-indigo-600 bg-indigo-50/50 shadow-md shadow-indigo-600/10 cursor-pointer"
                           : isAvailable
-                          ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
-                          : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
+                            ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
+                            : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
                       }`}
                     >
                       <div
@@ -581,31 +673,55 @@ export default function RegisterSchoolPage() {
                           isAvailable ? "bg-emerald-600" : "bg-slate-500"
                         }`}
                       >
-                        {isAvailable ? "FREE TRIAL — ₹99" : (plan.badge || "UPCOMING")}
+                        {isAvailable
+                          ? "FREE TRIAL — ₹99"
+                          : plan.badge || "UPCOMING"}
                       </div>
 
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-bold text-base text-slate-900">{plan.name}</h3>
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300"}`}>
+                          <h3 className="font-bold text-base text-slate-900">
+                            {plan.name}
+                          </h3>
+                          <div
+                            className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300"}`}
+                          >
                             {isSelected && <Check className="w-3 h-3" />}
                           </div>
                         </div>
                         <div className="mb-4">
-                          <span className="text-2xl font-black text-slate-900">₹{price.toLocaleString()}</span>
-                          <span className="text-xs text-slate-500 font-medium">/month</span>
+                          <span className="text-2xl font-black text-slate-900">
+                            ₹{price.toLocaleString()}
+                          </span>
+                          <span className="text-xs text-slate-500 font-medium">
+                            /month
+                          </span>
                         </div>
                         <ul className="space-y-2 text-xs text-slate-600">
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`} />
-                            <span>Up to <strong>{plan.maxStudents.toLocaleString()}</strong> Students</span>
+                            <CheckCircle2
+                              className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`}
+                            />
+                            <span>
+                              Up to{" "}
+                              <strong>
+                                {plan.maxStudents.toLocaleString()}
+                              </strong>{" "}
+                              Students
+                            </span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`} />
-                            <span>Up to <strong>{plan.maxTeachers}</strong> Teachers</span>
+                            <CheckCircle2
+                              className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`}
+                            />
+                            <span>
+                              Up to <strong>{plan.maxTeachers}</strong> Teachers
+                            </span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`} />
+                            <CheckCircle2
+                              className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`}
+                            />
                             <span>Full Portal & Mobile Access</span>
                           </li>
                         </ul>
@@ -614,7 +730,8 @@ export default function RegisterSchoolPage() {
                       <div className="mt-4 pt-3 border-t border-slate-100">
                         {isAvailable ? (
                           <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" /> Selected by default
+                            <Check className="w-3.5 h-3.5" /> Selected by
+                            default
                           </span>
                         ) : (
                           <span className="text-xs font-semibold text-slate-400">
@@ -629,23 +746,33 @@ export default function RegisterSchoolPage() {
 
               {/* Review Summary Box */}
               <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Summary</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Summary
+                </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
                     <span className="text-slate-500 block">School:</span>
-                    <strong className="text-slate-900 truncate block">{form.schoolName || "—"}</strong>
+                    <strong className="text-slate-900 truncate block">
+                      {form.schoolName || "—"}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-slate-500 block">Location:</span>
-                    <strong className="text-slate-900 truncate block">{form.location || "—"}</strong>
+                    <strong className="text-slate-900 truncate block">
+                      {form.location || "—"}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-slate-500 block">Admin Email:</span>
-                    <strong className="text-slate-900 truncate block">{form.email || "—"}</strong>
+                    <strong className="text-slate-900 truncate block">
+                      {form.email || "—"}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-slate-500 block">Plan:</span>
-                    <strong className="text-indigo-600 block">{selectedPlan.name} ({form.billingCycle})</strong>
+                    <strong className="text-indigo-600 block">
+                      {selectedPlan.name} ({form.billingCycle})
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -662,37 +789,50 @@ export default function RegisterSchoolPage() {
                         SchoolVajo is currently under active development
                       </h4>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        🎁 Free Access Phase
+                        Free Access Phase
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      We’re making SchoolVajo better every day to provide schools with a simple, reliable, and modern management experience.
+                      We’re making SchoolVajo better every day to provide
+                      schools with a simple, reliable, and modern management
+                      experience.
                     </p>
                   </div>
                 </div>
 
                 <div className="text-xs text-slate-600 space-y-2.5 pl-0 sm:pl-12">
                   <p className="leading-relaxed">
-                    As you use the platform, you may occasionally experience bugs, errors, missing information, or data inconsistencies.
+                    As you use the platform, you may occasionally experience
+                    bugs, errors, missing information, or data inconsistencies.
                   </p>
                   <p className="leading-relaxed">
-                    If you notice any issue, please let us know through <strong>email</strong>, <strong>Instagram</strong>, <strong>Facebook</strong>, or our support channels. Your feedback helps us identify and fix problems faster.
+                    If you notice any issue, please let us know through{" "}
+                    <strong>email</strong>, <strong>Instagram</strong>,{" "}
+                    <strong>Facebook</strong>, or our support channels. Your
+                    feedback helps us identify and fix problems faster.
                   </p>
 
                   <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 flex items-start gap-2.5 text-amber-950">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-relaxed">
-                      <strong>Important:</strong> During this development/testing phase, we cannot guarantee against unexpected data loss, deletion, or data inconsistencies. Please use the platform with this understanding.
+                      <strong>Important:</strong> During this
+                      development/testing phase, we cannot guarantee against
+                      unexpected data loss, deletion, or data inconsistencies.
+                      Please use the platform with this understanding.
                     </p>
                   </div>
 
                   <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-slate-700 font-medium">
                     <p className="text-xs flex items-center gap-1">
-                      <span>🙏 Thank you for your patience, feedback, and support.</span>
+                      <span>
+                        Thank you for your patience, feedback, and support.
+                      </span>
                     </p>
                     <p className="text-xs font-bold text-indigo-700 flex items-center gap-1">
-                      Let’s build a better future for schools — together. 💙
-                      <span className="text-slate-500 font-normal ml-1">— Team SchoolVajo</span>
+                      Let’s build a better future for schools — together.
+                      <span className="text-slate-500 font-normal ml-1">
+                        — Team SchoolVajo
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -718,7 +858,8 @@ export default function RegisterSchoolPage() {
                 >
                   {loading || uploading ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Provisioning School...
+                      <Loader2 className="w-4 h-4 animate-spin" /> Provisioning
+                      School...
                     </>
                   ) : (
                     <>
@@ -748,5 +889,3 @@ export default function RegisterSchoolPage() {
     </div>
   );
 }
-
-
