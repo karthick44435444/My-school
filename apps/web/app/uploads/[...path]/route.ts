@@ -43,10 +43,15 @@ export async function GET(
     const safeRelPath = path.normalize(rawPath).replace(/^(\.\.[\/\\])+/, "");
 
     // 1. Fetch directly from Database Store (includes automatic disk scan & DB persistence)
-    const { getUploadedFile, saveUploadedFile } = await import("@/lib/store");
+    const { getUploadedFile, getUploadedFileFromPostgres, saveUploadedFile } = await import("@/lib/store");
     let stored = getUploadedFile(safeBaseFilename);
 
-    // 2. Extra relative disk fallback
+    // 2. Query direct from PostgreSQL database if not in memory
+    if (!stored) {
+      stored = await getUploadedFileFromPostgres(safeBaseFilename);
+    }
+
+    // 3. Extra relative disk fallback
     if (!stored) {
       const candidatePaths = [
         path.join(process.cwd(), "apps", "web", "public", "uploads", safeBaseFilename),

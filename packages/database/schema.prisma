@@ -503,6 +503,19 @@ model NotificationPreference {
   general      Boolean @default(true)
 }
 
+model UploadedFile {
+  id        String   @id @default(cuid())
+  filename  String   @unique
+  data      String   @db.Text
+  mimeType  String   @default("application/octet-stream")
+  size      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([filename])
+}
+
+
 enum Role {
   ADMIN
   PRINCIPAL

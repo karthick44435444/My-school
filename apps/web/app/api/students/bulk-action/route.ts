@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          deleteUser(id, auth.schoolId);
+          await deleteUser(id, auth.schoolId);
           deletedCount++;
         } catch (err) {
           console.error(`[bulk delete error for ${id}]`, err);

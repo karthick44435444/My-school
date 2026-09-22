@@ -331,6 +331,7 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
         notifications,
         pushTokens,
         readReceipts,
+        uploadedFiles,
       ] = await Promise.all([
         prisma.school.findMany({ include: { subscription: true } }),
         prisma.user.findMany(),
@@ -345,6 +346,7 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
         prisma.notification.findMany({ orderBy: { createdAt: "desc" }, take: 2000 }),
         prisma.pushToken.findMany(),
         prisma.readReceipt.findMany(),
+        (prisma as any).uploadedFile ? (prisma as any).uploadedFile.findMany({ take: 2000 }) : Promise.resolve([]),
       ]);
 
       const hydrated: DB = {
@@ -538,7 +540,15 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
           readAt: rr.readAt ? (typeof rr.readAt === "string" ? rr.readAt : rr.readAt.toISOString()) : new Date().toISOString(),
         })),
         otps: [],
-        uploadedFiles: _cachedDB?.uploadedFiles || readDBFromFile().uploadedFiles || [],
+        uploadedFiles: Array.isArray(uploadedFiles) && uploadedFiles.length > 0
+          ? uploadedFiles.map((f: any) => ({
+              filename: f.filename,
+              data: f.data,
+              mimeType: f.mimeType || "application/octet-stream",
+              size: f.size || 0,
+              createdAt: f.createdAt ? (typeof f.createdAt === "string" ? f.createdAt : f.createdAt.toISOString()) : new Date().toISOString(),
+            }))
+          : (_cachedDB?.uploadedFiles || readDBFromFile().uploadedFiles || []),
       };
 
       ensureDataDir();
@@ -5912,8 +5922,6 @@ export async function checkAndDispatchExpiryNotifications() {
   return { success: true, processed: results };
 }
 
-// ====================== UPLOADED FILES STORE ======================
-
 export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: string, size?: number): StoredUploadedFile {
   const db = readDB();
   if (!Array.isArray(db.uploadedFiles)) db.uploadedFiles = [];
@@ -5932,14 +5940,94 @@ export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: st
     db.uploadedFiles[existingIdx] = entry;
   } else {
     db.uploadedFiles.push(entry);
-    // Keep max 1000 uploaded files in database storage
-    if (db.uploadedFiles.length > 1000) {
-      db.uploadedFiles = db.uploadedFiles.slice(-1000);
+    // Keep max 2000 uploaded files in local memory cache
+    if (db.uploadedFiles.length > 2000) {
+      db.uploadedFiles = db.uploadedFiles.slice(-2000);
     }
   }
 
   writeDB(db);
+
+  // Asynchronously persist to Postgres Server DB UploadedFile table
+  if (prisma && process.env.DATABASE_URL) {
+    (async () => {
+      try {
+        await (prisma as any).uploadedFile.upsert({
+          where: { filename: cleanName },
+          create: {
+            filename: cleanName,
+            data: base64,
+            mimeType: entry.mimeType,
+            size: entry.size || 0,
+          },
+          update: {
+            data: base64,
+            mimeType: entry.mimeType,
+            size: entry.size || 0,
+          },
+        });
+      } catch (err: any) {
+        console.error("[UploadedFile Postgres Upsert Error]:", err?.message);
+      }
+    })();
+  }
+
   return entry;
+}
+
+export async function getUploadedFileFromPostgres(filename: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
+  if (!prisma || !process.env.DATABASE_URL) return null;
+  try {
+    const rawClean = decodeURIComponent(filename || "").trim().replace(/^['"]+|['"]+$/g, "");
+    const cleanName = path.basename(rawClean);
+    if (!cleanName) return null;
+
+    const record = await (prisma as any).uploadedFile.findUnique({
+      where: { filename: cleanName },
+    });
+    if (record && record.data) {
+      return {
+        buffer: Buffer.from(record.data, "base64"),
+        mimeType: record.mimeType || "application/octet-stream",
+      };
+    }
+
+    const fuzzy = await (prisma as any).uploadedFile.findFirst({
+      where: {
+        filename: {
+          contains: path.parse(cleanName).name,
+          mode: "insensitive",
+        },
+      },
+    });
+    if (fuzzy && fuzzy.data) {
+      return {
+        buffer: Buffer.from(fuzzy.data, "base64"),
+        mimeType: fuzzy.mimeType || "application/octet-stream",
+      };
+    }
+  } catch (err: any) {
+    console.error("[Postgres UploadedFile Fetch Error]:", err?.message);
+  }
+  return null;
+}
+
+export async function deleteUploadedFile(filename: string) {
+  const cleanName = path.basename(filename);
+  const db = readDB();
+  if (db.uploadedFiles) {
+    db.uploadedFiles = db.uploadedFiles.filter((f) => f.filename.toLowerCase() !== cleanName.toLowerCase());
+    writeDB(db);
+  }
+  if (prisma && process.env.DATABASE_URL) {
+    try {
+      await (prisma as any).uploadedFile.deleteMany({
+        where: { filename: cleanName },
+      });
+    } catch (err: any) {
+      console.error("[deleteUploadedFile Postgres Error]:", err?.message);
+    }
+  }
 }
 
 export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: string } | null {
