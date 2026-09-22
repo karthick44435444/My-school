@@ -11,6 +11,7 @@ export interface SubscriptionPlanInfo {
   description: string;
   badge?: string;
   popular?: boolean;
+  isAvailable?: boolean;
   features: string[];
 }
 
@@ -23,7 +24,9 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlanInfo[] = [
     billingInterval: "1 Month",
     durationDays: 30,
     description: "Special introductory offer with complete access to all school features",
-    badge: "Special Offer - ₹99",
+    badge: "FREE TRIAL - ₹99",
+    popular: true,
+    isAvailable: true,
     features: [
       "Student & Parent Mobile App & Web Portal",
       "Attendance, Homework & Class Schedule Tracking",
@@ -41,8 +44,9 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlanInfo[] = [
     billingInterval: "6 Months",
     durationDays: 180,
     description: "Ideal for semester and term-based school management",
-    badge: "Popular Choice",
-    popular: true,
+    badge: "Upcoming",
+    popular: false,
+    isAvailable: false,
     features: [
       "All Features in 1-Month Plan",
       "6 Months Uninterrupted Access",
@@ -60,7 +64,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlanInfo[] = [
     billingInterval: "1 Year",
     durationDays: 365,
     description: "Best value for full academic year management and VIP support",
-    badge: "Best Value - ₹899/year",
+    badge: "Upcoming",
+    isAvailable: false,
     features: [
       "All Features in Term Plan",
       "365 Days Full Academic Year Access",
@@ -75,7 +80,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlanInfo[] = [
 export const PLANS: Plan[] = [
   {
     id: "BASIC",
-    name: "1-Month Offer",
+    name: "1-Month Offer (Free Trial)",
     monthlyPrice: 99,
     yearlyPrice: 899,
     maxAdmins: 1,
@@ -83,6 +88,9 @@ export const PLANS: Plan[] = [
     maxTeachers: 50,
     maxStudents: 1000,
     maxParents: 1000,
+    popular: true,
+    isAvailable: true,
+    badge: "FREE TRIAL",
     features: [
       "1 Admin + 2 Principals",
       "Up to 50 Teachers",
@@ -102,6 +110,8 @@ export const PLANS: Plan[] = [
     maxTeachers: 100,
     maxStudents: 2000,
     maxParents: 2000,
+    isAvailable: false,
+    badge: "Upcoming",
     features: [
       "Everything in 1-Month Plan",
       "Up to 100 Teachers",
@@ -110,7 +120,6 @@ export const PLANS: Plan[] = [
       "Priority Support & Daily Backups",
       "Custom Theme Color & Branding",
     ],
-    popular: true,
   },
   {
     id: "PREMIUM",
@@ -122,6 +131,8 @@ export const PLANS: Plan[] = [
     maxTeachers: 500,
     maxStudents: 10000,
     maxParents: 10000,
+    isAvailable: false,
+    badge: "Upcoming",
     features: [
       "Everything in Term Plan",
       "Unlimited Teachers & Students",

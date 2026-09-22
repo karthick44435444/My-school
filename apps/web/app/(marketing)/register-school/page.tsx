@@ -50,8 +50,8 @@ export default function RegisterSchoolPage() {
     email: "",
     phone: "",
     themeColor: "#4F46E5",
-    plan: "STANDARD",
-    billingCycle: "YEARLY" as "MONTHLY" | "YEARLY",
+    plan: "BASIC",
+    billingCycle: "MONTHLY" as "MONTHLY" | "YEARLY",
     logoFile: null as File | null,
     logoUrl: "",
   });
@@ -60,8 +60,10 @@ export default function RegisterSchoolPage() {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
       const planParam = sp.get("plan");
-      if (planParam) {
-        setForm((prev) => ({ ...prev, plan: planParam }));
+      if (planParam && planParam === "BASIC") {
+        setForm((prev) => ({ ...prev, plan: planParam, billingCycle: "MONTHLY" }));
+      } else {
+        setForm((prev) => ({ ...prev, plan: "BASIC", billingCycle: "MONTHLY" }));
       }
     }
   }, []);
@@ -548,29 +550,37 @@ export default function RegisterSchoolPage() {
               </div>
 
               {/* Plans Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {PLANS.map((plan) => {
+                  const isAvailable = plan.id === "BASIC";
                   const isSelected = form.plan === plan.id;
-                  const price =
-                    form.billingCycle === "YEARLY"
-                      ? Math.round(plan.monthlyPrice * 0.8)
-                      : plan.monthlyPrice;
+                  const price = plan.monthlyPrice;
 
                   return (
                     <div
                       key={plan.id}
-                      onClick={() => setForm({ ...form, plan: plan.id })}
-                      className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? "border-indigo-600 bg-indigo-50/50 shadow-md shadow-indigo-600/10"
-                          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
+                      onClick={() => {
+                        if (isAvailable) {
+                          setForm({ ...form, plan: plan.id });
+                        } else {
+                          toast.info("This plan is upcoming. 1-Month Special Offer (₹99) is currently active.");
+                        }
+                      }}
+                      className={`relative p-5 rounded-2xl border-2 transition-all flex flex-col justify-between ${
+                        isAvailable && isSelected
+                          ? "border-indigo-600 bg-indigo-50/50 shadow-md shadow-indigo-600/10 cursor-pointer"
+                          : isAvailable
+                          ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
+                          : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
                       }`}
                     >
-                      {plan.popular && (
-                        <div className="absolute -top-3 right-4 px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
-                          Most Popular
-                        </div>
-                      )}
+                      <div
+                        className={`absolute -top-3 right-4 px-2.5 py-0.5 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm ${
+                          isAvailable ? "bg-emerald-600" : "bg-slate-500"
+                        }`}
+                      >
+                        {isAvailable ? "FREE TRIAL — ₹99" : (plan.badge || "UPCOMING")}
+                      </div>
 
                       <div>
                         <div className="flex items-center justify-between mb-2">
@@ -585,18 +595,30 @@ export default function RegisterSchoolPage() {
                         </div>
                         <ul className="space-y-2 text-xs text-slate-600">
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`} />
                             <span>Up to <strong>{plan.maxStudents.toLocaleString()}</strong> Students</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`} />
                             <span>Up to <strong>{plan.maxTeachers}</strong> Teachers</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? "text-indigo-600" : "text-slate-400"}`} />
                             <span>Full Portal & Mobile Access</span>
                           </li>
                         </ul>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100">
+                        {isAvailable ? (
+                          <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                            <Check className="w-3.5 h-3.5" /> Selected by default
+                          </span>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-400">
+                            Upcoming Plan
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

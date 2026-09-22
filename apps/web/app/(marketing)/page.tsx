@@ -395,60 +395,70 @@ export default function MarketingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-          {PLANS.map((plan, idx) => (
-            <div
-              key={plan.id}
-              className={`relative rounded-3xl bg-white p-8 border transition-all flex flex-col justify-between ${
-                plan.popular
-                  ? "border-indigo-600 ring-2 ring-indigo-600/20 shadow-2xl scale-105 z-10"
-                  : "border-slate-200 shadow-md hover:shadow-xl"
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
-                  Most Popular Choice
-                </div>
-              )}
+          {PLANS.map((plan, idx) => {
+            const isAvailable = plan.id === "BASIC";
 
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900">
-                    ₹{plan.monthlyPrice.toLocaleString()}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-500">/month</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  or ₹{plan.yearlyPrice.toLocaleString()}/year (2 months free)
-                </p>
-
-                <div className="my-6 border-t border-slate-100" />
-
-                <ul className="space-y-3">
-                  {plan.features.map((f, fi) => (
-                    <li key={fi} className="flex items-start gap-2.5 text-xs text-slate-600 font-medium">
-                      <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="pt-8">
-                <Link
-                  href={`/register-school?plan=${plan.id}`}
-                  className={`w-full py-3.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 ${
-                    plan.popular
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700"
-                      : "bg-slate-100 text-slate-800 hover:bg-indigo-50 hover:text-indigo-700"
+            return (
+              <div
+                key={plan.id}
+                className={`relative rounded-3xl bg-white p-8 border transition-all flex flex-col justify-between ${
+                  isAvailable
+                    ? "border-indigo-600 ring-2 ring-indigo-600/20 shadow-2xl scale-105 z-10"
+                    : "border-slate-200 bg-slate-50/50 opacity-75 shadow-sm"
+                }`}
+              >
+                <div
+                  className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md ${
+                    isAvailable
+                      ? "bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 ring-2 ring-white"
+                      : "bg-slate-500 ring-2 ring-white"
                   }`}
                 >
-                  <span>Select {plan.name}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                  {isAvailable ? "FREE TRIAL — ₹99" : (plan.badge || "UPCOMING")}
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-4xl font-extrabold text-slate-900">
+                      ₹{plan.monthlyPrice.toLocaleString()}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500">/month</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {isAvailable ? "Special introductory offer with full features" : "Full academic tier (Coming Soon)"}
+                  </p>
+
+                  <div className="my-6 border-t border-slate-100" />
+
+                  <ul className="space-y-3">
+                    {plan.features.map((f, fi) => (
+                      <li key={fi} className="flex items-start gap-2.5 text-xs text-slate-600 font-medium">
+                        <Check className={`w-4 h-4 shrink-0 mt-0.5 ${isAvailable ? "text-emerald-500" : "text-slate-400"}`} />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-8">
+                  {isAvailable ? (
+                    <Link
+                      href="/register-school?plan=BASIC"
+                      className="w-full py-3.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700"
+                    >
+                      <span>Choose 1-Month Plan</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : (
+                    <div className="w-full py-3.5 rounded-xl font-bold text-xs bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center cursor-not-allowed">
+                      <span>Upcoming Plan</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

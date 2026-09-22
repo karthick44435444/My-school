@@ -268,27 +268,27 @@ export default function SubscriptionScreen() {
       {SUBSCRIPTION_PLANS.map((plan) => {
         const isCurrent = subscription?.planId === plan.id;
         const isUpgrading = upgradingId === plan.id;
+        const isOffer = plan.id === 'OFFER_MONTHLY';
+        const isAvailable = isOffer;
 
         return (
           <View
             key={plan.id}
             style={[
               styles.planCard,
-              plan.popular ? styles.popularCard : isCurrent ? styles.activeBorderCard : undefined,
+              isOffer ? styles.popularCard : isCurrent ? styles.activeBorderCard : { opacity: 0.75 },
             ]}
           >
-            {plan.badge && (
-              <View
-                style={[
-                  styles.badgePill,
-                  plan.id === 'OFFER_MONTHLY'
-                    ? { backgroundColor: '#F59E0B' }
-                    : { backgroundColor: color },
-                ]}
-              >
-                <Text style={styles.badgePillText}>{plan.badge}</Text>
-              </View>
-            )}
+            <View
+              style={[
+                styles.badgePill,
+                isOffer
+                  ? { backgroundColor: '#10B981' }
+                  : { backgroundColor: '#64748B' },
+              ]}
+            >
+              <Text style={styles.badgePillText}>{isOffer ? 'FREE TRIAL — ₹99' : (plan.badge || 'UPCOMING')}</Text>
+            </View>
 
             <View style={styles.planCardHeader}>
               <View>
@@ -305,43 +305,52 @@ export default function SubscriptionScreen() {
             <View style={styles.featureList}>
               {plan.features.map((feat, idx) => (
                 <View key={idx} style={styles.featureRow}>
-                  <Ionicons name='checkmark-circle' size={16} color='#10B981' />
-                  <Text style={styles.featureText}>{feat}</Text>
+                  <Ionicons name='checkmark-circle' size={16} color={isAvailable ? '#10B981' : '#94A3B8'} />
+                  <Text style={[styles.featureText, !isAvailable && { color: '#94A3B8' }]}>{feat}</Text>
                 </View>
               ))}
             </View>
 
             {user?.role === 'ADMIN' && (
-              <Pressable
-                onPress={() => handleUpgrade(plan)}
-                disabled={isUpgrading}
-                style={({ pressed }) => [
-                  styles.upgradeButton,
-                  plan.popular
-                    ? { backgroundColor: color }
-                    : plan.id === 'OFFER_MONTHLY'
-                    ? { backgroundColor: '#F59E0B' }
-                    : { backgroundColor: '#1E293B' },
-                  pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-                ]}
-              >
-                {isUpgrading ? (
-                  <ActivityIndicator size='small' color='#FFFFFF' />
-                ) : (
-                  <>
-                    <Ionicons
-                      name={isCurrent ? 'flash' : 'arrow-forward-circle'}
-                      size={18}
-                      color='#FFFFFF'
-                    />
-                    <Text style={styles.upgradeButtonText}>
-                      {isCurrent
-                        ? 'Recharge / Extend'
-                        : ('Upgrade to ' + plan.name)}
-                    </Text>
-                  </>
-                )}
-              </Pressable>
+              isAvailable ? (
+                <Pressable
+                  onPress={() => handleUpgrade(plan)}
+                  disabled={isUpgrading}
+                  style={({ pressed }) => [
+                    styles.upgradeButton,
+                    { backgroundColor: color },
+                    pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+                  ]}
+                >
+                  {isUpgrading ? (
+                    <ActivityIndicator size='small' color='#FFFFFF' />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name={isCurrent ? 'flash' : 'arrow-forward-circle'}
+                        size={18}
+                        color='#FFFFFF'
+                      />
+                      <Text style={styles.upgradeButtonText}>
+                        {isCurrent
+                          ? 'Recharge / Extend'
+                          : 'Choose 1-Month Plan'}
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              ) : (
+                <View
+                  style={[
+                    styles.upgradeButton,
+                    { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
+                  ]}
+                >
+                  <Text style={[styles.upgradeButtonText, { color: '#94A3B8' }]}>
+                    Upcoming Plan
+                  </Text>
+                </View>
+              )
             )}
           </View>
         );

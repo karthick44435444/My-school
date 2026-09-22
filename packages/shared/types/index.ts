@@ -20,6 +20,8 @@ export interface Plan {
   maxParents: number;
   features: string[];
   popular?: boolean;
+  badge?: string;
+  isAvailable?: boolean;
 }
 
 export interface SchoolRegistrationInput {
