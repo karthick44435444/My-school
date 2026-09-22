@@ -51,6 +51,18 @@ type HW = {
 function isImageUrl(url?: string): boolean {
   if (!url) return false;
   const clean = String(url).split("?")[0].replace(/\\/g, "/").toLowerCase();
+  if (
+    clean.startsWith("data:application/pdf") ||
+    clean.endsWith(".pdf") ||
+    clean.endsWith(".doc") ||
+    clean.endsWith(".docx") ||
+    clean.endsWith(".xls") ||
+    clean.endsWith(".xlsx") ||
+    clean.endsWith(".csv") ||
+    clean.endsWith(".txt")
+  ) {
+    return false;
+  }
   return (
     clean.startsWith("data:image/") ||
     clean.endsWith(".jpg") ||
@@ -61,13 +73,17 @@ function isImageUrl(url?: string): boolean {
     clean.endsWith(".svg") ||
     clean.endsWith(".bmp") ||
     clean.endsWith(".heic") ||
+    clean.endsWith(".avif") ||
     clean.includes(".jpg") ||
     clean.includes(".jpeg") ||
     clean.includes(".png") ||
     clean.includes(".webp") ||
     clean.includes("/image/upload/") ||
     clean.includes("/uploads/image") ||
-    clean.includes("image_")
+    clean.includes("image_") ||
+    clean.includes("photo") ||
+    clean.includes("student") ||
+    clean.includes("attachment")
   );
 }
 
@@ -93,8 +109,14 @@ function getFileName(url?: string): string {
 }
 
 function AttachmentThumb({ uri, onPress, color }: { uri: string; onPress: () => void; color: string }) {
-  const [loading, setLoading] = useState(true);
+  const isDataOrBlob = uri.startsWith("data:") || uri.startsWith("file:") || uri.startsWith("blob:");
+  const [loading, setLoading] = useState(!isDataOrBlob);
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+    setLoading(!isDataOrBlob);
+  }, [uri, isDataOrBlob]);
 
   return (
     <Pressable onPress={onPress} style={styles.imageAttThumbBox}>
@@ -104,7 +126,9 @@ function AttachmentThumb({ uri, onPress, color }: { uri: string; onPress: () => 
           style={styles.imageAttThumb}
           contentFit="cover"
           transition={150}
-          onLoadStart={() => setLoading(true)}
+          onLoadStart={() => {
+            if (!isDataOrBlob) setLoading(true);
+          }}
           onLoad={() => setLoading(false)}
           onError={() => {
             setFailed(true);

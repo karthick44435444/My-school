@@ -27,14 +27,39 @@ import Pagination from "@/components/shared/Pagination";
 function isImageUrl(url: string): boolean {
   if (!url) return false;
   const clean = url.split("?")[0].toLowerCase();
+  if (
+    clean.startsWith("data:application/pdf") ||
+    clean.endsWith(".pdf") ||
+    clean.endsWith(".doc") ||
+    clean.endsWith(".docx") ||
+    clean.endsWith(".xls") ||
+    clean.endsWith(".xlsx") ||
+    clean.endsWith(".csv") ||
+    clean.endsWith(".txt")
+  ) {
+    return false;
+  }
   return (
+    clean.startsWith("data:image/") ||
     clean.endsWith(".jpg") ||
     clean.endsWith(".jpeg") ||
     clean.endsWith(".png") ||
     clean.endsWith(".gif") ||
     clean.endsWith(".webp") ||
     clean.endsWith(".svg") ||
-    clean.startsWith("data:image/")
+    clean.endsWith(".bmp") ||
+    clean.endsWith(".heic") ||
+    clean.endsWith(".avif") ||
+    clean.includes(".jpg") ||
+    clean.includes(".jpeg") ||
+    clean.includes(".png") ||
+    clean.includes(".webp") ||
+    clean.includes("/image/upload/") ||
+    clean.includes("/uploads/image") ||
+    clean.includes("image_") ||
+    clean.includes("photo") ||
+    clean.includes("student") ||
+    clean.includes("attachment")
   );
 }
 

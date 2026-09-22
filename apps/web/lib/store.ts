@@ -5944,7 +5944,9 @@ export function saveUploadedFile(filename: string, buffer: Buffer, mimeType?: st
 
 export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: string } | null {
   const db = readDB();
-  const cleanName = path.basename(filename).toLowerCase();
+  const rawClean = decodeURIComponent(filename || "").trim().replace(/^['"]+|['"]+$/g, "");
+  const cleanName = path.basename(rawClean).toLowerCase();
+  if (!cleanName) return null;
   
   const MIME_MAP: Record<string, string> = {
     ".png": "image/png",
@@ -5963,6 +5965,21 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     ".txt": "text/plain",
   };
 
+  // Helper to decode data URI
+  const extractFromDataUri = (dataUri?: string) => {
+    if (!dataUri || !dataUri.startsWith("data:")) return null;
+    const match = dataUri.match(/^data:([^;]+);base64,(.+)$/);
+    if (match) {
+      try {
+        const buf = Buffer.from(match[2], "base64");
+        return { buffer: buf, mimeType: match[1] || "image/jpeg" };
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
   // 1. Find in db.uploadedFiles by exact name
   let file = (db.uploadedFiles || []).find((f) => f.filename.toLowerCase() === cleanName);
   if (file && file.data) {
@@ -5972,13 +5989,18 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     };
   }
 
-  // 2. Base-name / fuzzy match (e.g. 1788509548441_73vevm.jpg, photo_nm03.jpg -> photo.jpg)
+  // 2. Base-name / fuzzy match (e.g. 1788509548441_73vevm.jpg, photo_nm03.jpg -> photo.jpg, student_1x1_ev7y.jpg -> student_1x1.jpg)
   const baseNoExt = cleanName.replace(/\.[^.]+$/, "");
   const baseNoSuffix = baseNoExt.replace(/_[a-z0-9]{4,8}$/i, "");
   file = (db.uploadedFiles || []).find((f) => {
     const fLower = f.filename.toLowerCase();
     const fNoExt = fLower.replace(/\.[^.]+$/, "");
-    return fLower === cleanName || fLower === baseNoSuffix || fNoExt === baseNoSuffix || fNoExt.startsWith(baseNoSuffix);
+    if (fLower === cleanName) return true;
+    if (baseNoSuffix.length >= 3) {
+      if (fLower === baseNoSuffix || fNoExt === baseNoSuffix) return true;
+      if (fNoExt.startsWith(baseNoSuffix) || baseNoSuffix.startsWith(fNoExt)) return true;
+    }
+    return false;
   });
   if (file && file.data) {
     return {
@@ -6025,13 +6047,8 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
       if (aStr) {
         const aBase = path.basename(aStr).toLowerCase();
         if (aBase === cleanName || aStr.toLowerCase().includes(cleanName)) {
-          if (aStr.startsWith("data:")) {
-            const match = aStr.match(/^data:([^;]+);base64,(.+)$/);
-            if (match) {
-              const buf = Buffer.from(match[2], "base64");
-              return { buffer: buf, mimeType: match[1] };
-            }
-          }
+          const parsed = extractFromDataUri(aStr);
+          if (parsed) return parsed;
         }
       }
     }
@@ -6043,13 +6060,8 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     if (aStr) {
       const aBase = path.basename(aStr).toLowerCase();
       if (aBase === cleanName || aStr.toLowerCase().includes(cleanName)) {
-        if (aStr.startsWith("data:")) {
-          const match = aStr.match(/^data:([^;]+);base64,(.+)$/);
-          if (match) {
-            const buf = Buffer.from(match[2], "base64");
-            return { buffer: buf, mimeType: match[1] };
-          }
-        }
+        const parsed = extractFromDataUri(aStr);
+        if (parsed) return parsed;
       }
     }
   }
@@ -6063,14 +6075,9 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     return false;
   });
 
-  if (userMatch?.photoUrl && userMatch.photoUrl.startsWith("data:")) {
-    const match = userMatch.photoUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (match) {
-      return {
-        buffer: Buffer.from(match[2], "base64"),
-        mimeType: match[1],
-      };
-    }
+  if (userMatch?.photoUrl) {
+    const parsed = extractFromDataUri(userMatch.photoUrl);
+    if (parsed) return parsed;
   }
 
   // 7. Check if a school has a matching or base64 logoUrl in db.schools
@@ -6082,12 +6089,30 @@ export function getUploadedFile(filename: string): { buffer: Buffer; mimeType: s
     return false;
   });
 
-  if (schoolMatch?.logoUrl && schoolMatch.logoUrl.startsWith("data:")) {
-    const match = schoolMatch.logoUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (match) {
+  if (schoolMatch?.logoUrl) {
+    const parsed = extractFromDataUri(schoolMatch.logoUrl);
+    if (parsed) return parsed;
+  }
+
+  // 8. Legacy / generated placeholder fallbacks (e.g., gemini_generated_..., chatgpt_image_...)
+  if (
+    cleanName.includes("gemini_generated") ||
+    cleanName.includes("chatgpt_image") ||
+    cleanName.includes("student_1x1") ||
+    cleanName.includes("user-avatar")
+  ) {
+    const fallbackEntry = (db.uploadedFiles || []).find(
+      (f) =>
+        f.filename.toLowerCase().includes("chatgpt") ||
+        f.filename.toLowerCase().includes("student") ||
+        f.filename.toLowerCase().includes("photo") ||
+        f.filename.toLowerCase().includes("profile") ||
+        f.filename.toLowerCase().includes("boy")
+    );
+    if (fallbackEntry && fallbackEntry.data) {
       return {
-        buffer: Buffer.from(match[2], "base64"),
-        mimeType: match[1],
+        buffer: Buffer.from(fallbackEntry.data, "base64"),
+        mimeType: fallbackEntry.mimeType || "image/jpeg",
       };
     }
   }

@@ -76,12 +76,15 @@ export async function GET(
     }
 
     if (!stored) {
-      // Only serve generic avatar SVG for explicit avatar requests
-      if (
+      const ext = path.extname(safeBaseFilename).toLowerCase();
+      const isImgRequest =
+        [".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif", ".ico"].includes(ext) ||
         safeBaseFilename.startsWith("avatar") ||
-        safeBaseFilename.includes("default-avatar") ||
-        safeBaseFilename === "user-avatar.png"
-      ) {
+        safeBaseFilename.includes("photo") ||
+        safeBaseFilename.includes("student") ||
+        safeBaseFilename.includes("image");
+
+      if (isImgRequest) {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none"><rect width="128" height="128" rx="24" fill="#6366F1"/><circle cx="64" cy="48" r="22" fill="#FFFFFF"/><path d="M28 108C28 88.1178 44.1178 72 64 72C83.8822 72 100 88.1178 100 108" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/></svg>`;
         return new NextResponse(svg, {
           status: 200,

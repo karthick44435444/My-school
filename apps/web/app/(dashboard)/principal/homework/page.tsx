@@ -1,13 +1,88 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, X, Search } from "lucide-react";
+import { Loader2, Plus, Trash2, X, Search, Paperclip, Eye, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import Sidebar from "@/components/dashboard/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDateTime } from "@/lib/validation";
 import ConfirmDeleteModal from "@/components/shared/ConfirmDeleteModal";
 import Pagination from "@/components/shared/Pagination";
+
+function isImageUrl(url: string): boolean {
+  if (!url) return false;
+  const clean = url.split("?")[0].toLowerCase();
+  if (
+    clean.startsWith("data:application/pdf") ||
+    clean.endsWith(".pdf") ||
+    clean.endsWith(".doc") ||
+    clean.endsWith(".docx") ||
+    clean.endsWith(".xls") ||
+    clean.endsWith(".xlsx") ||
+    clean.endsWith(".csv") ||
+    clean.endsWith(".txt")
+  ) {
+    return false;
+  }
+  return (
+    clean.startsWith("data:image/") ||
+    clean.endsWith(".jpg") ||
+    clean.endsWith(".jpeg") ||
+    clean.endsWith(".png") ||
+    clean.endsWith(".gif") ||
+    clean.endsWith(".webp") ||
+    clean.endsWith(".svg") ||
+    clean.endsWith(".bmp") ||
+    clean.endsWith(".heic") ||
+    clean.endsWith(".avif") ||
+    clean.includes(".jpg") ||
+    clean.includes(".jpeg") ||
+    clean.includes(".png") ||
+    clean.includes(".webp") ||
+    clean.includes("/image/upload/") ||
+    clean.includes("/uploads/image") ||
+    clean.includes("image_") ||
+    clean.includes("photo") ||
+    clean.includes("student") ||
+    clean.includes("attachment")
+  );
+}
+
+function getFileName(url: string): string {
+  try {
+    const clean = url.split("?")[0];
+    let name = clean.split("/").pop() || "Attachment";
+    name = decodeURIComponent(name);
+    const rawMatch = name.match(/^(\d{10,15})_([a-z0-9]+)\.([a-z0-9]+)$/i);
+    if (rawMatch) {
+      const ext = rawMatch[3].toLowerCase();
+      if (ext === "pdf") return "Document.pdf";
+      if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return `Image.${ext}`;
+      return `Attachment.${ext}`;
+    }
+    return name;
+  } catch {
+    return "Attachment";
+  }
+}
+
+async function downloadAttachment(url: string, fileName?: string) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Failed to fetch file");
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = fileName || getFileName(url);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  } catch {
+    window.open(url, "_blank");
+  }
+}
 
 export default function PrincipalHomeworkPage() {
   const { user, loading } = useAuth(["PRINCIPAL"]);
@@ -22,6 +97,17 @@ export default function PrincipalHomeworkPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
+
+  const handleDownload = async (url: string, fileName?: string) => {
+    setDownloadingUrl(url);
+    try {
+      await downloadAttachment(url, fileName);
+    } finally {
+      setDownloadingUrl(null);
+    }
+  };
 
   const load = async (pageNum = page, query = searchQuery) => {
     try {
@@ -75,6 +161,23 @@ export default function PrincipalHomeworkPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/homework?id=${deleteItem.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete");
+      toast.success("Homework deleted");
+      setDeleteItem(null);
+      load(page, searchQuery);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -116,29 +219,152 @@ export default function PrincipalHomeworkPage() {
         ) : (
           <div className="space-y-4">
             <div className="space-y-3">
-              {list.map((h) => (
-                <div key={h.id} className="bg-white rounded-2xl border p-5 relative pb-9">
-                  <div className="flex justify-between items-start">
-                    <div className="pr-8">
-                      <div className="font-bold text-slate-900">{h.title}</div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        {h.className}{h.section ? `-${h.section}` : ""} · {h.subject || "General"} · by {h.createdByName}
+              {list.map((h) => {
+                const allAttachments: string[] = (
+                  Array.isArray(h.attachments) && h.attachments.length > 0
+                    ? h.attachments
+                    : h.attachmentUrl
+                    ? [h.attachmentUrl]
+                    : []
+                ).filter(Boolean);
+
+                return (
+                  <div key={h.id} className="bg-white rounded-3xl border border-slate-200/90 p-6 relative pb-10 shadow-xs hover:shadow-md transition">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">
+                            {h.subject || "General"}
+                          </span>
+                          <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">
+                            Class {h.className}{h.section ? `-${h.section}` : ""}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            by {h.createdByName || "Teacher"}
+                          </span>
+                        </div>
+                        <div className="font-bold text-slate-900 text-base mt-1">{h.title}</div>
+                        {h.description && (
+                          <p className="text-sm text-slate-600 mt-2 whitespace-pre-wrap leading-relaxed">
+                            {h.description}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-sm text-slate-600 mt-2">{h.description}</p>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteItem(h)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition shrink-0"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteItem(h)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg h-fit"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+
+                    {/* Attachments Section */}
+                    {allAttachments.length > 0 && (
+                      <div className="mt-4 pt-3.5 border-t border-slate-100">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 block flex items-center gap-1.5">
+                          <Paperclip className="w-3.5 h-3.5" /> Attachments ({allAttachments.length})
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {allAttachments.map((url, i) => {
+                            const isImg = isImageUrl(url);
+                            const fileName = getFileName(url);
+
+                            if (isImg) {
+                              return (
+                                <div
+                                  key={i}
+                                  className="group relative bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden p-2.5 flex items-center gap-3 hover:border-indigo-300 transition"
+                                >
+                                  <div
+                                    onClick={() => setPreviewImage(url)}
+                                    className="w-16 h-16 rounded-xl bg-slate-200 overflow-hidden shrink-0 cursor-pointer relative"
+                                  >
+                                    <img
+                                      src={url}
+                                      alt={fileName}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition"
+                                    />
+                                    <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
+                                      <Eye className="w-4 h-4" />
+                                    </div>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-xs font-bold text-slate-800 truncate" title={fileName}>
+                                      {fileName}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
+                                      Image Attachment
+                                    </span>
+                                    <div className="flex items-center gap-3 mt-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewImage(url)}
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800"
+                                      >
+                                        <Eye className="w-3 h-3" /> View
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={downloadingUrl === url}
+                                        onClick={() => handleDownload(url, fileName)}
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer disabled:opacity-60"
+                                      >
+                                        {downloadingUrl === url ? (
+                                          <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                                        ) : (
+                                          <Download className="w-3 h-3" />
+                                        )}
+                                        <span>{downloadingUrl === url ? "Saving..." : "Download"}</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                key={i}
+                                className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center gap-3 hover:border-slate-300 transition"
+                              >
+                                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                                  <FileText className="w-5 h-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-xs font-bold text-slate-800 truncate" title={fileName}>
+                                    {fileName}
+                                  </div>
+                                  <div className="flex items-center gap-3 mt-1.5">
+                                    <button
+                                      type="button"
+                                      disabled={downloadingUrl === url}
+                                      onClick={() => handleDownload(url, fileName)}
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 hover:text-slate-900 cursor-pointer disabled:opacity-60"
+                                    >
+                                      {downloadingUrl === url ? (
+                                        <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                                      ) : (
+                                        <Download className="w-3 h-3" />
+                                      )}
+                                      <span>{downloadingUrl === url ? "Downloading..." : "Download"}</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-3 right-5 text-xs text-slate-400">
+                      {formatDateTime(h.createdAt)}
+                    </div>
                   </div>
-                  <div className="absolute bottom-3 right-4 text-xs text-slate-400">
-                    {formatDateTime(h.createdAt)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200/80 px-4">
@@ -155,6 +381,40 @@ export default function PrincipalHomeworkPage() {
           </div>
         )}
       </main>
+
+      {/* Lightbox Preview Modal */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-md"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute -top-12 right-0 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleDownload(previewImage)}
+                className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition"
+                title="Download image"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
 
       {show && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
