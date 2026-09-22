@@ -376,7 +376,9 @@ export async function hydrateFromPostgres(): Promise<DB | null> {
           schoolCode: u.schoolCode || "",
           role: u.role as any,
           username: u.username,
-          email: u.email,
+          email: u.role === "STUDENT"
+            ? (u.parentEmail || (u.email && !u.email.includes("@student.local") ? u.email : "") || "")
+            : (u.email || ""),
           passwordHash: u.passwordHash,
           firstName: u.firstName,
           lastName: u.lastName || undefined,
@@ -1537,29 +1539,6 @@ export function createStudent(data: {
 }) {
   const db = readDB();
 
-  // Rule: Student - Parents email and student email cannot be the same
-  if (data.email && data.parentEmail && !data.email.includes("@student.local")) {
-    if (normalizeEmail(data.email) === normalizeEmail(data.parentEmail)) {
-      throw new Error("Student email and Parent email cannot be the same.");
-    }
-  }
-
-  // Rule: Student personal email uniqueness in this school (if custom email provided)
-  if (data.email && !data.email.includes("@student.local")) {
-    const normStEmail = normalizeEmail(data.email);
-    const dupStudentEmail = db.users.find(
-      (u) =>
-        u.schoolId === data.schoolId &&
-        u.role === "STUDENT" &&
-        u.isActive &&
-        !u.email?.includes("@student.local") &&
-        normalizeEmail(u.email) === normStEmail
-    );
-    if (dupStudentEmail) {
-      throw new Error("Student with this email already exists in this school.");
-    }
-  }
-
   // Note: Multiple students sharing the same parent email / phone is explicitly allowed.
   const studentUsername = generateUsername(data.firstName + (data.lastName || ""));
   const studentPassword = formatDobToPassword(data.dateOfBirth);
@@ -1574,13 +1553,17 @@ export function createStudent(data: {
 
   const studentRoll = (data.rollNumber || data.rollNo || "").trim() || undefined;
   const studentId = `user_${Date.now()}`;
+  const studentEmail = data.email && !data.email.includes("@student.local")
+    ? data.email.trim()
+    : (data.parentEmail ? data.parentEmail.trim().toLowerCase() : undefined);
+
   const student: StoredUser = {
     id: studentId,
     schoolId: data.schoolId,
     schoolCode: data.schoolCode,
     role: "STUDENT",
     username: finalStudentUsername,
-    email: data.email ? data.email.trim() : `${finalStudentUsername}@student.local`,
+    email: studentEmail || "",
     passwordHash: studentHash,
     firstName: titleCaseName(data.firstName),
     lastName: data.lastName ? titleCaseName(data.lastName) : data.lastName,

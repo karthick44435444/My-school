@@ -182,21 +182,35 @@ export default function StudentSettingsPage() {
                   <Mail className="w-4 h-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Email Address</div>
-                  <div className="text-sm font-bold text-slate-900 mt-0.5 truncate" title={user.email || ""}>
-                    {user.email || "—"}
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parent Email</div>
+                  <div className="text-sm font-bold text-slate-900 mt-0.5 truncate" title={u.parentEmail || user.email || ""}>
+                    {u.parentEmail || (user.email && !user.email.includes("@student.local") ? user.email : "—")}
                   </div>
                 </div>
               </div>
+
+              {u.parentName && (
+                <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 flex items-start gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-white shadow-2xs border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parent Name</div>
+                    <div className="text-sm font-bold text-slate-900 mt-0.5 truncate" title={u.parentName}>
+                      {u.parentName}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 flex items-start gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-white shadow-2xs border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</div>
-                  <div className="text-sm font-bold text-slate-900 mt-0.5 truncate" title={u.phone || ""}>
-                    {u.phone || "—"}
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Contact Phone</div>
+                  <div className="text-sm font-bold text-slate-900 mt-0.5 truncate" title={u.phone || u.parentPhone || ""}>
+                    {u.phone || u.parentPhone || "—"}
                   </div>
                 </div>
               </div>

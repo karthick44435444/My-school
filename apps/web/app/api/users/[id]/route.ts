@@ -30,6 +30,9 @@ export async function GET(
     }
 
     const { passwordHash, ...safe } = result.user as any;
+    if (safe.role === "STUDENT") {
+      safe.email = safe.parentEmail || (safe.email && !safe.email.includes("@student.local") ? safe.email : undefined);
+    }
     return NextResponse.json({ success: true, user: safe });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

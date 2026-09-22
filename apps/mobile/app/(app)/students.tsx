@@ -1140,7 +1140,7 @@ export default function StudentsScreen() {
                   </Pressable>
                 )}
 
-                {!!detail.email && (
+                {!!detail.email && !detail.email.includes("@student.local") && (
                   <Pressable
                     style={styles.infoRow}
                     onPress={() => Linking.openURL(`mailto:${detail.email}`)}

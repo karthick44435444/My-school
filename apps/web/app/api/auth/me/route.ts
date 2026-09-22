@@ -53,7 +53,9 @@ export async function GET() {
         role: user.role,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email,
+        email: user.role === "STUDENT"
+          ? (user.parentEmail || (user.email && !user.email.includes("@student.local") ? user.email : undefined))
+          : user.email,
         username: user.username,
         phone: user.phone,
         photoUrl: user.photoUrl || (user as any).avatar || (user as any).photo || (user as any).image || undefined,

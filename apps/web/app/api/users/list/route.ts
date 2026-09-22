@@ -106,6 +106,9 @@ export async function GET(req: NextRequest) {
     const paginated = limit > 0 ? filtered.slice((page - 1) * limit, page * limit) : filtered;
     const sanitizedUsers = paginated.map((u: any) => ({
       ...u,
+      email: u.role === "STUDENT"
+        ? (u.parentEmail || (u.email && !u.email.includes("@student.local") ? u.email : undefined))
+        : u.email,
       photoUrl: u.photoUrl || u.avatar || u.photo || u.image || null,
     }));
 

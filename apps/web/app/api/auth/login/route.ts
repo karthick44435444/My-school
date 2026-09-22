@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       schoolCode: user.schoolCode,
       role: user.role,
       firstName: user.firstName,
-      email: user.email,
+      email: user.email || user.parentEmail || "",
     });
 
     const response = NextResponse.json({
@@ -54,13 +54,18 @@ export async function POST(req: NextRequest) {
         role: user.role,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email,
+        email: user.role === "STUDENT"
+          ? (user.parentEmail || (user.email && !user.email.includes("@student.local") ? user.email : undefined))
+          : user.email,
         username: user.username,
         phone: user.phone,
         className: user.className,
         section: user.section,
         rollNumber: user.rollNumber || (user as any).rollNo || undefined,
         rollNo: user.rollNumber || (user as any).rollNo || undefined,
+        parentName: user.parentName,
+        parentEmail: user.parentEmail,
+        dateOfBirth: user.dateOfBirth,
         photoUrl: user.photoUrl || (user as any).avatar || (user as any).photo || (user as any).image || undefined,
         schoolCode: user.schoolCode,
         schoolName: (school?.displayName && school.displayName.trim()) ? school.displayName.trim() : (school?.name || ""),

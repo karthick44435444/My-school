@@ -26,6 +26,7 @@ import { TAB_BAR_CLEARANCE } from "@/constants/layout";
 import { useToast } from "@/hooks/useToast";
 import { SafeAvatar } from "@/components/ChildAvatar";
 import { resolveChildren, ChildInfo } from "@/hooks/useChildren";
+import { formatDateDDMMYYYY } from "@/lib/format";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -599,12 +600,36 @@ export default function ProfileScreen() {
                   ) : ((user as any)?.rollNumber || (user as any)?.rollNo) ? (
                     <InfoRow icon="id-card-outline" label="Roll Number" value={(user as any)?.rollNumber || (user as any)?.rollNo} />
                   ) : null}
-                  <InfoRow icon="mail-outline" label="Email Address" value={user?.email} />
+                  {isStudent ? (
+                    <>
+                      <InfoRow
+                        icon="mail-outline"
+                        label="Parent Email"
+                        value={(user as any)?.parentEmail || (!user?.email?.includes("@student.local") ? user?.email : "—")}
+                      />
+                      {!!(user as any)?.parentName && (
+                        <InfoRow
+                          icon="people-outline"
+                          label="Parent Name"
+                          value={(user as any)?.parentName}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <InfoRow icon="mail-outline" label="Email Address" value={user?.email} />
+                  )}
                   <InfoRow
                     icon="call-outline"
-                    label="Phone Number"
+                    label={isStudent ? "Contact Phone" : "Phone Number"}
                     value={(isParent ? (firstChild?.phone || user?.phone) : user?.phone) || "—"}
                   />
+                  {isStudent && !!(user as any)?.dateOfBirth && (
+                    <InfoRow
+                      icon="calendar-outline"
+                      label="Date of Birth"
+                      value={formatDateDDMMYYYY((user as any).dateOfBirth)}
+                    />
+                  )}
                   <InfoRow icon="at-outline" label="Username" value={user?.username} />
                   <InfoRow icon="business-outline" label="School" value={user?.schoolName || user?.schoolCode} />
                   {user?.className ? (
