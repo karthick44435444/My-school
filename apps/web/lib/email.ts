@@ -209,6 +209,30 @@ export function credentialsEmailHtml(opts: {
                   <li>Go to <strong>Settings & Password</strong> to create your personal secure password.</li>
                 </ol>
               </div>
+
+              <!-- Active Development Notice Box -->
+              <div style="margin-top:22px;border:1px solid #c7d2fe;background-color:#eef2ff;border-radius:14px;padding:16px;font-size:12px;color:#1e1b4b;line-height:1.6;">
+                <p style="margin:0 0 6px;font-weight:800;color:#3730a3;font-size:13px;">
+                  SchoolVajo is currently under active development.
+                </p>
+                <p style="margin:0 0 8px;color:#4338ca;">
+                  We’re making SchoolVajo better every day to provide schools with a simple, reliable, and modern management experience.
+                </p>
+                <p style="margin:0 0 8px;color:#047857;font-weight:700;">
+                  🎁 Access SchoolVajo Free During Our Development Phase
+                </p>
+                <p style="margin:0 0 8px;color:#475569;">
+                  As you use the platform, you may occasionally experience bugs, errors, missing information, or data inconsistencies. If you notice any issue, please let us know through email, Instagram, Facebook, or our support channels. Your feedback helps us identify and fix problems faster.
+                </p>
+                <div style="background-color:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin:8px 0;color:#92400e;font-size:11px;">
+                  <strong>⚠️ Important:</strong> During this development/testing phase, we cannot guarantee against unexpected data loss, deletion, or data inconsistencies. Please use the platform with this understanding.
+                </div>
+                <p style="margin:8px 0 0;color:#3730a3;font-weight:600;">
+                  🙏 Thank you for your patience, feedback, and support.<br>
+                  Let’s build a better future for schools — together. 💙<br>
+                  <span style="font-weight:700;color:#4338ca;">— Team SchoolVajo</span>
+                </p>
+              </div>
             </td>
           </tr>
 

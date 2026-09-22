@@ -17,6 +17,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Building2,
+  AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -644,6 +646,54 @@ export default function RegisterSchoolPage() {
                   <div>
                     <span className="text-slate-500 block">Plan:</span>
                     <strong className="text-indigo-600 block">{selectedPlan.name} ({form.billingCycle})</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Development & Free Access Note */}
+              <div className="rounded-2xl border border-indigo-200/90 bg-gradient-to-br from-indigo-50/90 via-purple-50/40 to-slate-50 p-5 space-y-3.5 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-extrabold text-slate-900">
+                        SchoolVajo is currently under active development
+                      </h4>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        🎁 Free Access Phase
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      We’re making SchoolVajo better every day to provide schools with a simple, reliable, and modern management experience.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-600 space-y-2.5 pl-0 sm:pl-12">
+                  <p className="leading-relaxed">
+                    As you use the platform, you may occasionally experience bugs, errors, missing information, or data inconsistencies.
+                  </p>
+                  <p className="leading-relaxed">
+                    If you notice any issue, please let us know through <strong>email</strong>, <strong>Instagram</strong>, <strong>Facebook</strong>, or our support channels. Your feedback helps us identify and fix problems faster.
+                  </p>
+
+                  <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 flex items-start gap-2.5 text-amber-950">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] leading-relaxed">
+                      <strong>Important:</strong> During this development/testing phase, we cannot guarantee against unexpected data loss, deletion, or data inconsistencies. Please use the platform with this understanding.
+                    </p>
+                  </div>
+
+                  <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-slate-700 font-medium">
+                    <p className="text-xs flex items-center gap-1">
+                      <span>🙏 Thank you for your patience, feedback, and support.</span>
+                    </p>
+                    <p className="text-xs font-bold text-indigo-700 flex items-center gap-1">
+                      Let’s build a better future for schools — together. 💙
+                      <span className="text-slate-500 font-normal ml-1">— Team SchoolVajo</span>
+                    </p>
                   </div>
                 </div>
               </div>

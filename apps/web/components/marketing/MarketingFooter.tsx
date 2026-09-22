@@ -146,15 +146,11 @@ export default function MarketingFooter() {
             <ul className="space-y-3 text-xs text-slate-500 font-medium">
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-indigo-600 shrink-0" />
-                <span>support@schoolvajo.com</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-indigo-600 shrink-0" />
-                <span>+91 98765 43210</span>
+                <span>schoolvajo@gmail.com</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <MapPin className="w-4 h-4 text-indigo-600 shrink-0" />
-                <span>Tech Park, Bangalore, India</span>
+                <span>Serving Schools Across India</span>
               </li>
             </ul>
           </div>
@@ -162,10 +158,7 @@ export default function MarketingFooter() {
 
         {/* Bottom copyright */}
         <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>
-            © {new Date().getFullYear()} SchoolVajo. All rights
-            reserved.
-          </p>
+          <p>© {new Date().getFullYear()} SchoolVajo. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link
               href="/privacy"

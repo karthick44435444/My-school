@@ -96,7 +96,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <span className="font-bold text-slate-900 block">Email Inquiries</span>
-                      <span>support@schoolvajo.com</span>
+                      <span>schoolvajo@gmail.com</span>
                     </div>
                   </div>
 

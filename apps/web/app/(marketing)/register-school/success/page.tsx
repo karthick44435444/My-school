@@ -16,6 +16,8 @@ import {
   Eye,
   EyeOff,
   Sparkles,
+  Heart,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -239,6 +241,54 @@ Login URL: ${loginUrl}
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Development & Testing Phase Notice */}
+        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/90 via-purple-50/30 to-slate-50 p-5 mb-6 text-xs text-slate-700 space-y-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-extrabold text-sm text-slate-900">
+                  SchoolVajo is currently under active development.
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  🎁 Access SchoolVajo Free During Our Development Phase
+                </span>
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                We’re making SchoolVajo better every day to provide schools with a simple, reliable, and modern management experience.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5 sm:pl-12">
+            <p className="leading-relaxed text-slate-600">
+              As you use the platform, you may occasionally experience bugs, errors, missing information, or data inconsistencies.
+            </p>
+            <p className="leading-relaxed text-slate-600">
+              If you notice any issue, please let us know through <strong>email</strong>, <strong>Instagram</strong>, <strong>Facebook</strong>, or our support channels. Your feedback helps us identify and fix problems faster.
+            </p>
+
+            <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 flex items-start gap-2.5 text-amber-950">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] leading-relaxed">
+                <strong>⚠️ Important:</strong> During this development/testing phase, we cannot guarantee against unexpected data loss, deletion, or data inconsistencies. Please use the platform with this understanding.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-indigo-100/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-slate-700">
+              <p className="font-medium flex items-center gap-1">
+                🙏 Thank you for your patience, feedback, and support.
+              </p>
+              <p className="font-bold text-indigo-700">
+                Let’s build a better future for schools — together. 💙
+                <span className="text-slate-500 font-normal ml-1.5">— Team SchoolVajo</span>
+              </p>
             </div>
           </div>
         </div>
