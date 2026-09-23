@@ -18,49 +18,82 @@ type SendEmailInput = {
 };
 
 export function isEmailEnabled() {
-  return process.env.EMAIL_ENABLED === "true";
+  const explicit = (process.env.EMAIL_ENABLED || "").trim().toLowerCase();
+  if (explicit === "true" || explicit === "1" || explicit === "yes") return true;
+  if (explicit === "false" || explicit === "0" || explicit === "no") return false;
+  // If RESEND_API_KEY is configured in production, automatically enable sending
+  return Boolean((process.env.RESEND_API_KEY || "").trim());
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
-  if (!to) {
+  const cleanTo = (to || "").trim();
+  if (!cleanTo) {
     return { success: false, skipped: true, reason: "no recipient" };
   }
 
   if (!isEmailEnabled()) {
-    console.log("[email:demo]", {
-      to,
+    console.log("[email:demo (disabled)]", {
+      to: cleanTo,
       subject,
       text: text || html.replace(/<[^>]+>/g, " ").slice(0, 200),
     });
     return { success: true, demo: true };
   }
 
-  const provider = (process.env.EMAIL_PROVIDER || "resend").toLowerCase();
+  const provider = (process.env.EMAIL_PROVIDER || "resend").toLowerCase().trim();
 
   if (provider === "resend") {
-    const key = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM || "SchoolVajo <onboarding@resend.dev>";
+    const rawKey = process.env.RESEND_API_KEY || "";
+    const key = rawKey.replace(/^["']|["']$/g, "").trim();
+
+    const rawFrom = process.env.EMAIL_FROM || "";
+    let from = rawFrom.replace(/^["']|["']$/g, "").trim();
+    if (!from) {
+      from = "SchoolVajo <noreply@schoolvajo.com>";
+    }
+
     if (!key) {
-      console.warn("[email] RESEND_API_KEY missing");
+      console.warn("[email] RESEND_API_KEY missing or empty in environment variables");
       return { success: false, error: "RESEND_API_KEY missing" };
     }
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ from, to, subject, html, text }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      console.error("[email:resend]", data);
-      return { success: false, error: data.message || "Resend failed" };
+
+    try {
+      console.log(`[email:resend:sending] To: ${cleanTo}, From: ${from}, Subject: "${subject}"`);
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from,
+          to: [cleanTo],
+          subject,
+          html,
+          text,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        console.error(`[email:resend:error] Status ${res.status}:`, data);
+        return {
+          success: false,
+          status: res.status,
+          error: data.message || data.error || `Resend HTTP error ${res.status}`,
+          details: data,
+        };
+      }
+
+      console.log(`[email:resend:success] Dispatched id: ${data.id}`);
+      return { success: true, id: data.id };
+    } catch (fetchErr: any) {
+      console.error("[email:resend:fetch_exception]", fetchErr);
+      return { success: false, error: fetchErr.message || "Network request to Resend failed" };
     }
-    return { success: true, id: data.id };
   }
 
-  console.log("[email:log]", { to, subject });
+  console.log("[email:log]", { to: cleanTo, subject });
   return { success: true, demo: true };
 }
 
