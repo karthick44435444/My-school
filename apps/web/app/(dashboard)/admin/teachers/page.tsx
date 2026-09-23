@@ -11,7 +11,6 @@ import CreateUserForm from "@/components/forms/CreateUserForm";
 import EditUserForm from "@/components/forms/EditUserForm";
 import ConfirmDeleteModal from "@/components/shared/ConfirmDeleteModal";
 import TeacherStatCards from "@/components/ui/TeacherStatCards";
-import CredentialsModal from "@/components/forms/CredentialsModal";
 
 export default function AdminTeachersPage() {
   const { user, loading: authLoading } = useAuth(["ADMIN"]);
@@ -288,16 +287,10 @@ export default function AdminTeachersPage() {
         theme={theme}
         open={showCreate}
         onClose={() => setShowCreate(false)}
-        onCreated={(creds) => {
-          setCredentials(creds);
+        onCreated={() => {
+          setShowCreate(false);
           loadTeachers(1);
         }}
-      />
-      <CredentialsModal
-        credentials={credentials}
-        theme={theme}
-        title="Teacher credentials"
-        onClose={() => setCredentials(null)}
       />
 
       <EditUserForm

@@ -9,6 +9,7 @@
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://schoolvajo.com";
 const LOGIN_URL = `${APP_URL}/login`;
 const LOGO_URL = `${APP_URL}/icon.png`;
+const APP_DOWNLOAD_URL = `${APP_URL}/api/app/download`;
 
 type SendEmailInput = {
   to: string;
@@ -378,11 +379,24 @@ export function credentialsEmailHtml(opts: {
                 </table>
               </div>
 
-              <!-- Action CTA -->
+              <!-- Action CTAs -->
               <div style="text-align:center;margin-bottom:26px;">
-                <a href="${loginLink}" target="_blank" style="display:inline-block;background:linear-gradient(135deg, #3730a3 0%, #4338ca 50%, #6366f1 100%);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:14px 36px;border-radius:14px;box-shadow:0 6px 18px rgba(67,56,202,0.28);">
-                  Login to SchoolVajo Portal →
-                </a>
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin:0 auto;max-width:440px;">
+                  <tr>
+                    <td align="center" style="padding:6px 0;">
+                      <a href="${loginLink}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:linear-gradient(135deg, #3730a3 0%, #4338ca 50%, #6366f1 100%);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:14px 24px;border-radius:14px;box-shadow:0 6px 18px rgba(67,56,202,0.28);text-align:center;">
+                        🌐 Open Web Portal →
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding:6px 0;">
+                      <a href="${APP_DOWNLOAD_URL}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:#0f172a;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:13px 24px;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,0.2);text-align:center;">
+                        📲 Download Android App (.apk)
+                      </a>
+                    </td>
+                  </tr>
+                </table>
               </div>
 
               <!-- Quick Steps -->
@@ -533,11 +547,24 @@ export function studentAndParentCredentialsEmailHtml(opts: {
                 </table>
               </div>
 
-              <!-- Action CTA -->
-              <div style="text-align:center;margin-bottom:24px;">
-                <a href="${loginLink}" target="_blank" style="display:inline-block;background:linear-gradient(135deg, #3730a3 0%, #4338ca 50%, #6366f1 100%);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:14px 36px;border-radius:14px;box-shadow:0 6px 18px rgba(67,56,202,0.28);">
-                  Login to SchoolVajo Portal →
-                </a>
+              <!-- Action CTAs -->
+              <div style="text-align:center;margin-bottom:26px;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin:0 auto;max-width:440px;">
+                  <tr>
+                    <td align="center" style="padding:6px 0;">
+                      <a href="${loginLink}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:14px 24px;border-radius:14px;box-shadow:0 6px 18px rgba(67,56,202,0.28);text-align:center;">
+                        🌐 Open Web Portal →
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding:6px 0;">
+                      <a href="${APP_DOWNLOAD_URL}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:#0f172a;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:13px 24px;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,0.2);text-align:center;">
+                        📲 Download Android App (.apk)
+                      </a>
+                    </td>
+                  </tr>
+                </table>
               </div>
 
               <div style="border-top:1px solid #f1f5f9;padding-top:14px;text-align:center;">

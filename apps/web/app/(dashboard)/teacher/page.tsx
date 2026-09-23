@@ -164,8 +164,7 @@ export default function TeacherDashboard() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      setCredentials(data.credentials);
-      toast.success("Student created!");
+      toast.success("Student created successfully! Login credentials have been sent to the parent's email.");
       setShowCreate(false);
       setForm({});
       setErrors({});
@@ -1177,113 +1176,7 @@ export default function TeacherDashboard() {
         </div>
       )}
 
-      {/* Credentials Dialog (Fixed Header + Copy) */}
-      {credentials && (
-        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0 sticky top-0 z-10">
-              <h3 className="font-bold text-slate-900 text-base sm:text-lg text-green-700">
-                Student & Parent Created!
-              </h3>
-              <button
-                type="button"
-                onClick={() => setCredentials(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-3.5">
-              <p className="text-xs text-slate-500">Save and share these login credentials securely.</p>
-
-              {credentials.student && (
-                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-2">
-                  <div className="text-xs font-bold text-slate-700">Student Login</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Username:</span>
-                    <div className="flex items-center gap-1.5">
-                      <code className="font-mono font-bold text-xs text-slate-900">{credentials.student.username}</code>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(credentials.student.username);
-                          toast.success("Student username copied!");
-                        }}
-                        className="p-1 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5 text-slate-500" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Password:</span>
-                    <div className="flex items-center gap-1.5">
-                      <code className="font-mono font-bold text-xs text-slate-900">{credentials.student.password}</code>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(credentials.student.password);
-                          toast.success("Student password copied!");
-                        }}
-                        className="p-1 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5 text-slate-500" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {credentials.parent && (
-                <div className="bg-indigo-50/70 rounded-2xl p-4 border border-indigo-100 space-y-2">
-                  <div className="text-xs font-bold text-indigo-900">Parent Login</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-indigo-600">Username:</span>
-                    <div className="flex items-center gap-1.5">
-                      <code className="font-mono font-bold text-xs text-indigo-950">{credentials.parent.username}</code>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(credentials.parent.username);
-                          toast.success("Parent username copied!");
-                        }}
-                        className="p-1 rounded-lg hover:bg-white border border-transparent hover:border-indigo-200 cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5 text-indigo-500" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-indigo-600">Password:</span>
-                    <div className="flex items-center gap-1.5">
-                      <code className="font-mono font-bold text-xs text-indigo-950">{credentials.parent.password}</code>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(credentials.parent.password);
-                          toast.success("Parent password copied!");
-                        }}
-                        className="p-1 rounded-lg hover:bg-white border border-transparent hover:border-indigo-200 cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5 text-indigo-500" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setCredentials(null)}
-                className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs sm:text-sm shadow-xs transition hover:bg-indigo-700 cursor-pointer"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Export Attendance Modal */}
       <ExportAttendanceModal

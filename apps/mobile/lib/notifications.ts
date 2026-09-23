@@ -11,8 +11,23 @@ try {
       shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: true,
+      priority: Notifications.AndroidNotificationPriority.MAX,
     }),
   });
+  if (Platform.OS === "android") {
+    Notifications.setNotificationChannelAsync("default", {
+      name: "SchoolVajo Notifications",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#156afd",
+      sound: "default",
+      enableLights: true,
+      enableVibrate: true,
+      showBadge: true,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: false,
+    }).catch(() => {});
+  }
 } catch {
   /* ignore */
 }

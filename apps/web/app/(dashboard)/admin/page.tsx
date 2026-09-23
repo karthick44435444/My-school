@@ -29,7 +29,6 @@ import { useAuth } from "@/hooks/useAuth";
 import CreateUserForm, {
   type CreateUserRole,
 } from "@/components/forms/CreateUserForm";
-import CredentialsModal from "@/components/forms/CredentialsModal";
 import ExportAttendanceModal from "@/components/attendance/ExportAttendanceModal";
 
 export default function AdminDashboard() {
@@ -690,16 +689,10 @@ export default function AdminDashboard() {
         classes={classes}
         open={!!showCreate}
         onClose={() => setShowCreate(null)}
-        onCreated={(creds) => {
-          setCredentials(creds);
+        onCreated={() => {
+          setShowCreate(null);
           loadData();
         }}
-      />
-      <CredentialsModal
-        credentials={credentials}
-        theme={theme}
-        title="Login credentials"
-        onClose={() => setCredentials(null)}
       />
       <ExportAttendanceModal
         open={showExport}

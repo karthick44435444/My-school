@@ -118,8 +118,8 @@ export default function RegisterSchoolPage() {
             displayName: !form.displayName.trim()
               ? "Display name is required when school name exceeds 20 characters"
               : form.displayName.trim().length > 20
-              ? "Display name must be 20 characters or less"
-              : undefined,
+                ? "Display name must be 20 characters or less"
+                : undefined,
           }
         : {}),
       location: validateRequired(form.location, "Location"),
@@ -133,8 +133,8 @@ export default function RegisterSchoolPage() {
       confirmPassword: !form.confirmPassword
         ? "Confirm password is required"
         : form.password !== form.confirmPassword
-        ? "Passwords do not match"
-        : "",
+          ? "Passwords do not match"
+          : "",
     });
     setErrors(next || {});
     return !next;
@@ -313,7 +313,10 @@ export default function RegisterSchoolPage() {
     }
   };
 
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleOtpKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       otpInputsRef.current[index - 1]?.focus();
     }
@@ -356,7 +359,9 @@ export default function RegisterSchoolPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "School registration verification failed");
+        throw new Error(
+          data.error || "School registration verification failed",
+        );
       }
 
       // Store credentials for success page
@@ -371,7 +376,10 @@ export default function RegisterSchoolPage() {
         plan: form.plan,
       };
 
-      sessionStorage.setItem("myschool_new_school", JSON.stringify(credentials));
+      sessionStorage.setItem(
+        "myschool_new_school",
+        JSON.stringify(credentials),
+      );
       toast.success("School created successfully! You are now logged in.");
       router.push("/register-school/success");
     } catch (err: any) {
@@ -422,7 +430,8 @@ export default function RegisterSchoolPage() {
             Register Your <span className="text-indigo-600">School</span>
           </h1>
           <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-            Set up your cloud campus in minutes with full administrative control.
+            Set up your cloud campus in minutes with full administrative
+            control.
           </p>
 
           {/* Stepper Progress Indicator (3 Steps) */}
@@ -435,8 +444,8 @@ export default function RegisterSchoolPage() {
                 step === 1
                   ? "bg-indigo-600 text-white shadow-indigo-600/20"
                   : step > 1
-                  ? "bg-white text-emerald-600 border border-emerald-200"
-                  : "bg-white text-slate-500 border border-slate-200"
+                    ? "bg-white text-emerald-600 border border-emerald-200"
+                    : "bg-white text-slate-500 border border-slate-200"
               }`}
             >
               <div
@@ -444,11 +453,15 @@ export default function RegisterSchoolPage() {
                   step === 1
                     ? "bg-white/20 text-white"
                     : step > 1
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-slate-100 text-slate-600"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-slate-100 text-slate-600"
                 }`}
               >
-                {step > 1 ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : "1"}
+                {step > 1 ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  "1"
+                )}
               </div>
               <span className="hidden sm:inline">1. School Details</span>
               <span className="sm:hidden">Details</span>
@@ -470,8 +483,8 @@ export default function RegisterSchoolPage() {
                 step === 2
                   ? "bg-indigo-600 text-white shadow-indigo-600/20"
                   : step > 2
-                  ? "bg-white text-emerald-600 border border-emerald-200"
-                  : "bg-white text-slate-500 border border-slate-200"
+                    ? "bg-white text-emerald-600 border border-emerald-200"
+                    : "bg-white text-slate-500 border border-slate-200"
               }`}
             >
               <div
@@ -479,11 +492,15 @@ export default function RegisterSchoolPage() {
                   step === 2
                     ? "bg-white/20 text-white"
                     : step > 2
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-slate-100 text-slate-600"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-slate-100 text-slate-600"
                 }`}
               >
-                {step > 2 ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : "2"}
+                {step > 2 ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  "2"
+                )}
               </div>
               <span className="hidden sm:inline">2. Choose Plan</span>
               <span className="sm:hidden">Plan</span>
@@ -505,7 +522,9 @@ export default function RegisterSchoolPage() {
             >
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] ${
-                  step === 3 ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                  step === 3
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-100 text-slate-500"
                 }`}
               >
                 3
@@ -534,10 +553,12 @@ export default function RegisterSchoolPage() {
               <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <School className="w-5 h-5 text-indigo-600" /> School Information
+                    <School className="w-5 h-5 text-indigo-600" /> School
+                    Information
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Enter your school details and set your administrator password.
+                    Enter your school details and set your administrator
+                    password.
                   </p>
                 </div>
                 <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-xl border border-indigo-100">
@@ -565,11 +586,13 @@ export default function RegisterSchoolPage() {
                           ? "border-red-400 ring-1 ring-red-400/30"
                           : "border-slate-200 focus:border-indigo-500"
                       }`}
-                      placeholder="e.g. Oxford Public School"
+                      placeholder="Enter school name"
                     />
                   </div>
                   {errors.schoolName && (
-                    <p className="mt-1 text-xs text-red-600">{errors.schoolName}</p>
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.schoolName}
+                    </p>
                   )}
                 </div>
 
@@ -578,19 +601,23 @@ export default function RegisterSchoolPage() {
                   <div className="md:col-span-2 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200/90 space-y-2 animate-in fade-in duration-200">
                     <div className="flex items-center justify-between">
                       <label className="block text-xs font-bold uppercase tracking-wider text-indigo-900">
-                        Display Name (Short Name) <span className="text-indigo-600">*</span>
+                        Display Name (Short Name){" "}
+                        <span className="text-indigo-600">*</span>
                       </label>
                       <span
                         className={`text-[11px] font-mono font-bold ${
-                          form.displayName.length > 20 ? "text-rose-600" : "text-indigo-600"
+                          form.displayName.length > 20
+                            ? "text-rose-600"
+                            : "text-indigo-600"
                         }`}
                       >
                         {form.displayName.length}/20 characters
                       </span>
                     </div>
                     <p className="text-xs text-indigo-700/90 leading-relaxed">
-                      Your school name exceeds 20 characters. Please provide a short display name
-                      (up to 20 characters) for application headers and mobile views.
+                      Your school name exceeds 20 characters. Please provide a
+                      short display name (up to 20 characters) for application
+                      headers and mobile views.
                     </p>
                     <div className="relative">
                       <Sparkles className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 pointer-events-none" />
@@ -607,7 +634,7 @@ export default function RegisterSchoolPage() {
                             ? "border-red-400 ring-1 ring-red-400/30"
                             : "border-indigo-200 focus:border-indigo-500"
                         }`}
-                        placeholder="e.g. Oxford School"
+                        placeholder="e.g. HS School"
                       />
                     </div>
                     {errors.displayName && (
@@ -641,7 +668,9 @@ export default function RegisterSchoolPage() {
                     />
                   </div>
                   {errors.location && (
-                    <p className="mt-1 text-xs text-red-600">{errors.location}</p>
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.location}
+                    </p>
                   )}
                 </div>
 
@@ -693,10 +722,12 @@ export default function RegisterSchoolPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                      <Palette className="w-3.5 h-3.5 text-indigo-600" /> Theme Color{" "}
-                      <span className="text-indigo-600">*</span>
+                      <Palette className="w-3.5 h-3.5 text-indigo-600" /> Theme
+                      Color <span className="text-indigo-600">*</span>
                     </label>
-                    <span className="text-[11px] text-slate-500">At least 30% dark</span>
+                    <span className="text-[11px] text-slate-500">
+                      At least 30% dark
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div
@@ -736,7 +767,9 @@ export default function RegisterSchoolPage() {
                     />
                   </div>
                   {errors.themeColor && (
-                    <p className="mt-1 text-xs text-red-600">{errors.themeColor}</p>
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.themeColor}
+                    </p>
                   )}
                 </div>
 
@@ -744,10 +777,12 @@ export default function RegisterSchoolPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                      <Key className="w-3.5 h-3.5 text-indigo-600" /> Enter Password{" "}
-                      <span className="text-indigo-600">*</span>
+                      <Key className="w-3.5 h-3.5 text-indigo-600" /> Enter
+                      Password <span className="text-indigo-600">*</span>
                     </label>
-                    <span className="text-[11px] text-slate-500">Min 6 characters</span>
+                    <span className="text-[11px] text-slate-500">
+                      Min 6 characters
+                    </span>
                   </div>
                   <div className="relative">
                     <input
@@ -770,11 +805,17 @@ export default function RegisterSchoolPage() {
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
                       tabIndex={-1}
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.password}
+                    </p>
                   )}
                 </div>
 
@@ -782,10 +823,12 @@ export default function RegisterSchoolPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                      <Lock className="w-3.5 h-3.5 text-indigo-600" /> Confirm Password{" "}
-                      <span className="text-indigo-600">*</span>
+                      <Lock className="w-3.5 h-3.5 text-indigo-600" /> Confirm
+                      Password <span className="text-indigo-600">*</span>
                     </label>
-                    <span className="text-[11px] text-slate-500">Must match</span>
+                    <span className="text-[11px] text-slate-500">
+                      Must match
+                    </span>
                   </div>
                   <div className="relative">
                     <input
@@ -816,7 +859,9 @@ export default function RegisterSchoolPage() {
                     </button>
                   </div>
                   {errors.confirmPassword && (
-                    <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.confirmPassword}
+                    </p>
                   )}
                 </div>
 
@@ -824,7 +869,9 @@ export default function RegisterSchoolPage() {
                 <div className="md:col-span-2 pt-1">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
                     School Logo{" "}
-                    <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                    <span className="text-slate-400 font-normal lowercase">
+                      (optional)
+                    </span>
                   </label>
                   <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
                     {logoPreview ? (
@@ -843,7 +890,9 @@ export default function RegisterSchoolPage() {
                     <div className="flex-1 text-center sm:text-left">
                       <label className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer transition shadow-sm">
                         <Upload className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>{logoPreview ? "Change Logo" : "Upload School Logo"}</span>
+                        <span>
+                          {logoPreview ? "Change Logo" : "Upload School Logo"}
+                        </span>
                         <input
                           type="file"
                           accept="image/*"
@@ -886,7 +935,8 @@ export default function RegisterSchoolPage() {
               <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-indigo-600" /> Choose Subscription Plan
+                    <Sparkles className="w-5 h-5 text-indigo-600" /> Choose
+                    Subscription Plan
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Select the plan that fits your campus scale.
@@ -896,7 +946,9 @@ export default function RegisterSchoolPage() {
                 <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 self-start sm:self-auto">
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, billingCycle: "MONTHLY" })}
+                    onClick={() =>
+                      setForm({ ...form, billingCycle: "MONTHLY" })
+                    }
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       form.billingCycle === "MONTHLY"
                         ? "bg-white text-indigo-600 shadow-sm"
@@ -937,7 +989,7 @@ export default function RegisterSchoolPage() {
                           setForm({ ...form, plan: plan.id });
                         } else {
                           toast.info(
-                            "This plan is upcoming. 1-Month Special Offer (₹99) is currently active."
+                            "This plan is upcoming. 1-Month Special Offer (₹99) is currently active.",
                           );
                         }
                       }}
@@ -945,8 +997,8 @@ export default function RegisterSchoolPage() {
                         isAvailable && isSelected
                           ? "border-indigo-600 bg-indigo-50/50 shadow-md shadow-indigo-600/10 cursor-pointer"
                           : isAvailable
-                          ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
-                          : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
+                            ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
+                            : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
                       }`}
                     >
                       <div
@@ -954,12 +1006,16 @@ export default function RegisterSchoolPage() {
                           isAvailable ? "bg-emerald-600" : "bg-slate-500"
                         }`}
                       >
-                        {isAvailable ? "FREE TRIAL — ₹99" : plan.badge || "UPCOMING"}
+                        {isAvailable
+                          ? "FREE TRIAL — ₹99"
+                          : plan.badge || "UPCOMING"}
                       </div>
 
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-bold text-base text-slate-900">{plan.name}</h3>
+                          <h3 className="font-bold text-base text-slate-900">
+                            {plan.name}
+                          </h3>
                           <div
                             className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                               isSelected
@@ -974,23 +1030,33 @@ export default function RegisterSchoolPage() {
                           <span className="text-2xl font-black text-slate-900">
                             ₹{price.toLocaleString()}
                           </span>
-                          <span className="text-xs text-slate-500 font-medium">/month</span>
+                          <span className="text-xs text-slate-500 font-medium">
+                            /month
+                          </span>
                         </div>
                         <ul className="space-y-2 text-xs text-slate-600">
                           <li className="flex items-center gap-2">
                             <CheckCircle2
                               className={`w-3.5 h-3.5 shrink-0 ${
-                                isAvailable ? "text-indigo-600" : "text-slate-400"
+                                isAvailable
+                                  ? "text-indigo-600"
+                                  : "text-slate-400"
                               }`}
                             />
                             <span>
-                              Up to <strong>{plan.maxStudents.toLocaleString()}</strong> Students
+                              Up to{" "}
+                              <strong>
+                                {plan.maxStudents.toLocaleString()}
+                              </strong>{" "}
+                              Students
                             </span>
                           </li>
                           <li className="flex items-center gap-2">
                             <CheckCircle2
                               className={`w-3.5 h-3.5 shrink-0 ${
-                                isAvailable ? "text-indigo-600" : "text-slate-400"
+                                isAvailable
+                                  ? "text-indigo-600"
+                                  : "text-slate-400"
                               }`}
                             />
                             <span>
@@ -1000,7 +1066,9 @@ export default function RegisterSchoolPage() {
                           <li className="flex items-center gap-2">
                             <CheckCircle2
                               className={`w-3.5 h-3.5 shrink-0 ${
-                                isAvailable ? "text-indigo-600" : "text-slate-400"
+                                isAvailable
+                                  ? "text-indigo-600"
+                                  : "text-slate-400"
                               }`}
                             />
                             <span>Full Portal & Mobile Access</span>
@@ -1011,7 +1079,8 @@ export default function RegisterSchoolPage() {
                       <div className="mt-4 pt-3 border-t border-slate-100">
                         {isAvailable ? (
                           <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" /> Selected by default
+                            <Check className="w-3.5 h-3.5" /> Selected by
+                            default
                           </span>
                         ) : (
                           <span className="text-xs font-semibold text-slate-400">
@@ -1073,27 +1142,30 @@ export default function RegisterSchoolPage() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      We’re making SchoolVajo better every day to provide schools with a simple,
-                      reliable, and modern management experience.
+                      We’re making SchoolVajo better every day to provide
+                      schools with a simple, reliable, and modern management
+                      experience.
                     </p>
                   </div>
                 </div>
 
                 <div className="text-xs text-slate-600 space-y-2.5 pl-0 sm:pl-12">
                   <p className="leading-relaxed">
-                    As you use the platform, you may occasionally experience bugs, errors, missing
-                    information, or data inconsistencies.
+                    As you use the platform, you may occasionally experience
+                    bugs, errors, missing information, or data inconsistencies.
                   </p>
                   <p className="leading-relaxed">
-                    If you notice any issue, please let us know through <strong>email</strong> or
-                    our support channels. Your feedback helps us identify and fix problems faster.
+                    If you notice any issue, please let us know through{" "}
+                    <strong>email</strong> or our support channels. Your
+                    feedback helps us identify and fix problems faster.
                   </p>
 
                   <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 flex items-start gap-2.5 text-amber-950">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-relaxed">
-                      <strong>Important:</strong> During this development/testing phase, we cannot
-                      guarantee against unexpected data loss or data inconsistencies. Please use
+                      <strong>Important:</strong> During this
+                      development/testing phase, we cannot guarantee against
+                      unexpected data loss or data inconsistencies. Please use
                       the platform with this understanding.
                     </p>
                   </div>
@@ -1120,7 +1192,8 @@ export default function RegisterSchoolPage() {
                 >
                   {loading || uploading ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Sending Verification Code...
+                      <Loader2 className="w-4 h-4 animate-spin" /> Sending
+                      Verification Code...
                     </>
                   ) : (
                     <>
@@ -1190,7 +1263,9 @@ export default function RegisterSchoolPage() {
                   {resendCooldown > 0 ? (
                     <span className="text-slate-400 font-medium">
                       Resend code in{" "}
-                      <strong className="text-slate-600 font-mono">{resendCooldown}s</strong>
+                      <strong className="text-slate-600 font-mono">
+                        {resendCooldown}s
+                      </strong>
                     </span>
                   ) : (
                     <button
@@ -1199,8 +1274,14 @@ export default function RegisterSchoolPage() {
                       onClick={handleResendOtp}
                       className="text-indigo-600 hover:text-indigo-700 font-bold inline-flex items-center gap-1.5 hover:underline disabled:opacity-50 cursor-pointer"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${resending ? "animate-spin" : ""}`} />
-                      <span>{resending ? "Sending code..." : "Resend Verification Code"}</span>
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 ${resending ? "animate-spin" : ""}`}
+                      />
+                      <span>
+                        {resending
+                          ? "Sending code..."
+                          : "Resend Verification Code"}
+                      </span>
                     </button>
                   )}
                 </div>
@@ -1210,8 +1291,9 @@ export default function RegisterSchoolPage() {
               <div className="max-w-md mx-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-xs text-slate-500 flex items-start gap-2.5">
                 <Lock className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  The verification code expires in 15 minutes. Once verified, your administrator
-                  portal for <strong>{form.schoolName}</strong> will be immediately ready.
+                  The verification code expires in 15 minutes. Once verified,
+                  your administrator portal for{" "}
+                  <strong>{form.schoolName}</strong> will be immediately ready.
                 </p>
               </div>
 
@@ -1236,7 +1318,8 @@ export default function RegisterSchoolPage() {
                 >
                   {verifying ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying & Setting Up...
+                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying &
+                      Setting Up...
                     </>
                   ) : (
                     <>

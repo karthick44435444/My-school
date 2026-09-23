@@ -33,7 +33,6 @@ import { PhoneField } from "@/components/PhoneField";
 import { Colors, spacing, radius } from "@/constants/theme";
 import { str, formatDateDDMMYYYY, cleanPhone } from "@/lib/format";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { CredentialsModal, Credentials } from "@/components/CredentialsModal";
 import { BulkStudentUploadModal } from "@/components/BulkStudentUploadModal";
 import { SearchBar } from "@/components/SearchBar";
 import { useToast } from "@/hooks/useToast";
@@ -100,7 +99,6 @@ export default function StudentsScreen() {
   const [confirmDel, setConfirmDel] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [detail, setDetail] = useState<any>(null);
-  const [credentials, setCredentials] = useState<Credentials | null>(null);
   const lastParamsKeyRef = React.useRef<string>("");
   const activeIdxRef = React.useRef<number>(0);
   activeIdxRef.current = activeIdx;
@@ -575,10 +573,7 @@ export default function StudentsScreen() {
           return;
         }
         const res = await api<any>("/api/users/create", { method: "POST", body });
-        toast.success("Student enrolled successfully");
-        if (res.credentials) {
-          setCredentials(res.credentials);
-        }
+        toast.success("Student created! Login credentials sent to parent email.");
       }
       setModal(false);
       loadMetadata();
@@ -1423,16 +1418,6 @@ export default function StudentsScreen() {
             setDeleting(false);
           }
         }}
-      />
-
-      {/* Credentials Modal */}
-      <CredentialsModal
-        visible={!!credentials}
-        credentials={credentials}
-        color={color}
-        title="Student Enrolled"
-        subtitle="Credentials for both Student and Parent login"
-        onClose={() => setCredentials(null)}
       />
 
       {/* Bulk Upload Modal */}

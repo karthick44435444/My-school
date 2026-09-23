@@ -10,7 +10,6 @@ import Pagination from "@/components/shared/Pagination";
 import CreateUserForm from "@/components/forms/CreateUserForm";
 import EditUserForm from "@/components/forms/EditUserForm";
 import ConfirmDeleteModal from "@/components/shared/ConfirmDeleteModal";
-import CredentialsModal from "@/components/forms/CredentialsModal";
 import BulkStudentUploadModal from "@/components/shared/BulkStudentUploadModal";
 import BulkChangeClassModal from "@/components/shared/BulkChangeClassModal";
 
@@ -511,17 +510,11 @@ export default function PrincipalStudentsPage() {
         classes={classes}
         open={showCreate}
         onClose={() => setShowCreate(false)}
-        onCreated={(creds) => {
-          setCredentials(creds);
+        onCreated={() => {
+          setShowCreate(false);
           loadMetadata();
           loadStudents(1);
         }}
-      />
-      <CredentialsModal
-        credentials={credentials}
-        theme={theme}
-        title="Student credentials"
-        onClose={() => setCredentials(null)}
       />
 
       <EditUserForm

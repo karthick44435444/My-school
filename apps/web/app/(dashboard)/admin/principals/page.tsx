@@ -9,7 +9,6 @@ import Avatar from "@/components/shared/Avatar";
 import Pagination from "@/components/shared/Pagination";
 import CreateUserForm from "@/components/forms/CreateUserForm";
 import EditUserForm from "@/components/forms/EditUserForm";
-import CredentialsModal from "@/components/forms/CredentialsModal";
 import ConfirmDeleteModal from "@/components/shared/ConfirmDeleteModal";
 
 export default function AdminPrincipalsPage() {
@@ -226,17 +225,10 @@ export default function AdminPrincipalsPage() {
         theme={theme}
         open={showCreate}
         onClose={() => setShowCreate(false)}
-        onCreated={(creds) => {
-          setCredentials(creds);
+        onCreated={() => {
+          setShowCreate(false);
           loadPrincipals(1);
         }}
-      />
-
-      <CredentialsModal
-        credentials={credentials}
-        theme={theme}
-        title="Principal Credentials"
-        onClose={() => setCredentials(null)}
       />
 
       <EditUserForm

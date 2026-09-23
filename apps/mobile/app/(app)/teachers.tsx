@@ -23,7 +23,6 @@ import { Badge, Button, Empty, Input, Label, Loading } from "@/components/ui";
 import { PhoneField } from "@/components/PhoneField";
 import { SearchBar, matchesSearch } from "@/components/SearchBar";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { CredentialsModal, Credentials } from "@/components/CredentialsModal";
 import { Colors, spacing, radius } from "@/constants/theme";
 import { TAB_BAR_CLEARANCE } from "@/constants/layout";
 import { str } from "@/lib/format";
@@ -155,7 +154,6 @@ export default function TeachersScreen() {
   const [confirmDel, setConfirmDel] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [detail, setDetail] = useState<any>(null);
-  const [credentials, setCredentials] = useState<Credentials | null>(null);
 
   const fetchTeachers = useCallback(
     async (targetPage = 1, append = false, searchQuery = qRef.current, statusFilter = filterRef.current) => {
@@ -342,10 +340,7 @@ export default function TeachersScreen() {
             photoUrl: form.photoUrl || undefined,
           },
         });
-        toast.success("Teacher created successfully");
-        if (res.credentials) {
-          setCredentials(res.credentials);
-        }
+        toast.success("Teacher created! Login credentials sent to email.");
       }
       setModal(false);
       await fetchTeachers(1, false, qRef.current, filterRef.current);
@@ -652,15 +647,6 @@ export default function TeachersScreen() {
             setDeleting(false);
           }
         }}
-      />
-
-      {/* Credentials Modal */}
-      <CredentialsModal
-        visible={!!credentials}
-        credentials={credentials}
-        color={color}
-        title="Teacher Account Created"
-        onClose={() => setCredentials(null)}
       />
     </View>
   );

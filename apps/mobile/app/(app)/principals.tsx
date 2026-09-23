@@ -25,7 +25,6 @@ import { SafeAvatar } from "@/components/ChildAvatar";
 import { PhoneField } from "@/components/PhoneField";
 import { SearchBar, matchesSearch } from "@/components/SearchBar";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { CredentialsModal, Credentials } from "@/components/CredentialsModal";
 import { Colors, spacing, radius } from "@/constants/theme";
 import { TAB_BAR_CLEARANCE } from "@/constants/layout";
 
@@ -61,7 +60,6 @@ export default function PrincipalsScreen() {
   const [apiBase, setApiBase] = useState(() => getApiBaseSync());
   const [confirmDel, setConfirmDel] = useState<any>(null);
   const [detail, setDetail] = useState<any>(null);
-  const [credentials, setCredentials] = useState<Credentials | null>(null);
 
   const openModal = (type: "create" | "edit", item?: any) => {
     setErrors({});
@@ -197,11 +195,8 @@ export default function PrincipalsScreen() {
             photoUrl: form.photoUrl || undefined,
           },
         });
-        toast.success("Principal created successfully");
+        toast.success("Principal created! Login credentials sent to email.");
         closeModal();
-        if (res.credentials) {
-          setCredentials(res.credentials);
-        }
         await load();
       }
     } catch (err: any) {
@@ -547,15 +542,6 @@ export default function PrincipalsScreen() {
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => !deleting && setConfirmDel(null)}
-      />
-
-      {/* Newly Created Credentials Modal */}
-      <CredentialsModal
-        visible={!!credentials}
-        credentials={credentials}
-        color={color}
-        title="Principal Account Created"
-        onClose={() => setCredentials(null)}
       />
     </View>
   );
