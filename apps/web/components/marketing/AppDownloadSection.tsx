@@ -118,7 +118,12 @@ export default function AppDownloadSection() {
                       </span>
                     </h4>
                     <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                      Our apps will soon be available on the <strong>Google Play Store</strong> and <strong>Apple App Store</strong>. In the meantime, you can safely download our official, verified early-access Android app directly with 100% secure cryptographic builds.
+                      Our apps will soon be available on the{" "}
+                      <strong>Google Play Store</strong> and{" "}
+                      <strong>Apple App Store</strong>. In the meantime, you can
+                      safely download our official, verified early-access
+                      Android app directly with 100% secure cryptographic
+                      builds.
                     </p>
                   </div>
                 </div>
@@ -181,7 +186,8 @@ export default function AppDownloadSection() {
                       Scan with Mobile Camera
                     </h3>
                     <p className="text-xs text-slate-300">
-                      Point your phone camera at this QR code to download SchoolVajo on your phone.
+                      Point your phone camera at this QR code to download
+                      SchoolVajo on your phone.
                     </p>
                   </div>
 
@@ -277,7 +283,11 @@ export default function AppDownloadSection() {
                   </span>
                 </h4>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Our apps will soon be available on the <strong>Google Play Store</strong> and <strong>Apple App Store</strong>. In the meantime, you can safely download our official, verified early-access Android app directly with 100% secure cryptographic builds.
+                  Our apps will soon be available on the{" "}
+                  <strong>Google Play Store</strong> and{" "}
+                  <strong>Apple App Store</strong>. In the meantime, you can
+                  safely download our official, verified early-access Android
+                  app directly with 100% secure cryptographic builds.
                 </p>
               </div>
             </div>
@@ -289,7 +299,7 @@ export default function AppDownloadSection() {
               className="w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-extrabold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-3 transition-all"
             >
               <Download className="w-5 h-5" />
-              <span>Download App (SchoolVajo.apk)</span>
+              <span>Download App (SchoolVajo)</span>
             </button>
 
             {/* Quick Actions: Copy Link & Share */}
