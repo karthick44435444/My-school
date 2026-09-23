@@ -152,7 +152,7 @@ async function sendFcmAdmin(
     const adminApp = getFirebaseAdminApp();
     const messaging = getAdminMessaging(adminApp);
     const appBase = (
-      process.env.NEXT_PUBLIC_APP_URL || "https://myschool-web-had7.onrender.com"
+      process.env.NEXT_PUBLIC_APP_URL || "https://schoolvajo.com"
     ).replace(/\/+$/, "");
     const iconUrl = `${appBase}/logo.png`;
     const targetLink = payload.data?.url || payload.data?.webUrl || appBase || "/";

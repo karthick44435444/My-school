@@ -6,9 +6,9 @@
  * OTP codes are still returned in API responses for local demo.
  */
 
-const APP_URL = "https://schoolvajo.com";
-const LOGIN_URL = "https://schoolvajo.com/login";
-const LOGO_URL = "https://schoolvajo.com/icon.png";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://schoolvajo.com";
+const LOGIN_URL = `${APP_URL}/login`;
+const LOGO_URL = `${APP_URL}/icon.png`;
 
 type SendEmailInput = {
   to: string;
