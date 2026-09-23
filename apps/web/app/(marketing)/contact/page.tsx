@@ -57,12 +57,14 @@ export default function ContactPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to submit inquiry. Please try again.");
+        throw new Error(
+          data.error || "Failed to submit inquiry. Please try again.",
+        );
       }
 
       setSubmitted(true);
       toast.success(
-        "Thank you! Your message has been sent successfully. Our team will reach out shortly."
+        "Thank you! Your message has been sent successfully. Our team will reach out shortly.",
       );
     } catch (err: any) {
       toast.error(err.message || "Failed to submit inquiry. Please try again.");
@@ -129,12 +131,6 @@ export default function ContactPage() {
                         Email Inquiries
                       </span>
                       <span>schoolvajo@gmail.com</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
-                      <Phone className="w-4 h-4" />
                     </div>
                   </div>
 

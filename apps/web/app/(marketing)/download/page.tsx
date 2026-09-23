@@ -20,8 +20,7 @@ export default function DownloadPage() {
       setAutoStarted(true);
       const timer = setTimeout(() => {
         const link = document.createElement("a");
-        link.href =
-          "https://expo.dev/artifacts/eas/8b530834-7f6b-42fc-be94-2a20a2e658bb.apk";
+        link.href = "/api/app/download";
         link.setAttribute("download", "SchoolVajo.apk");
         document.body.appendChild(link);
         link.click();

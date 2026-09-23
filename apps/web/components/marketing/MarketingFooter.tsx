@@ -69,7 +69,7 @@ export default function MarketingFooter() {
                   onClick={triggerTopLoader}
                   className="hover:text-indigo-600 transition font-bold text-indigo-600"
                 >
-                  📱 Mobile App (Android APK)
+                  Mobile App (Android APK)
                 </Link>
               </li>
               <li>
