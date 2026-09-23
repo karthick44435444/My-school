@@ -351,7 +351,7 @@ export function getRoleBasedRoutes(
   return { webUrl, mobileRoute };
 }
 
-/** Push + optional email to a user with role-based routing and auto DB notification record */
+/** Push to a user with role-based routing and auto DB notification record (Email omitted for non-critical alerts) */
 export async function notifyUser(
   userId: string,
   opts: {
@@ -363,7 +363,6 @@ export async function notifyUser(
     createDbNotif?: boolean;
   }
 ) {
-  const { sendEmail, notificationEmailHtml } = await import("./email");
   const { createNotification, getUserById } = await import("./store");
 
   const results: any = {};
@@ -417,19 +416,6 @@ export async function notifyUser(
     results.push = { success: false, error: e.message };
   }
 
-  if (opts.email) {
-    try {
-      results.email = await sendEmail({
-        to: opts.email,
-        subject: opts.title,
-        html: notificationEmailHtml(opts.title, opts.body),
-        text: opts.body,
-      });
-    } catch (e: any) {
-      results.email = { success: false, error: e.message };
-    }
-  }
-
   // Real-time notification and badge update pushed via Socket.IO & SSE
   try {
     const { emitNewNotification, emitBadgeUpdate } = await import("./realtime");
@@ -457,7 +443,7 @@ export type RecipientUser = {
  * High-performance batch notification dispatcher:
  * 1. Creates all database notification records in a single atomic write.
  * 2. Emits real-time Socket.IO notifications and badge updates instantly (<1ms).
- * 3. Dispatches FCM push notifications & emails asynchronously without blocking the HTTP request.
+ * 3. Dispatches FCM push notifications asynchronously without blocking the HTTP request.
  */
 export async function notifyUsersBatch(
   recipients: RecipientUser[],
@@ -472,7 +458,6 @@ export async function notifyUsersBatch(
 
   const { createNotificationsBulk, getUserById } = await import("./store");
   const { emitNewNotification } = await import("./realtime");
-  const { sendEmail, notificationEmailHtml } = await import("./email");
 
   // Deduplicate recipients
   const uniqueRecipients: RecipientUser[] = [];
@@ -520,7 +505,7 @@ export async function notifyUsersBatch(
     }
   }
 
-  // 3. Background asynchronous delivery for FCM Push and Email (does not block HTTP response)
+  // 3. Background asynchronous delivery for FCM Push (does not block HTTP response)
   const backgroundTasks = uniqueRecipients.map(async (u) => {
     try {
       const notif = notifMap.get(u.id);
@@ -544,16 +529,6 @@ export async function notifyUsersBatch(
         body: opts.body,
         data: pushData,
       }).catch(() => {});
-
-      // Email (if valid)
-      if (u.email && !u.email.includes(".local")) {
-        await sendEmail({
-          to: u.email,
-          subject: opts.title,
-          html: notificationEmailHtml(opts.title, opts.body),
-          text: opts.body,
-        }).catch(() => {});
-      }
     } catch {
       /* ignore individual background push errors */
     }

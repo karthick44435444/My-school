@@ -77,17 +77,8 @@ export async function POST(req: NextRequest) {
             await notifyUser(parent.id, {
               title,
               body: bodyText,
-              email: parent.email,
               type: "LEAVE",
               data: { type: "LEAVE", studentId: student.id, date: p.date },
-            });
-          } else {
-            const { sendEmail, notificationEmailHtml } = await import("@/lib/email");
-            await sendEmail({
-              to: student.parentEmail,
-              subject: title,
-              html: notificationEmailHtml(title, bodyText),
-              text: bodyText,
             });
           }
         }

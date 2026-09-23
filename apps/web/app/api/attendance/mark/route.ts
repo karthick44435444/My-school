@@ -84,22 +84,8 @@ export async function POST(req: NextRequest) {
             await notifyUser(parent.id, {
               title,
               body: parentBodyText,
-              email: parent.email,
               type: "LEAVE",
               data: { type: "LEAVE", studentId: student.id, date: day },
-            });
-          } else if (!parent && !seen.has(student.parentEmail.toLowerCase())) {
-            seen.add(student.parentEmail.toLowerCase());
-            // email parent even without account push
-            const { sendEmail, notificationEmailHtml } = await import("@/lib/email");
-            await sendEmail({
-              to: student.parentEmail,
-              subject: title,
-              html: notificationEmailHtml(
-                title,
-                parentBodyText
-              ),
-              text: parentBodyText,
             });
           }
         }

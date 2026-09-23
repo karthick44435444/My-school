@@ -62,7 +62,7 @@ export default function RegisterSuccessPage() {
     const loginUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}/login`
-        : "https://myschool.app/login";
+        : "https://schoolvajo.com/login";
     const text = `SchoolVajo Login Credentials
 ==============================
 School Name: ${credentials.schoolName}
@@ -70,6 +70,7 @@ School Code: ${credentials.schoolCode}
 Admin Username: ${credentials.adminUsername}
 Admin Password: ${credentials.adminPassword}
 Admin Email: ${credentials.email}
+Website: https://schoolvajo.com/
 Login URL: ${loginUrl}
 ==============================`;
     navigator.clipboard.writeText(text);
