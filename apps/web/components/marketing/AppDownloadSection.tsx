@@ -30,13 +30,10 @@ export default function AppDownloadSection() {
   }, []);
 
   const handleDownload = () => {
-    toast.info("Downloading SchoolVajo.apk...");
-    const link = document.createElement("a");
-    link.href = DIRECT_DOWNLOAD_PATH;
-    link.setAttribute("download", "SchoolVajo.apk");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    toast.info("Starting SchoolVajo.apk download...");
+    if (typeof window !== "undefined") {
+      window.location.href = DIRECT_DOWNLOAD_PATH;
+    }
   };
 
   const handleCopy = async () => {
