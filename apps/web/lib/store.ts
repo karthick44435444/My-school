@@ -1172,6 +1172,93 @@ export function isExactClassAndSection(
   return sA === sB;
 }
 
+export function requestSchoolRegistrationOtp(data: {
+  schoolName: string;
+  email: string;
+  phone?: string;
+  password?: string;
+}) {
+  const db = readDB() as any;
+  const normEmail = normalizeEmail(data.email);
+  if (!normEmail) throw new Error("School email is required.");
+  if (!data.schoolName || !data.schoolName.trim()) throw new Error("School name is required.");
+  if (!data.password || data.password.length < 6) throw new Error("Password must be at least 6 characters.");
+
+  // Rule: Admin school - Email and phone must be unique across the entire app
+  const dupSchoolEmail = db.schools.find((s: any) => normalizeEmail(s.email) === normEmail);
+  if (dupSchoolEmail) {
+    throw new Error("A school with this email already exists.");
+  }
+  const dupAdminEmail = db.users.find(
+    (u: any) => u.role === "ADMIN" && u.isActive && normalizeEmail(u.email) === normEmail
+  );
+  if (dupAdminEmail) {
+    throw new Error("An admin account with this email already exists.");
+  }
+
+  if (data.phone && data.phone.trim()) {
+    const dupSchoolPhone = db.schools.find((s: any) => s.phone && isSamePhone(s.phone, data.phone));
+    if (dupSchoolPhone) {
+      throw new Error("A school with this phone number already exists.");
+    }
+    const dupAdminPhone = db.users.find(
+      (u: any) => u.role === "ADMIN" && u.isActive && u.phone && isSamePhone(u.phone, data.phone)
+    );
+    if (dupAdminPhone) {
+      throw new Error("An admin account with this phone number already exists.");
+    }
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  if (!db.otps) db.otps = [];
+  db.otps = db.otps.filter(
+    (o: any) => !(normalizeEmail(o.email) === normEmail && o.purpose === "SCHOOL_REGISTRATION")
+  );
+  db.otps.push({
+    email: normEmail,
+    code,
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    purpose: "SCHOOL_REGISTRATION",
+    createdAt: new Date().toISOString(),
+  });
+  writeDB(db);
+
+  return {
+    code,
+    email: normEmail,
+    schoolName: data.schoolName.trim(),
+  };
+}
+
+export function verifySchoolRegistrationOtp(email: string, code: string): boolean {
+  const db = readDB() as any;
+  const normEmail = normalizeEmail(email);
+  if (!normEmail) throw new Error("Email is required.");
+  if (!code || !code.trim()) throw new Error("Verification code is required.");
+
+  const cleanCode = code.trim();
+  const otp = (db.otps || []).find(
+    (o: any) =>
+      normalizeEmail(o.email) === normEmail &&
+      o.code === cleanCode &&
+      o.purpose === "SCHOOL_REGISTRATION"
+  );
+
+  if (!otp) {
+    throw new Error("Invalid verification code. Please check and try again.");
+  }
+  if (new Date(otp.expiresAt) < new Date()) {
+    throw new Error("Verification code has expired. Please request a new code.");
+  }
+
+  // OTP is valid - consume it
+  db.otps = (db.otps || []).filter(
+    (o: any) => !(normalizeEmail(o.email) === normEmail && o.purpose === "SCHOOL_REGISTRATION")
+  );
+  writeDB(db);
+  return true;
+}
+
 export function createSchool(data: {
   name: string;
   displayName?: string;
@@ -1182,6 +1269,7 @@ export function createSchool(data: {
   plan: string;
   billingCycle: string;
   logoUrl?: string;
+  password?: string;
 }) {
   const db = readDB();
   const normEmail = normalizeEmail(data.email);
@@ -1231,7 +1319,9 @@ export function createSchool(data: {
 
   const schoolCode = generateSchoolCode();
   const schoolId = `sch_${Date.now()}`;
-  const adminPassword = generateTempPassword(10);
+  const adminPassword = (data.password && data.password.trim().length >= 6)
+    ? data.password.trim()
+    : generateTempPassword(10);
   const passwordHash = bcrypt.hashSync(adminPassword, 10);
 
   const school: StoredSchool = {
@@ -1244,9 +1334,11 @@ export function createSchool(data: {
     phone: data.phone ? data.phone.trim() : undefined,
     themeColor: data.themeColor,
     logoUrl: data.logoUrl,
-    plan: data.plan || "OFFER_MONTHLY",
+    plan: data.plan || "BASIC",
     billingCycle: data.billingCycle || "MONTHLY",
-    planExpiresAt: new Date(Date.now() + (data.billingCycle === "YEARLY" ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+    planExpiresAt: new Date(
+      Date.now() + (data.billingCycle === "YEARLY" ? 365 : 30) * 24 * 60 * 60 * 1000
+    ).toISOString(),
     planStatus: "ACTIVE",
     lastExpiryNotificationSent: null,
     createdAt: new Date().toISOString(),
@@ -1273,12 +1365,15 @@ export function createSchool(data: {
   return {
     school,
     admin: {
+      id: admin.id,
       username: admin.username,
       password: adminPassword, // plain text only returned once
       email: admin.email,
+      firstName: admin.firstName,
     },
   };
 }
+
 
 export function findUserByCredentials(schoolCode: string, username: string, password: string) {
   const db = readDB();

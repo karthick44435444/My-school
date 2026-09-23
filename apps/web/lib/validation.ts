@@ -71,6 +71,14 @@ export function validateName(value: string | undefined | null, label = "Name"): 
   return "";
 }
 
+export function validatePassword(value: string | undefined | null, minLength = 6): string {
+  const v = (value || "").trim();
+  if (!v) return "Password is required";
+  if (v.length < minLength) return `Password must be at least ${minLength} characters`;
+  return "";
+}
+
+
 export type FieldErrors = Record<string, string>;
 
 /** Collect first error per field; returns null if all valid */

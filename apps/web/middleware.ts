@@ -92,7 +92,7 @@ export function middleware(req: NextRequest) {
     pathname === "/" ||
     pathname === "/login" ||
     pathname === "/forgot-password" ||
-    pathname.startsWith("/register-school");
+    (pathname.startsWith("/register-school") && pathname !== "/register-school/success");
 
   const isProtectedPath =
     pathname.startsWith("/admin") ||

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Copy,
@@ -16,8 +17,8 @@ import {
   Eye,
   EyeOff,
   Sparkles,
-  Heart,
-  MessageCircle,
+  LayoutDashboard,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ interface Credentials {
 }
 
 export default function RegisterSuccessPage() {
+  const router = useRouter();
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [allCopied, setAllCopied] = useState(false);
@@ -57,7 +59,10 @@ export default function RegisterSuccessPage() {
 
   const copyAll = () => {
     if (!credentials) return;
-    const loginUrl = typeof window !== "undefined" ? `${window.location.origin}/login` : "https://myschool.app/login";
+    const loginUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/login`
+        : "https://myschool.app/login";
     const text = `SchoolVajo Login Credentials
 ==============================
 School Name: ${credentials.schoolName}
@@ -116,23 +121,23 @@ Login URL: ${loginUrl}
             <CheckCircle2 className="w-8 h-8" />
           </motion.div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Institution Activated
+            <Sparkles className="w-3.5 h-3.5" /> Institution Created & Logged In
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             School Created Successfully!
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            <span className="font-semibold text-slate-900">{credentials.schoolName}</span> is now ready.
+            <span className="font-semibold text-slate-900">{credentials.schoolName}</span> is now active.
           </p>
         </div>
 
         {/* Notice Alert */}
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 mb-6 flex items-start gap-3 text-xs text-amber-900">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 mb-6 flex items-start gap-3 text-xs text-emerald-950">
+          <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed">
-            <strong className="text-amber-950 block mb-0.5">Save these credentials now!</strong>
-            A copy has also been sent to <span className="font-bold underline">{credentials.email}</span>.
-            Use these details to log into your administrator account.
+            <strong className="text-emerald-950 block mb-0.5">You are already authenticated!</strong>
+            Copy your account details below for future logins. A confirmation has also been dispatched to{" "}
+            <span className="font-bold underline">{credentials.email}</span>.
           </div>
         </div>
 
@@ -145,7 +150,9 @@ Login URL: ${loginUrl}
                 <School className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">School Code</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  School Code
+                </span>
                 <code className="text-lg font-black font-mono tracking-wider text-indigo-600">
                   {credentials.schoolCode}
                 </code>
@@ -153,7 +160,7 @@ Login URL: ${loginUrl}
             </div>
             <button
               onClick={() => copyToClipboard(credentials.schoolCode, "School Code")}
-              className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition flex items-center gap-1.5 text-xs font-semibold shadow-sm"
+              className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition flex items-center gap-1.5 text-xs font-semibold shadow-sm cursor-pointer"
               title="Copy School Code"
             >
               {copiedField === "School Code" ? (
@@ -177,7 +184,9 @@ Login URL: ${loginUrl}
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Admin Username</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  Admin Username
+                </span>
                 <code className="text-base font-bold font-mono text-slate-800">
                   {credentials.adminUsername}
                 </code>
@@ -185,7 +194,7 @@ Login URL: ${loginUrl}
             </div>
             <button
               onClick={() => copyToClipboard(credentials.adminUsername, "Username")}
-              className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition flex items-center gap-1.5 text-xs font-semibold shadow-sm"
+              className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition flex items-center gap-1.5 text-xs font-semibold shadow-sm cursor-pointer"
               title="Copy Username"
             >
               {copiedField === "Username" ? (
@@ -202,14 +211,16 @@ Login URL: ${loginUrl}
             </button>
           </div>
 
-          {/* Admin Password */}
+          {/* Admin Password (User entered) */}
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center shrink-0 border border-pink-100">
                 <Key className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Admin Password</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  Admin Password
+                </span>
                 <code className="text-base font-bold font-mono text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
                   {showPassword ? credentials.adminPassword : "••••••••••••"}
                 </code>
@@ -219,14 +230,14 @@ Login URL: ${loginUrl}
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-700 transition shadow-sm"
+                className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-700 transition shadow-sm cursor-pointer"
                 title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
               <button
                 onClick={() => copyToClipboard(credentials.adminPassword, "Password")}
-                className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition flex items-center gap-1.5 text-xs font-semibold shadow-sm"
+                className="p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition flex items-center gap-1.5 text-xs font-semibold shadow-sm cursor-pointer"
                 title="Copy Password"
               >
                 {copiedField === "Password" ? (
@@ -251,7 +262,7 @@ Login URL: ${loginUrl}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             onClick={copyAll}
-            className={`w-full py-3 rounded-xl border font-semibold text-xs transition flex items-center justify-center gap-2 shadow-sm ${
+            className={`w-full py-3 rounded-xl border font-semibold text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer ${
               allCopied
                 ? "bg-emerald-50 border-emerald-300 text-emerald-700"
                 : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
@@ -262,10 +273,11 @@ Login URL: ${loginUrl}
           </motion.button>
 
           <Link
-            href="/login"
-            className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold text-sm shadow-md shadow-indigo-600/20 hover:bg-indigo-700 flex items-center justify-center gap-2 transition"
+            href="/admin"
+            className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 hover:bg-indigo-700 flex items-center justify-center gap-2 transition cursor-pointer"
           >
-            <span>Proceed to Login</span>
+            <LayoutDashboard className="w-4 h-4" />
+            <span>Continue to Admin Dashboard</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -279,5 +291,3 @@ Login URL: ${loginUrl}
     </div>
   );
 }
-
-

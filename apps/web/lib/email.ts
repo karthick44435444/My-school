@@ -109,6 +109,68 @@ export function otpEmailHtml(code: string, schoolName?: string) {
 </html>`;
 }
 
+export function schoolRegistrationOtpEmailHtml(code: string, schoolName: string) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Registration Verification</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f8fafc;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:540px;background-color:#ffffff;border-radius:24px;border:1px solid #e2e8f0;box-shadow:0 12px 30px -8px rgba(0,0,0,0.06);overflow:hidden;">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg, #3730a3 0%, #4338ca 50%, #6366f1 100%);padding:32px 32px 28px;text-align:center;">
+              <div style="display:inline-block;background:rgba(255,255,255,0.2);padding:6px 14px;border-radius:20px;margin-bottom:10px;">
+                <span style="color:#ffffff;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">Institution Onboarding</span>
+              </div>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Verify Your School Email</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:14px;">${schoolName}</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px 32px 24px;">
+              <h2 style="margin:0 0 12px;color:#0f172a;font-size:18px;font-weight:700;">Complete Your School Registration</h2>
+              <p style="margin:0 0 20px;color:#475569;font-size:14px;line-height:1.6;">
+                Thank you for choosing <strong>SchoolVajo</strong> for <strong>${schoolName}</strong>. Please enter the 6-digit verification code below to verify your email and activate your administrator portal:
+              </p>
+              
+              <div style="background-color:#eef2ff;border:2px dashed #6366f1;border-radius:16px;padding:22px;text-align:center;margin-bottom:24px;">
+                <span style="font-family:'Courier New',Courier,monospace;font-size:36px;font-weight:900;letter-spacing:10px;color:#3730a3;display:inline-block;margin-left:10px;">${code}</span>
+              </div>
+
+              <div style="background-color:#f8fafc;border-radius:12px;padding:14px 16px;border:1px solid #e2e8f0;margin-bottom:20px;">
+                <p style="margin:0;color:#64748b;font-size:13px;line-height:1.5;">
+                  ⏰ <strong>Validity:</strong> This OTP is valid for <strong>15 minutes</strong>.<br>
+                  🔒 <strong>Security Notice:</strong> Never share this code with anyone. SchoolVajo staff will never ask for your verification code.
+                </p>
+              </div>
+
+              <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.5;">
+                If you did not initiate this school creation, you can safely disregard this email.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;text-align:center;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;">© ${new Date().getFullYear()} SchoolVajo — Modern School Management Platform</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 export function credentialsEmailHtml(opts: {
   role: string;
   schoolCode: string;
