@@ -28,7 +28,6 @@ export default function MarketingNavbar() {
     { label: "Home", href: "/" },
     { label: "Platform Tour", href: "/tour" },
     { label: "Mobile App", href: "/download" },
-    { label: "Blog", href: "/blog" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];
@@ -51,7 +50,11 @@ export default function MarketingNavbar() {
           className="flex items-center gap-2.5 group shrink-0"
         >
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 p-2 flex items-center justify-center border border-slate-200/80 shadow-xs group-hover:scale-105 group-hover:border-indigo-300 transition-all">
-            <img src="/logo.png" alt="SchoolVajo" className="w-full h-full object-contain" />
+            <img
+              src="/logo.png"
+              alt="SchoolVajo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="flex flex-col">
             <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 flex items-center gap-1 leading-tight">
@@ -121,7 +124,11 @@ export default function MarketingNavbar() {
             className="p-2 rounded-full border border-slate-200/80 text-slate-700 hover:bg-white/90 bg-white/70 transition"
             aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {mobileMenuOpen ? (
+              <X className="w-4 h-4" />
+            ) : (
+              <Menu className="w-4 h-4" />
+            )}
           </button>
         </div>
       </div>

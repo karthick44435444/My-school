@@ -85,7 +85,7 @@ export default function MarketingFooter() {
                 <Link
                   href="/blog"
                   onClick={triggerTopLoader}
-                  className="hover:text-indigo-600 transition font-bold text-indigo-600"
+                  className="hover:text-indigo-600 transition"
                 >
                   Blog & EdTech Resources
                 </Link>

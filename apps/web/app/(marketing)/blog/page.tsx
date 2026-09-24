@@ -83,8 +83,8 @@ export default function BlogIndexPage() {
       datePublished: post.publishedAt,
       dateModified: post.updatedAt,
       author: {
-        "@type": "Person",
-        name: post.author.name,
+        "@type": "Organization",
+        name: "SchoolVajo",
       },
       image: `https://schoolvajo.com${post.coverImage}`,
     })),
@@ -163,16 +163,16 @@ export default function BlogIndexPage() {
                 </p>
 
                 <div className="pt-2 flex items-center justify-between flex-wrap gap-4 border-t border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-indigo-50 p-1.5 border border-indigo-100 flex items-center justify-center">
-                      <GraduationCap className="w-5 h-5 text-indigo-600" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-indigo-50 p-1 border border-indigo-100 flex items-center justify-center">
+                      <ShieldCheck className="w-4 h-4 text-indigo-600" />
                     </div>
                     <div>
                       <strong className="text-xs font-bold text-slate-900 block">
-                        {featuredPost.author.name}
+                        SchoolVajo Editorial Team
                       </strong>
                       <span className="text-[11px] text-slate-500 block">
-                        {featuredPost.author.role}
+                        Verified Campus Insights
                       </span>
                     </div>
                   </div>
@@ -259,9 +259,10 @@ export default function BlogIndexPage() {
               </div>
 
               <div className="px-6 pb-6 pt-2 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-[11px] text-slate-500 font-medium">
-                  By {post.author.name}
-                </span>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>SchoolVajo Editorial</span>
+                </div>
                 <Link
                   href={`/blog/${post.slug}`}
                   className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:gap-2 transition-all"

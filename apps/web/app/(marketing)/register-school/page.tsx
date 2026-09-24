@@ -82,7 +82,12 @@ export default function RegisterSchoolPage() {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
       const planParam = sp.get("plan");
-      if (planParam && (planParam === "STARTER" || planParam === "STARTER_1_MONTH" || planParam === "BASIC")) {
+      if (
+        planParam &&
+        (planParam === "STARTER" ||
+          planParam === "STARTER_1_MONTH" ||
+          planParam === "BASIC")
+      ) {
         setForm((prev) => ({
           ...prev,
           plan: "STARTER_1_MONTH",
@@ -107,7 +112,8 @@ export default function RegisterSchoolPage() {
     return () => clearInterval(interval);
   }, [resendCooldown]);
 
-  const selectedTier = PLAN_TIERS.find((p) => p.id === "STARTER") || PLAN_TIERS[0];
+  const selectedTier =
+    PLAN_TIERS.find((p) => p.id === "STARTER") || PLAN_TIERS[0];
   const selectedPlan = PLANS.find((p) => p.id === "STARTER") || PLANS[0];
 
   const validateStep1 = (): boolean => {
@@ -436,7 +442,7 @@ export default function RegisterSchoolPage() {
           </p>
 
           {/* Stepper Progress Indicator (3 Steps) */}
-          <div className="flex items-center justify-center gap-2 sm:gap-3 max-w-lg mx-auto mt-6">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mx-auto mt-6">
             {/* Step 1 Button */}
             <button
               onClick={() => step !== 3 && setStep(1)}
@@ -958,7 +964,7 @@ export default function RegisterSchoolPage() {
                     type="button"
                     onClick={() =>
                       toast.info(
-                        "6-Month package is upcoming. 1-Month Starter Free Trial is currently active for registration."
+                        "6-Month package is upcoming. 1-Month Starter Free Trial is currently active for registration.",
                       )
                     }
                     className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-600 transition flex items-center gap-1.5 opacity-70 cursor-not-allowed"
@@ -972,7 +978,7 @@ export default function RegisterSchoolPage() {
                     type="button"
                     onClick={() =>
                       toast.info(
-                        "1-Year package is upcoming. 1-Month Starter Free Trial is currently active for registration."
+                        "1-Year package is upcoming. 1-Month Starter Free Trial is currently active for registration.",
                       )
                     }
                     className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-600 transition flex items-center gap-1.5 opacity-70 cursor-not-allowed"
@@ -1000,7 +1006,7 @@ export default function RegisterSchoolPage() {
                           setForm({ ...form, plan: "STARTER_1_MONTH" });
                         } else {
                           toast.info(
-                            `${tier.name} is upcoming. SchoolVajo Starter (1 Month Free Trial) is currently active.`
+                            `${tier.name} is upcoming. SchoolVajo Starter (1 Month Free Trial) is currently active.`,
                           );
                         }
                       }}
@@ -1008,8 +1014,8 @@ export default function RegisterSchoolPage() {
                         isAvailable && isSelected
                           ? "border-indigo-600 bg-indigo-50/50 shadow-md shadow-indigo-600/10 cursor-pointer"
                           : isAvailable
-                          ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
-                          : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
+                            ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
+                            : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
                       }`}
                     >
                       <div
@@ -1017,9 +1023,7 @@ export default function RegisterSchoolPage() {
                           isAvailable ? "bg-emerald-600" : "bg-slate-500"
                         }`}
                       >
-                        {isAvailable
-                          ? "FREE TRIAL"
-                          : tier.badge || "UPCOMING"}
+                        {isAvailable ? "FREE TRIAL" : tier.badge || "UPCOMING"}
                       </div>
 
                       <div>

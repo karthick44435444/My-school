@@ -64,7 +64,7 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
-      authors: [post.author.name],
+      authors: ["SchoolVajo"],
       images: [
         {
           url: post.coverImage,
@@ -103,9 +103,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
     author: {
-      "@type": "Person",
-      name: post.author.name,
-      jobTitle: post.author.role,
+      "@type": "Organization",
+      name: "SchoolVajo",
+      url: "https://schoolvajo.com",
     },
     publisher: {
       "@type": "Organization",
@@ -187,14 +187,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <div className="pt-4 border-t border-slate-200 flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-indigo-50 p-2 border border-indigo-100 flex items-center justify-center">
-                  <GraduationCap className="w-5 h-5 text-indigo-600" />
+                  <ShieldCheck className="w-5 h-5 text-indigo-600" />
                 </div>
                 <div>
                   <strong className="text-xs font-bold text-slate-900 block">
-                    {post.author.name}
+                    SchoolVajo Editorial Team
                   </strong>
                   <span className="text-[11px] text-slate-500 block">
-                    {post.author.role}
+                    Verified Campus Management &amp; EdTech Insights
                   </span>
                 </div>
               </div>

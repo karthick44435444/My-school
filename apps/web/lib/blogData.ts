@@ -64,8 +64,8 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: "2026-03-15T09:00:00Z",
     updatedAt: "2026-03-24T10:00:00Z",
     author: {
-      name: "Karthick Raja",
-      role: "EdTech Systems Architect & Founder",
+      name: "SchoolVajo Editorial Team",
+      role: "Campus Technology & Research",
       avatar: "/logo.png",
     },
     coverImage: "/about-banner.jpg",
@@ -208,8 +208,8 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: "2026-03-18T10:30:00Z",
     updatedAt: "2026-03-24T10:00:00Z",
     author: {
-      name: "Priya Sharma",
-      role: "Academic Operations Specialist",
+      name: "SchoolVajo Editorial Team",
+      role: "Campus Operations & Best Practices",
       avatar: "/logo.png",
     },
     coverImage: "/contact-banner.jpg",
@@ -299,8 +299,8 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: "2026-03-20T11:00:00Z",
     updatedAt: "2026-03-24T10:00:00Z",
     author: {
-      name: "Dr. Ananya Mukherjee",
-      role: "Curriculum & Evaluation Consultant",
+      name: "SchoolVajo Editorial Team",
+      role: "Academic Evaluation & Grading Standards",
       avatar: "/logo.png",
     },
     coverImage: "/login-banner.jpg",
@@ -378,8 +378,8 @@ export const BLOG_POSTS: BlogPost[] = [
     publishedAt: "2026-03-22T08:00:00Z",
     updatedAt: "2026-03-24T10:00:00Z",
     author: {
-      name: "Karthick Raja",
-      role: "EdTech Systems Architect",
+      name: "SchoolVajo Editorial Team",
+      role: "EdTech Architecture & Mobility",
       avatar: "/logo.png",
     },
     coverImage: "/privacy-banner.jpg",
