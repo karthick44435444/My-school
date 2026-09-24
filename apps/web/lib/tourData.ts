@@ -22,7 +22,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Administrator Command Center",
     roleBadge: "Admin Role",
     badgeColor: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    description: "Centralized school governance providing real-time headcount, daily check-in metrics, class rankings, and administrative control.",
+    description:
+      "Centralized school governance providing real-time headcount, daily check-in metrics, class rankings, and administrative control.",
     features: [
       "Total students and active faculty metrics",
       "Real-time teacher and student daily attendance ratio",
@@ -40,7 +41,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Principal Academic Overview",
     roleBadge: "Principal Role",
     badgeColor: "bg-purple-100 text-purple-700 border-purple-200",
-    description: "Institution-wide academic monitoring with faculty attendance status, classroom performance, and swift administrative reporting.",
+    description:
+      "Institution-wide academic monitoring with faculty attendance status, classroom performance, and swift administrative reporting.",
     features: [
       "Campus-wide student & teacher enrollment counts",
       "Faculty check-in tracking & attendance summary",
@@ -58,7 +60,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Teacher Daily Portal",
     roleBadge: "Teacher Role",
     badgeColor: "bg-blue-100 text-blue-700 border-blue-200",
-    description: "Personalized workspace for faculty to record class attendance, manage homework assignments, enter exam marks, and monitor students.",
+    description:
+      "Personalized workspace for faculty to record class attendance, manage homework assignments, enter exam marks, and monitor students.",
     features: [
       "Assigned classroom overview & student count",
       "One-click 'Take Attendance' action",
@@ -76,7 +79,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Student Learning Dashboard",
     roleBadge: "Student Role",
     badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    description: "Student portal showcasing personal attendance rates, assigned homework tasks, exam report cards, and school-wide announcements.",
+    description:
+      "Student portal showcasing personal attendance rates, assigned homework tasks, exam report cards, and school-wide announcements.",
     features: [
       "Personal attendance percentage & present days",
       "Upcoming & pending homework assignments",
@@ -94,7 +98,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Parent Multi-Child Portal",
     roleBadge: "Parent Role",
     badgeColor: "bg-amber-100 text-amber-700 border-amber-200",
-    description: "Unified parent interface with seamless child switching, real-time daily attendance updates, homework status, and exam scorecards.",
+    description:
+      "Unified parent interface with seamless child switching, real-time daily attendance updates, homework status, and exam scorecards.",
     features: [
       "Multi-child selector with instant profile switching",
       "Live daily attendance status (Present / Absent / Late)",
@@ -112,7 +117,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Daily Attendance Marking",
     roleBadge: "Daily Operations",
     badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    description: "Fast, error-free attendance register allowing teachers and admins to mark present, absent, or late with one-click bulk presets.",
+    description:
+      "Fast, error-free attendance register allowing teachers and admins to mark present, absent, or late with one-click bulk presets.",
     features: [
       "Date selector with instant class and section loading",
       "Present, Absent, and Late status toggles per student",
@@ -130,7 +136,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Attendance Analytics & History",
     roleBadge: "Analytics",
     badgeColor: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    description: "In-depth attendance breakdown across classes and date ranges with present vs absent statistics and historical records.",
+    description:
+      "In-depth attendance breakdown across classes and date ranges with present vs absent statistics and historical records.",
     features: [
       "Class-wise attendance percentage and total present counts",
       "Historical date filter for daily and monthly reviews",
@@ -148,7 +155,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Parent Attendance Calendar",
     roleBadge: "Parent Monitoring",
     badgeColor: "bg-teal-100 text-teal-700 border-teal-200",
-    description: "Monthly calendar grid and chronological timeline giving parents complete transparency into their child's attendance record.",
+    description:
+      "Monthly calendar grid and chronological timeline giving parents complete transparency into their child's attendance record.",
     features: [
       "Visual monthly calendar with color-coded status badges",
       "Total present days, absent count, and percentage summary",
@@ -166,7 +174,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Parent Leave & Absence Monitoring",
     roleBadge: "Real-Time Alerts",
     badgeColor: "bg-rose-100 text-rose-700 border-rose-200",
-    description: "Instant push notifications and real-time alerts sent directly to parents when a teacher marks a student absent or records leave.",
+    description:
+      "Instant push notifications and real-time alerts sent directly to parents when a teacher marks a student absent or records leave.",
     features: [
       "Instant push notifications delivered to parents on attendance submission",
       "Notification specifies student name, class, section, and date",
@@ -181,10 +190,11 @@ export const TOUR_ITEMS: TourItem[] = [
     id: "exams-and-marks",
     category: "academics",
     categoryLabel: "Exams & Academics",
-    title: "Exams, Grading & Progress Cards",
+    title: "Exams & Progress Cards",
     roleBadge: "Academic Grading",
     badgeColor: "bg-rose-100 text-rose-700 border-rose-200",
-    description: "End-to-end examination management with flexible mark splits, digital grade entry, automated calculations, and official Progress Card downloads.",
+    description:
+      "End-to-end examination management with flexible mark splits, digital grade entry, automated calculations, and official Progress Card downloads.",
     features: [
       "Exam setup with customizable split criteria (Theory, Practical, Oral)",
       "Subject-wise marks entry with max and pass thresholds",
@@ -202,7 +212,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Auto-Generated Progress Card",
     roleBadge: "Student & Parent",
     badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    description: "Automated progress card generation with detailed subject splits, total marks, percentage, grade, and one-click download as high-resolution Image or PDF for students and parents.",
+    description:
+      "Automated progress card generation with detailed subject splits, total marks, percentage, grade, and one-click download as high-resolution Image or PDF for students and parents.",
     features: [
       "Auto-calculated subject splits (Theory, Practical, Oral)",
       "Automated total marks, overall percentage, and grade",
@@ -220,7 +231,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Homework & Multi-Attachment Sharing",
     roleBadge: "Assignments",
     badgeColor: "bg-amber-100 text-amber-700 border-amber-200",
-    description: "Digital assignment distribution enabling teachers to attach reference materials and students/parents to access coursework anywhere.",
+    description:
+      "Digital assignment distribution enabling teachers to attach reference materials and students/parents to access coursework anywhere.",
     features: [
       "Assignment creation with class, section, and subject targeting",
       "Due date scheduling with urgency badges",
@@ -238,7 +250,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Campus Notices & Announcements",
     roleBadge: "Broadcasts",
     badgeColor: "bg-sky-100 text-sky-700 border-sky-200",
-    description: "School-wide and targeted communication system for broadcasting urgent notices, event schedules, and administrative circulars.",
+    description:
+      "School-wide and targeted communication system for broadcasting urgent notices, event schedules, and administrative circulars.",
     features: [
       "Role-based targeting (All, Teachers, Students, Parents)",
       "Priority badges and publication dates",
@@ -256,7 +269,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Bulk Student Excel/CSV Upload",
     roleBadge: "Quick Onboarding",
     badgeColor: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    description: "Easily onboard hundreds of students in seconds using our standardized Excel spreadsheet template with instant pre-validation and error checks.",
+    description:
+      "Easily onboard hundreds of students in seconds using our standardized Excel spreadsheet template with instant pre-validation and error checks.",
     features: [
       "Standardized Excel / CSV spreadsheet template download",
       "Auto-assignment of class, section, roll number, and parent accounts",
@@ -274,7 +288,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Student Directory & Roster",
     roleBadge: "Student Records",
     badgeColor: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    description: "Complete student record management with class/section filtering, profile photo uploads, parent linking, and credential management.",
+    description:
+      "Complete student record management with class/section filtering, profile photo uploads, parent linking, and credential management.",
     features: [
       "Class, section, and keyword search filters",
       "Individual student profiles with roll numbers and contact info",
@@ -292,7 +307,8 @@ export const TOUR_ITEMS: TourItem[] = [
     title: "Faculty Roster & Class Mapping",
     roleBadge: "Staff Management",
     badgeColor: "bg-violet-100 text-violet-700 border-violet-200",
-    description: "Faculty directory for organizing teaching staff, designating class teachers, assigning subjects, and managing contact credentials.",
+    description:
+      "Faculty directory for organizing teaching staff, designating class teachers, assigning subjects, and managing contact credentials.",
     features: [
       "Teacher roster with department and qualification details",
       "Class teacher and subject teacher assignment workflows",

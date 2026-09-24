@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PLANS } from "@myschool/shared";
+import { PLANS, PLAN_TIERS, DURATION_OPTIONS, type DurationKey } from "@myschool/shared";
 import {
   Sparkles,
   School,
@@ -35,6 +35,7 @@ export default function MarketingPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<number>(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [pricingDuration, setPricingDuration] = useState<DurationKey>("1_MONTH");
 
   const features = [
     {
@@ -423,7 +424,7 @@ export default function MarketingPage() {
         id="plans"
         className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       >
-        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
+        <div className="text-center max-w-2xl mx-auto mb-10 space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold uppercase">
             <Sparkles className="w-3.5 h-3.5" /> Transparent Pricing
           </div>
@@ -431,61 +432,96 @@ export default function MarketingPage() {
             Plans for Schools of All Sizes
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
-            No hidden setup fees. Upgrade, downgrade, or cancel anytime.
+            No hidden setup fees. Upgrade, downgrade, or extend anytime.
           </p>
         </div>
 
+        {/* Duration Switcher */}
+        <div className="flex justify-center mb-12">
+          <div className="flex items-center p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-inner">
+            {DURATION_OPTIONS.map((opt) => {
+              const isSelected = pricingDuration === opt.key;
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setPricingDuration(opt.key)}
+                  className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    isSelected
+                      ? "bg-white text-indigo-700 shadow-md shadow-slate-300/60"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span>{opt.label}</span>
+                  {opt.key === "6_MONTHS" && (
+                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-extrabold">
+                      Save 16%
+                    </span>
+                  )}
+                  {opt.key === "1_YEAR" && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-extrabold">
+                      Save 20%
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Plan Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-          {PLANS.map((plan, idx) => {
-            const isAvailable = plan.id === "BASIC";
+          {PLAN_TIERS.map((tier) => {
+            const pricing = tier.pricing[pricingDuration];
+            const isStarter = tier.id === "STARTER";
 
             return (
               <div
-                key={plan.id}
+                key={tier.id}
                 className={`relative rounded-3xl bg-white p-8 border transition-all flex flex-col justify-between ${
-                  isAvailable
+                  isStarter
                     ? "border-indigo-600 ring-2 ring-indigo-600/20 shadow-2xl scale-105 z-10"
-                    : "border-slate-200 bg-slate-50/50 opacity-75 shadow-sm"
+                    : "border-slate-200 shadow-md hover:border-indigo-200"
                 }`}
               >
                 <div
-                  className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md ${
-                    isAvailable
+                  className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md whitespace-nowrap ${
+                    isStarter
                       ? "bg-gradient-to-r from-emerald-600 via-indigo-600 to-purple-600 ring-2 ring-white"
-                      : "bg-slate-500 ring-2 ring-white"
+                      : "bg-slate-700 ring-2 ring-white"
                   }`}
                 >
-                  {isAvailable ? "FREE TRIAL — ₹99" : plan.badge || "UPCOMING"}
+                  {pricingDuration === "1_MONTH" && isStarter
+                    ? "FREE TRIAL — ₹299"
+                    : pricing.badge || (tier.id === "GROWTH" ? "POPULAR" : "UNLIMITED")}
                 </div>
 
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">
-                    {plan.name}
+                    {tier.name}
                   </h3>
                   <div className="mt-4 flex items-baseline gap-1">
                     <span className="text-4xl font-extrabold text-slate-900">
-                      ₹{plan.monthlyPrice.toLocaleString()}
+                      ₹{pricing.price.toLocaleString()}
                     </span>
                     <span className="text-xs font-semibold text-slate-500">
-                      /month
+                      /{pricing.billingInterval}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {isAvailable
-                      ? "Special introductory offer with full features"
-                      : "Full academic tier (Coming Soon)"}
+                  <p className="text-xs text-slate-500 mt-1 min-h-[32px]">
+                    {tier.tagline}
                   </p>
 
                   <div className="my-6 border-t border-slate-100" />
 
                   <ul className="space-y-3">
-                    {plan.features.map((f, fi) => (
+                    {tier.features.map((f, fi) => (
                       <li
                         key={fi}
                         className="flex items-start gap-2.5 text-xs text-slate-600 font-medium"
                       >
                         <Check
-                          className={`w-4 h-4 shrink-0 mt-0.5 ${isAvailable ? "text-emerald-500" : "text-slate-400"}`}
+                          className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500"
                         />
                         <span>{f}</span>
                       </li>
@@ -494,19 +530,17 @@ export default function MarketingPage() {
                 </div>
 
                 <div className="pt-8">
-                  {isAvailable ? (
-                    <Link
-                      href="/register-school?plan=BASIC"
-                      className="w-full py-3.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700"
-                    >
-                      <span>Choose 1-Month Plan</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  ) : (
-                    <div className="w-full py-3.5 rounded-xl font-bold text-xs bg-slate-100 text-slate-400 border border-slate-200 flex items-center justify-center cursor-not-allowed">
-                      <span>Upcoming Plan</span>
-                    </div>
-                  )}
+                  <Link
+                    href={`/register-school?plan=${tier.id}_${pricingDuration}`}
+                    className={`w-full py-3.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-md ${
+                      isStarter
+                        ? "bg-indigo-600 text-white shadow-indigo-600/20 hover:bg-indigo-700"
+                        : "bg-slate-900 text-white shadow-slate-900/20 hover:bg-slate-800"
+                    }`}
+                  >
+                    <span>Get Started with {tier.name}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
             );

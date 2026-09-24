@@ -20,8 +20,10 @@ type SendEmailInput = {
 
 export function isEmailEnabled() {
   const explicit = (process.env.EMAIL_ENABLED || "").trim().toLowerCase();
-  if (explicit === "true" || explicit === "1" || explicit === "yes") return true;
-  if (explicit === "false" || explicit === "0" || explicit === "no") return false;
+  if (explicit === "true" || explicit === "1" || explicit === "yes")
+    return true;
+  if (explicit === "false" || explicit === "0" || explicit === "no")
+    return false;
   // If RESEND_API_KEY is configured in production, automatically enable sending
   return Boolean((process.env.RESEND_API_KEY || "").trim());
 }
@@ -41,7 +43,9 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
     return { success: true, demo: true };
   }
 
-  const provider = (process.env.EMAIL_PROVIDER || "resend").toLowerCase().trim();
+  const provider = (process.env.EMAIL_PROVIDER || "resend")
+    .toLowerCase()
+    .trim();
 
   if (provider === "resend") {
     const rawKey = process.env.RESEND_API_KEY || "";
@@ -54,12 +58,16 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
     }
 
     if (!key) {
-      console.warn("[email] RESEND_API_KEY missing or empty in environment variables");
+      console.warn(
+        "[email] RESEND_API_KEY missing or empty in environment variables",
+      );
       return { success: false, error: "RESEND_API_KEY missing" };
     }
 
     try {
-      console.log(`[email:resend:sending] To: ${cleanTo}, From: ${from}, Subject: "${subject}"`);
+      console.log(
+        `[email:resend:sending] To: ${cleanTo}, From: ${from}, Subject: "${subject}"`,
+      );
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -81,7 +89,8 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
         return {
           success: false,
           status: res.status,
-          error: data.message || data.error || `Resend HTTP error ${res.status}`,
+          error:
+            data.message || data.error || `Resend HTTP error ${res.status}`,
           details: data,
         };
       }
@@ -90,7 +99,10 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
       return { success: true, id: data.id };
     } catch (fetchErr: any) {
       console.error("[email:resend:fetch_exception]", fetchErr);
-      return { success: false, error: fetchErr.message || "Network request to Resend failed" };
+      return {
+        success: false,
+        error: fetchErr.message || "Network request to Resend failed",
+      };
     }
   }
 
@@ -192,7 +204,10 @@ export function otpEmailHtml(code: string, schoolName?: string) {
 /**
  * 2. School Creation OTP Verification Email Template
  */
-export function schoolRegistrationOtpEmailHtml(code: string, schoolName: string) {
+export function schoolRegistrationOtpEmailHtml(
+  code: string,
+  schoolName: string,
+) {
   const currentYear = new Date().getFullYear();
   return `
 <!DOCTYPE html>
@@ -295,14 +310,14 @@ export function credentialsEmailHtml(opts: {
     roleName === "ADMIN"
       ? "Administrator"
       : roleName === "PRINCIPAL"
-      ? "Principal"
-      : roleName === "TEACHER"
-      ? "Teacher"
-      : roleName === "STUDENT"
-      ? "Student"
-      : roleName === "PARENT"
-      ? "Parent"
-      : opts.role;
+        ? "Principal"
+        : roleName === "TEACHER"
+          ? "Teacher"
+          : roleName === "STUDENT"
+            ? "Student"
+            : roleName === "PARENT"
+              ? "Parent"
+              : opts.role;
 
   const loginLink = opts.loginUrl || LOGIN_URL;
 
@@ -384,15 +399,15 @@ export function credentialsEmailHtml(opts: {
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin:0 auto;max-width:440px;">
                   <tr>
                     <td align="center" style="padding:6px 0;">
-                      <a href="${loginLink}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:linear-gradient(135deg, #3730a3 0%, #4338ca 50%, #6366f1 100%);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:14px 24px;border-radius:14px;box-shadow:0 6px 18px rgba(67,56,202,0.28);text-align:center;">
-                        🌐 Open Web Portal →
+                      <a href="${APP_DOWNLOAD_URL}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:#0f172a;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:13px 24px;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,0.2);text-align:center;">
+                        Download Android App (.apk)
                       </a>
                     </td>
                   </tr>
                   <tr>
                     <td align="center" style="padding:6px 0;">
-                      <a href="${APP_DOWNLOAD_URL}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:#0f172a;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:13px 24px;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,0.2);text-align:center;">
-                        📲 Download Android App (.apk)
+                      <a href="${loginLink}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:linear-gradient(135deg, #3730a3 0%, #4338ca 50%, #6366f1 100%);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:14px 24px;border-radius:14px;box-shadow:0 6px 18px rgba(67,56,202,0.28);text-align:center;">
+                        Open Website →
                       </a>
                     </td>
                   </tr>
@@ -552,15 +567,15 @@ export function studentAndParentCredentialsEmailHtml(opts: {
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin:0 auto;max-width:440px;">
                   <tr>
                     <td align="center" style="padding:6px 0;">
-                      <a href="${loginLink}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:14px 24px;border-radius:14px;box-shadow:0 6px 18px rgba(67,56,202,0.28);text-align:center;">
-                        🌐 Open Web Portal →
+                      <a href="${APP_DOWNLOAD_URL}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:#0f172a;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:13px 24px;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,0.2);text-align:center;">
+                        Download Android App (.apk)
                       </a>
                     </td>
                   </tr>
                   <tr>
                     <td align="center" style="padding:6px 0;">
-                      <a href="${APP_DOWNLOAD_URL}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:#0f172a;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:13px 24px;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,0.2);text-align:center;">
-                        📲 Download Android App (.apk)
+                      <a href="${loginLink}" target="_blank" style="display:inline-block;width:100%;box-sizing:border-box;background:linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%);color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;padding:14px 24px;border-radius:14px;box-shadow:0 6px 18px rgba(67,56,202,0.28);text-align:center;">
+                        Open Website →
                       </a>
                     </td>
                   </tr>
@@ -594,7 +609,11 @@ export function studentAndParentCredentialsEmailHtml(opts: {
 /**
  * 5. General Notification Email Template (Preserved for backward-compatibility if needed)
  */
-export function notificationEmailHtml(title: string, body: string, schoolName?: string) {
+export function notificationEmailHtml(
+  title: string,
+  body: string,
+  schoolName?: string,
+) {
   const currentYear = new Date().getFullYear();
   return `
 <!DOCTYPE html>

@@ -15,13 +15,21 @@ import { useAuth } from '@/hooks/useAuth';
 import { fetchSubscription, upgradeSubscription } from '@/lib/api';
 import { Colors, radius, spacing } from '@/constants/theme';
 import { TAB_BAR_CLEARANCE } from '@/constants/layout';
-import { SUBSCRIPTION_PLANS, SubscriptionPlanInfo } from '@myschool/shared';
+import {
+  PLAN_TIERS,
+  DURATION_OPTIONS,
+  SUBSCRIPTION_PLANS,
+  resolveSubscriptionPlan,
+  DurationKey,
+  SubscriptionPlanInfo,
+} from '@myschool/shared';
 
 export default function SubscriptionScreen() {
   const { user, themeColor, refresh } = useAuth();
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState<DurationKey>('1_MONTH');
   const [upgradingId, setUpgradingId] = useState<string | null>(null);
 
   const color = themeColor || Colors.primary;
@@ -50,7 +58,7 @@ export default function SubscriptionScreen() {
   const handleUpgrade = (plan: SubscriptionPlanInfo) => {
     Alert.alert(
       'Confirm Plan Upgrade',
-      'Activate ' + plan.name + ' for ₹' + plan.price + ' (' + plan.billingInterval + ')?\n\nDuration: +' + plan.durationDays + ' days.',
+      'Activate ' + plan.name + ' for ₹' + plan.price.toLocaleString() + ' (' + plan.billingInterval + ')?\n\nDuration: +' + plan.durationDays + ' days.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -172,7 +180,7 @@ export default function SubscriptionScreen() {
       })
     : '--';
 
-  const currentPlan = subscription?.currentPlan || SUBSCRIPTION_PLANS[0];
+  const currentPlan = subscription?.currentPlan || resolveSubscriptionPlan('STARTER_1_MONTH');
 
   return (
     <ScrollView
@@ -253,10 +261,46 @@ export default function SubscriptionScreen() {
         <View style={styles.priceRow}>
           <Text style={styles.currentRateText}>Active Rate</Text>
           <Text style={styles.priceValue}>
-            ₹{currentPlan.price}{' '}
+            ₹{currentPlan.price.toLocaleString()}{' '}
             <Text style={styles.priceInterval}>/{currentPlan.billingInterval}</Text>
           </Text>
         </View>
+      </View>
+
+      {/* Validity Selection Tabs */}
+      <View style={styles.durationSwitchContainer}>
+        {DURATION_OPTIONS.map((opt) => {
+          const isSelected = selectedDuration === opt.key;
+          return (
+            <Pressable
+              key={opt.key}
+              onPress={() => setSelectedDuration(opt.key)}
+              style={[
+                styles.durationTab,
+                isSelected && { backgroundColor: color, borderColor: color },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.durationTabText,
+                  isSelected && { color: '#FFFFFF', fontWeight: '800' },
+                ]}
+              >
+                {opt.label}
+              </Text>
+              {opt.key === '6_MONTHS' && (
+                <View style={[styles.durationBadge, isSelected ? { backgroundColor: 'rgba(255,255,255,0.25)' } : { backgroundColor: '#EEF2FF' }]}>
+                  <Text style={[styles.durationBadgeText, isSelected ? { color: '#FFFFFF' } : { color: '#4F46E5' }]}>-16%</Text>
+                </View>
+              )}
+              {opt.key === '1_YEAR' && (
+                <View style={[styles.durationBadge, isSelected ? { backgroundColor: 'rgba(255,255,255,0.25)' } : { backgroundColor: '#D1FAE5' }]}>
+                  <Text style={[styles.durationBadgeText, isSelected ? { color: '#FFFFFF' } : { color: '#059669' }]}>-20%</Text>
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
       </View>
 
       {/* Available Plans Section */}
@@ -265,92 +309,84 @@ export default function SubscriptionScreen() {
         <Text style={styles.sectionSub}>Choose a plan to extend school service instantly</Text>
       </View>
 
-      {SUBSCRIPTION_PLANS.map((plan) => {
-        const isCurrent = subscription?.planId === plan.id;
-        const isUpgrading = upgradingId === plan.id;
-        const isOffer = plan.id === 'OFFER_MONTHLY';
-        const isAvailable = isOffer;
+      {PLAN_TIERS.map((tier) => {
+        const pricing = tier.pricing[selectedDuration];
+        const planKey = `${tier.id}_${selectedDuration}`;
+        const isCurrent = subscription?.planId === planKey || (tier.id === "STARTER" && selectedDuration === "1_MONTH" && (!subscription?.planId || subscription?.planId === "BASIC" || subscription?.planId === "OFFER_MONTHLY"));
+        const isUpgrading = upgradingId === planKey;
+        const resolvedPlan = resolveSubscriptionPlan(planKey);
 
         return (
           <View
-            key={plan.id}
+            key={tier.id}
             style={[
               styles.planCard,
-              isOffer ? styles.popularCard : isCurrent ? styles.activeBorderCard : { opacity: 0.75 },
+              tier.id === 'STARTER' ? [styles.popularCard, { borderColor: color }] : isCurrent ? styles.activeBorderCard : {},
             ]}
           >
             <View
               style={[
                 styles.badgePill,
-                isOffer
+                tier.id === 'STARTER'
                   ? { backgroundColor: '#10B981' }
-                  : { backgroundColor: '#64748B' },
+                  : { backgroundColor: '#475569' },
               ]}
             >
-              <Text style={styles.badgePillText}>{isOffer ? 'FREE TRIAL — ₹99' : (plan.badge || 'UPCOMING')}</Text>
+              <Text style={styles.badgePillText}>
+                {selectedDuration === '1_MONTH' && tier.id === 'STARTER'
+                  ? 'FREE TRIAL'
+                  : pricing.badge || (tier.id === 'GROWTH' ? 'POPULAR' : 'UNLIMITED')}
+              </Text>
             </View>
 
             <View style={styles.planCardHeader}>
               <View>
-                <Text style={styles.planName}>{plan.name}</Text>
-                <Text style={styles.planDesc}>{plan.description}</Text>
+                <Text style={styles.planName}>{tier.name}</Text>
+                <Text style={styles.planDesc}>{tier.tagline}</Text>
               </View>
             </View>
 
             <View style={styles.planPriceContainer}>
-              <Text style={styles.planPriceBig}>₹{plan.price}</Text>
-              <Text style={styles.planPriceInterval}>/{plan.billingInterval}</Text>
+              <Text style={styles.planPriceBig}>₹{pricing.price.toLocaleString()}</Text>
+              <Text style={styles.planPriceInterval}>/{pricing.billingInterval}</Text>
             </View>
 
             <View style={styles.featureList}>
-              {plan.features.map((feat, idx) => (
+              {tier.features.map((feat, idx) => (
                 <View key={idx} style={styles.featureRow}>
-                  <Ionicons name='checkmark-circle' size={16} color={isAvailable ? '#10B981' : '#94A3B8'} />
-                  <Text style={[styles.featureText, !isAvailable && { color: '#94A3B8' }]}>{feat}</Text>
+                  <Ionicons name='checkmark-circle' size={16} color='#10B981' />
+                  <Text style={styles.featureText}>{feat}</Text>
                 </View>
               ))}
             </View>
 
             {user?.role === 'ADMIN' && (
-              isAvailable ? (
-                <Pressable
-                  onPress={() => handleUpgrade(plan)}
-                  disabled={isUpgrading}
-                  style={({ pressed }) => [
-                    styles.upgradeButton,
-                    { backgroundColor: color },
-                    pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-                  ]}
-                >
-                  {isUpgrading ? (
-                    <ActivityIndicator size='small' color='#FFFFFF' />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name={isCurrent ? 'flash' : 'arrow-forward-circle'}
-                        size={18}
-                        color='#FFFFFF'
-                      />
-                      <Text style={styles.upgradeButtonText}>
-                        {isCurrent
-                          ? 'Recharge / Extend'
-                          : 'Choose 1-Month Plan'}
-                      </Text>
-                    </>
-                  )}
-                </Pressable>
-              ) : (
-                <View
-                  style={[
-                    styles.upgradeButton,
-                    { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-                  ]}
-                >
-                  <Text style={[styles.upgradeButtonText, { color: '#94A3B8' }]}>
-                    Upcoming Plan
-                  </Text>
-                </View>
-              )
+              <Pressable
+                onPress={() => handleUpgrade(resolvedPlan)}
+                disabled={isUpgrading}
+                style={({ pressed }) => [
+                  styles.upgradeButton,
+                  { backgroundColor: tier.id === 'STARTER' ? color : '#0F172A' },
+                  pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+                ]}
+              >
+                {isUpgrading ? (
+                  <ActivityIndicator size='small' color='#FFFFFF' />
+                ) : (
+                  <>
+                    <Ionicons
+                      name={isCurrent ? 'flash' : 'arrow-forward-circle'}
+                      size={18}
+                      color='#FFFFFF'
+                    />
+                    <Text style={styles.upgradeButtonText}>
+                      {isCurrent
+                        ? `Recharge / Extend (${pricing.label})`
+                        : `Activate ${tier.name}`}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
             )}
           </View>
         );
@@ -523,6 +559,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: 'rgba(255,255,255,0.8)',
+  },
+  durationSwitchContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: radius.xl,
+    padding: 4,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 4,
+  },
+  durationTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    gap: 4,
+  },
+  durationTabText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  durationBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: radius.full,
+  },
+  durationBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
   },
   sectionHeader: {
     marginBottom: spacing.md,

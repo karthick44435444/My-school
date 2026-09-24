@@ -70,7 +70,7 @@ export async function GET() {
         schoolPhone: school?.phone || null,
         schoolEmail: school?.email || null,
         schoolAddress: school?.location || null,
-        plan: school?.plan || "OFFER_MONTHLY",
+        plan: school?.plan || "STARTER_1_MONTH",
         planStatus: school?.planStatus || "ACTIVE",
         planExpiresAt: school?.planExpiresAt || null,
         isSubscriptionExpired: school ? (school.planStatus === "EXPIRED" || (school.planExpiresAt ? new Date(school.planExpiresAt).getTime() <= Date.now() : false)) : false,

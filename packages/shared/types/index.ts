@@ -3,8 +3,9 @@
 export type Role = "ADMIN" | "PRINCIPAL" | "TEACHER" | "STUDENT" | "PARENT";
 export type TeacherType = "CLASS_TEACHER" | "SUBJECT_TEACHER";
 export type Gender = "MALE" | "FEMALE" | "OTHER";
-export type PlanType = "BASIC" | "STANDARD" | "PREMIUM";
-export type BillingCycle = "MONTHLY" | "YEARLY";
+export type PlanType = "STARTER" | "GROWTH" | "PRO" | "BASIC" | "STANDARD" | "PREMIUM";
+export type DurationKey = "1_MONTH" | "6_MONTHS" | "1_YEAR";
+export type BillingCycle = "1_MONTH" | "6_MONTHS" | "1_YEAR" | "MONTHLY" | "YEARLY";
 export type AttendanceStatus = "PRESENT" | "ABSENT" | "LATE" | "HALF_DAY" | "HOLIDAY";
 export type AnnouncementTarget = "ALL" | "PARENTS_ONLY" | "SPECIFIC_CLASS" | "SPECIFIC_SECTION" | "MY_STUDENTS";
 

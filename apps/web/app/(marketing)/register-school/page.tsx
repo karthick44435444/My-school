@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { PLANS } from "@myschool/shared";
+import { PLANS, PLAN_TIERS } from "@myschool/shared";
 import {
   ArrowLeft,
   Upload,
@@ -66,7 +66,7 @@ export default function RegisterSchoolPage() {
     email: "",
     phone: "",
     themeColor: "#4F46E5",
-    plan: "BASIC",
+    plan: "STARTER_1_MONTH",
     billingCycle: "MONTHLY" as "MONTHLY" | "YEARLY",
     logoFile: null as File | null,
     logoUrl: "",
@@ -82,16 +82,16 @@ export default function RegisterSchoolPage() {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
       const planParam = sp.get("plan");
-      if (planParam && planParam === "BASIC") {
+      if (planParam && (planParam === "STARTER" || planParam === "STARTER_1_MONTH" || planParam === "BASIC")) {
         setForm((prev) => ({
           ...prev,
-          plan: planParam,
+          plan: "STARTER_1_MONTH",
           billingCycle: "MONTHLY",
         }));
       } else {
         setForm((prev) => ({
           ...prev,
-          plan: "BASIC",
+          plan: "STARTER_1_MONTH",
           billingCycle: "MONTHLY",
         }));
       }
@@ -107,7 +107,8 @@ export default function RegisterSchoolPage() {
     return () => clearInterval(interval);
   }, [resendCooldown]);
 
-  const selectedPlan = PLANS.find((p) => p.id === form.plan) || PLANS[0];
+  const selectedTier = PLAN_TIERS.find((p) => p.id === "STARTER") || PLAN_TIERS[0];
+  const selectedPlan = PLANS.find((p) => p.id === "STARTER") || PLANS[0];
 
   const validateStep1 = (): boolean => {
     const isLongName = form.schoolName.trim().length > 20;
@@ -942,33 +943,43 @@ export default function RegisterSchoolPage() {
                     Select the plan that fits your campus scale.
                   </p>
                 </div>
-                {/* Billing Cycle Switcher */}
-                <div className="flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 self-start sm:self-auto">
+                {/* Validity / Billing Switcher */}
+                <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 border border-slate-200 self-start sm:self-auto">
                   <button
                     type="button"
-                    onClick={() =>
-                      setForm({ ...form, billingCycle: "MONTHLY" })
-                    }
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      form.billingCycle === "MONTHLY"
-                        ? "bg-white text-indigo-600 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-indigo-600 shadow-sm flex items-center gap-1.5 cursor-default"
                   >
-                    Monthly
+                    <span>1 Month</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-extrabold">
+                      Free Trial
+                    </span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, billingCycle: "YEARLY" })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      form.billingCycle === "YEARLY"
-                        ? "bg-white text-indigo-600 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
+                    onClick={() =>
+                      toast.info(
+                        "6-Month package is upcoming. 1-Month Starter Free Trial is currently active for registration."
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-600 transition flex items-center gap-1.5 opacity-70 cursor-not-allowed"
                   >
-                    <span>Yearly</span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.2 rounded-full font-bold">
-                      Save 20%
+                    <span>6 Months</span>
+                    <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full font-bold">
+                      Upcoming
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toast.info(
+                        "1-Year package is upcoming. 1-Month Starter Free Trial is currently active for registration."
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-600 transition flex items-center gap-1.5 opacity-70 cursor-not-allowed"
+                  >
+                    <span>1 Year</span>
+                    <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full font-bold">
+                      Upcoming
                     </span>
                   </button>
                 </div>
@@ -976,20 +987,20 @@ export default function RegisterSchoolPage() {
 
               {/* Plans Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {PLANS.map((plan) => {
-                  const isAvailable = plan.id === "BASIC";
-                  const isSelected = form.plan === plan.id;
-                  const price = plan.monthlyPrice;
+                {PLAN_TIERS.map((tier) => {
+                  const isAvailable = tier.id === "STARTER";
+                  const isSelected = isAvailable;
+                  const price = tier.pricing["1_MONTH"].price;
 
                   return (
                     <div
-                      key={plan.id}
+                      key={tier.id}
                       onClick={() => {
                         if (isAvailable) {
-                          setForm({ ...form, plan: plan.id });
+                          setForm({ ...form, plan: "STARTER_1_MONTH" });
                         } else {
                           toast.info(
-                            "This plan is upcoming. 1-Month Special Offer (₹99) is currently active.",
+                            `${tier.name} is upcoming. SchoolVajo Starter (1 Month Free Trial) is currently active.`
                           );
                         }
                       }}
@@ -997,8 +1008,8 @@ export default function RegisterSchoolPage() {
                         isAvailable && isSelected
                           ? "border-indigo-600 bg-indigo-50/50 shadow-md shadow-indigo-600/10 cursor-pointer"
                           : isAvailable
-                            ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
-                            : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
+                          ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
+                          : "border-slate-200 bg-slate-50/60 opacity-70 cursor-not-allowed"
                       }`}
                     >
                       <div
@@ -1007,14 +1018,14 @@ export default function RegisterSchoolPage() {
                         }`}
                       >
                         {isAvailable
-                          ? "FREE TRIAL — ₹99"
-                          : plan.badge || "UPCOMING"}
+                          ? "FREE TRIAL"
+                          : tier.badge || "UPCOMING"}
                       </div>
 
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="font-bold text-base text-slate-900">
-                            {plan.name}
+                            {tier.name}
                           </h3>
                           <div
                             className={`w-5 h-5 rounded-full border flex items-center justify-center ${
@@ -1035,44 +1046,18 @@ export default function RegisterSchoolPage() {
                           </span>
                         </div>
                         <ul className="space-y-2 text-xs text-slate-600">
-                          <li className="flex items-center gap-2">
-                            <CheckCircle2
-                              className={`w-3.5 h-3.5 shrink-0 ${
-                                isAvailable
-                                  ? "text-indigo-600"
-                                  : "text-slate-400"
-                              }`}
-                            />
-                            <span>
-                              Up to{" "}
-                              <strong>
-                                {plan.maxStudents.toLocaleString()}
-                              </strong>{" "}
-                              Students
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <CheckCircle2
-                              className={`w-3.5 h-3.5 shrink-0 ${
-                                isAvailable
-                                  ? "text-indigo-600"
-                                  : "text-slate-400"
-                              }`}
-                            />
-                            <span>
-                              Up to <strong>{plan.maxTeachers}</strong> Teachers
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <CheckCircle2
-                              className={`w-3.5 h-3.5 shrink-0 ${
-                                isAvailable
-                                  ? "text-indigo-600"
-                                  : "text-slate-400"
-                              }`}
-                            />
-                            <span>Full Portal & Mobile Access</span>
-                          </li>
+                          {tier.features.map((feature, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <CheckCircle2
+                                className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                                  isAvailable
+                                    ? "text-indigo-600"
+                                    : "text-slate-400"
+                                }`}
+                              />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
                         </ul>
                       </div>
 
@@ -1080,7 +1065,7 @@ export default function RegisterSchoolPage() {
                         {isAvailable ? (
                           <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
                             <Check className="w-3.5 h-3.5" /> Selected by
-                            default
+                            default (Free Trial)
                           </span>
                         ) : (
                           <span className="text-xs font-semibold text-slate-400">
@@ -1120,7 +1105,7 @@ export default function RegisterSchoolPage() {
                   <div>
                     <span className="text-slate-500 block">Plan:</span>
                     <strong className="text-indigo-600 block">
-                      {selectedPlan.name} ({form.billingCycle})
+                      {selectedTier.name} (1 Month Free Trial)
                     </strong>
                   </div>
                 </div>

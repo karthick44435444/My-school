@@ -2,10 +2,20 @@
 import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
-import { generateSchoolCode, generateTempPassword, generateUsername, formatDobToPassword, SUBSCRIPTION_PLANS, SubscriptionPlanInfo } from "@myschool/shared";
+import {
+  generateSchoolCode,
+  generateTempPassword,
+  generateUsername,
+  formatDobToPassword,
+  SUBSCRIPTION_PLANS,
+  SubscriptionPlanInfo,
+  resolveSubscriptionPlan,
+  PLAN_TIERS,
+  DURATION_OPTIONS,
+} from "@myschool/shared";
 import { prisma } from "@myschool/database";
 
-export { prisma, SUBSCRIPTION_PLANS };
+export { prisma, SUBSCRIPTION_PLANS, PLAN_TIERS, DURATION_OPTIONS };
 export type { SubscriptionPlanInfo };
 
 const DATA_DIR = fs.existsSync(path.join(process.cwd(), "apps", "web", ".data"))
@@ -5789,43 +5799,45 @@ export function getSchoolSubscription(schoolId: string) {
   const isExpired = school.planStatus === "EXPIRED" || diffMs <= 0;
   const status = isExpired ? "EXPIRED" : (school.planStatus || "ACTIVE");
 
-  const currentPlan = SUBSCRIPTION_PLANS.find((p) => p.id === school.plan) || SUBSCRIPTION_PLANS[0];
+  const currentPlan = resolveSubscriptionPlan(school.plan);
 
   return {
     schoolId: school.id,
     schoolName: school.name,
     schoolCode: school.schoolCode,
-    planId: school.plan || "OFFER_MONTHLY",
+    planId: currentPlan.id,
     currentPlan,
-    billingCycle: school.billingCycle || "MONTHLY",
+    billingCycle: school.billingCycle || currentPlan.billingInterval,
     planExpiresAt: expiresAt,
     daysRemaining,
     isExpired,
     status,
     availablePlans: SUBSCRIPTION_PLANS,
+    planTiers: PLAN_TIERS,
+    durationOptions: DURATION_OPTIONS,
   };
 }
 
 export function getSchoolPlanLimits(schoolId: string) {
   const db = readDB();
   const school = db.schools.find((s) => s.id === schoolId);
-  const planId = (school?.plan || "OFFER_MONTHLY").toUpperCase();
+  const planId = (school?.plan || "STARTER_1_MONTH").toUpperCase();
 
   let maxTeachers = 50;
   let maxStudents = 1000;
   let maxPrincipals = 2;
-  let planName = "1-Month Offer";
+  let planName = "SchoolVajo Starter";
 
-  if (planId === "TERM" || planId === "STANDARD") {
+  if (planId.includes("GROWTH") || planId === "TERM" || planId === "STANDARD") {
     maxTeachers = 100;
     maxStudents = 2000;
     maxPrincipals = 5;
-    planName = "Term Plan (6 Months)";
-  } else if (planId === "ANNUAL" || planId === "PREMIUM") {
-    maxTeachers = 500;
-    maxStudents = 10000;
-    maxPrincipals = 10;
-    planName = "Annual Plan (1 Year)";
+    planName = "SchoolVajo Growth";
+  } else if (planId.includes("PRO") || planId === "ANNUAL" || planId === "PREMIUM") {
+    maxTeachers = 99999;
+    maxStudents = 99999;
+    maxPrincipals = 9999;
+    planName = "SchoolVajo Pro";
   }
 
   const currentTeachers = (db.users || []).filter(
@@ -5868,7 +5880,7 @@ export async function upgradeSchoolSubscription(schoolId: string, planId: string
   const schoolIndex = db.schools.findIndex((s) => s.id === schoolId);
   if (schoolIndex === -1) throw new Error("School not found");
 
-  const targetPlan = SUBSCRIPTION_PLANS.find((p) => p.id === planId) || SUBSCRIPTION_PLANS[0];
+  const targetPlan = resolveSubscriptionPlan(planId);
   const school = db.schools[schoolIndex];
 
   const now = Date.now();
@@ -5897,19 +5909,22 @@ export async function upgradeSchoolSubscription(schoolId: string, planId: string
         },
       }).catch(() => {});
 
+      const prismaPlan = targetPlan.tierId === "STARTER" ? "BASIC" : (targetPlan.tierId === "PRO" ? "PREMIUM" : "STANDARD");
+      const prismaCycle = targetPlan.durationKey === "1_YEAR" ? "YEARLY" : "MONTHLY";
+
       await prisma.subscription.upsert({
         where: { schoolId },
         create: {
           schoolId,
-          plan: targetPlan.id === "OFFER_MONTHLY" ? "BASIC" : (targetPlan.id === "ANNUAL" ? "PREMIUM" : "STANDARD"),
-          billingCycle: targetPlan.id === "ANNUAL" ? "YEARLY" : "MONTHLY",
+          plan: prismaPlan,
+          billingCycle: prismaCycle,
           startDate: new Date(),
           endDate: new Date(newExpiry),
           isActive: true,
         },
         update: {
-          plan: targetPlan.id === "OFFER_MONTHLY" ? "BASIC" : (targetPlan.id === "ANNUAL" ? "PREMIUM" : "STANDARD"),
-          billingCycle: targetPlan.id === "ANNUAL" ? "YEARLY" : "MONTHLY",
+          plan: prismaPlan,
+          billingCycle: prismaCycle,
           endDate: new Date(newExpiry),
           isActive: true,
         },
