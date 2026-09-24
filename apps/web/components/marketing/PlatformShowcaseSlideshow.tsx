@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,40 +12,103 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { TOUR_ITEMS } from "@/lib/tourData";
+import { TOUR_ITEMS, type TourItem } from "@/lib/tourData";
+
+const getPillLabel = (item: TourItem) => {
+  if (item.id === "admin-dashboard") return "Admin";
+  if (item.id === "principal-dashboard") return "Principal";
+  if (item.id === "teacher-dashboard") return "Teacher";
+  if (item.id === "student-dashboard") return "Student";
+  if (item.id === "parent-dashboard") return "Parents";
+  if (item.id === "attendance-marking") return "Attendance";
+  if (item.id === "attendance-reports") return "Reports";
+  if (item.id === "parent-attendance-monitor") return "Calendar";
+  if (item.id === "leave-notification") return "Alerts";
+  if (item.id === "exams-and-marks") return "Exams";
+  if (item.id === "student-marks") return "Marks";
+  if (item.id === "homework-management") return "Homework";
+  if (item.id === "announcements") return "Notices";
+  if (item.id === "bulk-import") return "Bulk Upload";
+  if (item.id === "school-settings") return "Branding";
+  return item.title.split(" ")[0];
+};
+
+const slideVariants = {
+  enter: (dir: number) => ({
+    x: dir > 0 ? 80 : -80,
+    opacity: 0,
+    scale: 0.985,
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1,
+    scale: 1,
+    transition: {
+      x: { type: "spring", stiffness: 280, damping: 30, mass: 0.8 },
+      opacity: { duration: 0.28, ease: "easeOut" },
+      scale: { duration: 0.28, ease: "easeOut" },
+    },
+  },
+  exit: (dir: number) => ({
+    zIndex: 0,
+    x: dir > 0 ? -80 : 80,
+    opacity: 0,
+    scale: 0.985,
+    transition: {
+      x: { type: "spring", stiffness: 280, damping: 30, mass: 0.8 },
+      opacity: { duration: 0.2, ease: "easeIn" },
+      scale: { duration: 0.2, ease: "easeIn" },
+    },
+  }),
+};
 
 export default function PlatformShowcaseSlideshow() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [direction, setDirection] = useState<number>(1);
+  const [isUserInteracted, setIsUserInteracted] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const pillListRef = useRef<HTMLDivElement>(null);
 
   const currentItem = TOUR_ITEMS[currentIndex];
 
-  const nextSlide = useCallback(() => {
+  const nextSlide = useCallback((isAuto = false) => {
+    if (!isAuto) {
+      setIsUserInteracted(true);
+    }
+    setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % TOUR_ITEMS.length);
   }, []);
 
-  const prevSlide = useCallback(() => {
+  const prevSlide = useCallback((isAuto = false) => {
+    if (!isAuto) {
+      setIsUserInteracted(true);
+    }
+    setDirection(-1);
     setCurrentIndex((prev) => (prev - 1 + TOUR_ITEMS.length) % TOUR_ITEMS.length);
   }, []);
 
   const goToSlide = (idx: number) => {
+    if (idx === currentIndex) return;
+    setIsUserInteracted(true);
+    setDirection(idx > currentIndex ? 1 : -1);
     setCurrentIndex(idx);
   };
 
-  // Auto-advance timer (5.5 seconds)
+  // Auto-advance timer (5.5s) - Active ONLY when user hasn't manually interacted
   useEffect(() => {
-    if (isPaused) return;
+    if (isUserInteracted || isHovered) return;
     const timer = setInterval(() => {
-      nextSlide();
+      nextSlide(true);
     }, 5500);
     return () => clearInterval(timer);
-  }, [nextSlide, isPaused]);
+  }, [nextSlide, isUserInteracted, isHovered]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") nextSlide();
-      if (e.key === "ArrowLeft") prevSlide();
+      if (e.key === "ArrowRight") nextSlide(false);
+      if (e.key === "ArrowLeft") prevSlide(false);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -54,16 +117,21 @@ export default function PlatformShowcaseSlideshow() {
   return (
     <div
       className="relative max-w-5xl mx-auto text-left"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Category & Screen Quick Pills */}
-      <div className="flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 mb-5 overflow-x-auto pb-2 px-2 no-scrollbar">
+      <div
+        ref={pillListRef}
+        className="flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 mb-5 overflow-x-auto pb-2 px-2 no-scrollbar scroll-smooth"
+      >
         {TOUR_ITEMS.map((item, idx) => {
           const isActive = idx === currentIndex;
+          const label = getPillLabel(item);
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => goToSlide(idx)}
               className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                 isActive
@@ -71,8 +139,12 @@ export default function PlatformShowcaseSlideshow() {
                   : "bg-white/90 backdrop-blur-sm border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-white" : "bg-slate-400"}`} />
-              <span>{item.title.split(" ")[0]}</span>
+              <span
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                  isActive ? "bg-white" : "bg-slate-400"
+                }`}
+              />
+              <span>{label}</span>
             </button>
           );
         })}
@@ -83,7 +155,9 @@ export default function PlatformShowcaseSlideshow() {
         {/* Top Header & Slide Progress Bar */}
         <div className="relative border-b border-slate-100 px-5 py-3 bg-slate-50/70 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2.5">
-            <span className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider border ${currentItem.badgeColor}`}>
+            <span
+              className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase tracking-wider border ${currentItem.badgeColor}`}
+            >
               {currentItem.roleBadge}
             </span>
             <span className="text-xs font-bold text-slate-500 hidden sm:inline">
@@ -101,45 +175,46 @@ export default function PlatformShowcaseSlideshow() {
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={prevSlide}
+                onClick={() => prevSlide(false)}
                 aria-label="Previous Slide"
-                className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition flex items-center justify-center cursor-pointer shadow-2xs"
+                className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition flex items-center justify-center cursor-pointer shadow-2xs active:scale-95"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 type="button"
-                onClick={nextSlide}
+                onClick={() => nextSlide(false)}
                 aria-label="Next Slide"
-                className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition flex items-center justify-center cursor-pointer shadow-2xs"
+                className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition flex items-center justify-center cursor-pointer shadow-2xs active:scale-95"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Animated timer bar indicator */}
-          {!isPaused && (
+          {/* Animated timer bar indicator (only active during auto-play mode) */}
+          {!isUserInteracted && (
             <motion.div
               key={currentIndex}
               initial={{ width: "0%" }}
               animate={{ width: "100%" }}
               transition={{ duration: 5.5, ease: "linear" }}
-              className="absolute bottom-0 left-0 h-0.5 bg-indigo-600"
+              className="absolute bottom-0 left-0 h-0.5 bg-indigo-600 z-10 pointer-events-none"
             />
           )}
         </div>
 
-        {/* Slide Content Area */}
-        <div className="p-4 sm:p-6 min-h-[460px] flex flex-col justify-between">
-          <AnimatePresence mode="wait">
+        {/* Slide Content Area with Carousel Sliding Animation */}
+        <div className="p-4 sm:p-6 min-h-[460px] flex flex-col justify-between overflow-hidden relative">
+          <AnimatePresence mode="popLayout" custom={direction} initial={false}>
             <motion.div
               key={currentItem.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="space-y-5"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="space-y-5 w-full"
             >
               {/* Slide Title & Feature Explanation Header */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 text-left">
@@ -184,13 +259,14 @@ export default function PlatformShowcaseSlideshow() {
                       </span>
                     </div>
 
-                    {/* Web Screenshot Image (Clean Static Display) */}
-                    <div className="relative overflow-hidden aspect-16/10 bg-slate-50 flex items-center justify-center">
+                    {/* Web Screenshot Image */}
+                    <div className="relative overflow-hidden aspect-16/10 bg-slate-100 flex items-center justify-center">
                       <img
                         src={currentItem.webImage}
                         alt={`${currentItem.title} Web View`}
                         className="w-full h-full object-contain object-top"
                         loading="eager"
+                        decoding="async"
                       />
                     </div>
                   </div>
@@ -202,18 +278,19 @@ export default function PlatformShowcaseSlideshow() {
                   </div>
                 </div>
 
-                {/* 2. Mobile App Phone Frame (4 Cols) - Clean Bezel Without Notch */}
+                {/* 2. Mobile App Phone Frame (4 Cols) */}
                 <div className="lg:col-span-4 relative flex flex-col items-center">
                   <div className="w-full max-w-[210px] sm:max-w-[225px] rounded-[30px] border-[4px] border-slate-800 bg-slate-900 p-1 shadow-lg transition-all">
-                    {/* Clean Phone Screen Container (No Notch) */}
+                    {/* Clean Phone Screen Container */}
                     <div className="rounded-[24px] overflow-hidden bg-slate-950 border border-slate-800 relative">
-                      {/* Mobile Screenshot Image (Clean Static Display) */}
+                      {/* Mobile Screenshot Image */}
                       <div className="relative overflow-hidden aspect-9/18.5 bg-slate-900 flex items-center justify-center">
                         <img
                           src={currentItem.mobileImage}
                           alt={`${currentItem.title} Mobile View`}
                           className="w-full h-full object-contain"
                           loading="eager"
+                          decoding="async"
                         />
                       </div>
                     </div>
