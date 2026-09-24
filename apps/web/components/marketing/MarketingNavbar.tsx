@@ -16,6 +16,7 @@ export default function MarketingNavbar() {
     router.prefetch("/");
     router.prefetch("/tour");
     router.prefetch("/about");
+    router.prefetch("/blog");
     router.prefetch("/contact");
     router.prefetch("/privacy");
     router.prefetch("/download");
@@ -27,6 +28,7 @@ export default function MarketingNavbar() {
     { label: "Home", href: "/" },
     { label: "Platform Tour", href: "/tour" },
     { label: "Mobile App", href: "/download" },
+    { label: "Blog", href: "/blog" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];
